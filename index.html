@@ -222,12 +222,12 @@
    ═══════════════════════════════════════════ */
 const TICKER_DB = [
     // ── ITALIA ──
-    { name:"FTSE MIB", ticker:"CAPITALCOM:ITALY40", cat:"🇮🇹 Italia" },
-    { name:"Eni", ticker:"CAPITALCOM:ENI", cat:"🇮🇹 Italia" },
-    { name:"UniCredit", ticker:"CAPITALCOM:UCG", cat:"🇮🇹 Italia" },
-    { name:"Intesa Sanpaolo", ticker:"CAPITALCOM:ISP", cat:"🇮🇹 Italia" },
-    { name:"Enel", ticker:"CAPITALCOM:ENEL", cat:"🇮🇹 Italia" },
-    { name:"Ferrari", ticker:"CAPITALCOM:RACE", cat:"🇮🇹 Italia" },
+    { name:"FTSE MIB", ticker:"TVC:FTSEMIB", cat:"🇮🇹 Italia" },
+    { name:"Eni", ticker:"MIL:ENI", cat:"🇮🇹 Italia" },
+    { name:"UniCredit", ticker:"MIL:UCG", cat:"🇮🇹 Italia" },
+    { name:"Intesa Sanpaolo", ticker:"MIL:ISP", cat:"🇮🇹 Italia" },
+    { name:"Enel", ticker:"MIL:ENEL", cat:"🇮🇹 Italia" },
+    { name:"Ferrari", ticker:"MIL:RACE", cat:"🇮🇹 Italia" },
     { name:"Telecom Italia", ticker:"MIL:TIT", cat:"🇮🇹 Italia" },
     { name:"Generali", ticker:"MIL:G", cat:"🇮🇹 Italia" },
     { name:"Stellantis", ticker:"MIL:STLAM", cat:"🇮🇹 Italia" },
@@ -235,9 +235,9 @@ const TICKER_DB = [
     { name:"Leonardo", ticker:"MIL:LDO", cat:"🇮🇹 Italia" },
     { name:"Moncler", ticker:"MIL:MONC", cat:"🇮🇹 Italia" },
     // ── USA INDICI ──
-    { name:"Nasdaq 100", ticker:"FXCM:NAS100", cat:"🇺🇸 USA" },
-    { name:"S&P 500", ticker:"FXCM:SPX500", cat:"🇺🇸 USA" },
-    { name:"Dow Jones", ticker:"FXCM:US30", cat:"🇺🇸 USA" },
+    { name:"Nasdaq 100", ticker:"NASDAQ:NDX", cat:"🇺🇸 USA" },
+    { name:"S&P 500", ticker:"SP:SPX", cat:"🇺🇸 USA" },
+    { name:"Dow Jones", ticker:"DJ:DJI", cat:"🇺🇸 USA" },
     { name:"Russell 2000", ticker:"TVC:RUT", cat:"🇺🇸 USA" },
     // ── USA STOCKS ──
     { name:"Apple", ticker:"NASDAQ:AAPL", cat:"🇺🇸 USA" },
@@ -260,10 +260,10 @@ const TICKER_DB = [
     { name:"USD/CHF", ticker:"FX:USDCHF", cat:"💱 Forex" },
     { name:"NZD/USD", ticker:"FX:NZDUSD", cat:"💱 Forex" },
     // ── COMMODITIES ──
-    { name:"Oro (Gold)", ticker:"FXCM:XAUUSD", cat:"🛢 Materie" },
-    { name:"Petrolio (WTI)", ticker:"FXCM:USOIL", cat:"🛢 Materie" },
+    { name:"Oro (Gold)", ticker:"TVC:GOLD", cat:"🛢 Materie" },
+    { name:"Petrolio (WTI)", ticker:"TVC:USOIL", cat:"🛢 Materie" },
     { name:"Gas Naturale", ticker:"TVC:NG1!", cat:"🛢 Materie" },
-    { name:"Argento (Silver)", ticker:"FXCM:XAGUSD", cat:"🛢 Materie" },
+    { name:"Argento (Silver)", ticker:"TVC:SILVER", cat:"🛢 Materie" },
     { name:"Rame (Copper)", ticker:"COMEX:HG1!", cat:"🛢 Materie" },
     { name:"Platino", ticker:"NYMEX:PL1!", cat:"🛢 Materie" },
     { name:"Palladio", ticker:"NYMEX:PA1!", cat:"🛢 Materie" },
@@ -452,7 +452,7 @@ function renderCharts() {
     const quickItems = marketProducts[activeMarket] || [];
 
     for (let i = 0; i < currentChartCount; i++) {
-        const product = activeProducts[i] || { name:"FTSE MIB", ticker:"CAPITALCOM:ITALY40" };
+        const product = activeProducts[i] || { name:"FTSE MIB", ticker:"TVC:FTSEMIB" };
 
         const card = document.createElement("div");
         card.className = "chart-card";
