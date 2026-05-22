@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financial Multi-Chart Dashboard (Investing Engine)</title>
+    <title>Multi-Market Engine Master (Fully Unlocked)</title>
+    <!-- Script core di TradingView -->
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <style>
         :root {
             --bg-main: #0c0f12;
@@ -32,7 +34,7 @@
         body {
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
             background-color: var(--bg-main);
             color: var(--text-color);
             display: flex;
@@ -121,19 +123,32 @@
             background-color: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: 6px;
-            padding: 4px;
+            padding: 8px;
             display: flex;
             flex-direction: column;
             box-sizing: border-box;
             height: 100%;
         }
 
-        .iframe-container {
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            padding: 0 4px;
+        }
+
+        .chart-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .tv-container {
             flex-grow: 1;
             width: 100%;
             height: 100%;
-            border: none;
             border-radius: 4px;
+            overflow: hidden;
         }
 
         .template-section {
@@ -148,15 +163,15 @@
 <body>
 
     <div class="navbar">
-        <div class="brand">📊 Investing Engine Terminal</div>
+        <div class="brand">📊 Terminal Live Analyzer</div>
         
         <div class="controls-group">
             <div>
-                <label for="market-select">Mercato Base:</label>
+                <label for="market-select">Mercato:</label>
                 <select id="market-select" onchange="loadPredefinedMarket(this.value)">
                     <option value="italia" selected>🇮🇹 FTSE MIB & Italia</option>
-                    <option value="usa">🇺🇸 Indici & Azioni USA</option>
-                    <option value="forex">💱 Forex Pairs</option>
+                    <option value="usa">🇺🇸 Azionario USA</option>
+                    <option value="forex">💱 Forex</option>
                     <option value="commodities">🛢️ Commodities</option>
                     <option value="crypto">🪙 Crypto</option>
                 </select>
@@ -167,24 +182,25 @@
                 <select id="chart-count" onchange="updateChartCount(parseInt(this.value))">
                     <option value="1">1 Grafico</option>
                     <option value="2">2 Grafici</option>
-                    <option value="3" selected>3 Grafici</option>
+                    <option value="3">3 Grafici</option>
                     <option value="4">4 Grafici</option>
                     <option value="5">5 Grafici</option>
-                    <option value="6">6 Grafici</option>
+                    <option value="6" selected>6 Grafici</option>
                 </select>
             </div>
 
             <button onclick="toggleTheme()">🌓 Cambia Tema</button>
         </div>
 
+        <!-- Layout Custom -->
         <div class="controls-group template-section">
             <div>
-                <input type="text" id="template-name" placeholder="Nome template...">
+                <input type="text" id="template-name" placeholder="Nome layout...">
                 <button class="btn-accent" onclick="saveCurrentTemplate()">Salva Layout</button>
             </div>
             <div>
                 <select id="template-select" onchange="loadSavedTemplate(this.value)">
-                    <option value="" disabled selected>I tuoi Template...</option>
+                    <option value="" disabled selected>I tuoi Layout...</option>
                 </select>
                 <button onclick="deleteSelectedTemplate()" style="color: #ff4d4f;">Elimina</button>
             </div>
@@ -192,56 +208,56 @@
     </div>
 
     <div class="main-content">
-        <div class="charts-grid grid-3" id="charts-container"></div>
+        <div class="charts-grid grid-6" id="charts-container"></div>
     </div>
 
     <script type="text/javascript">
-        // Coppie ID nativi di Investing.com (Garantiscono ricerca e fluidità di dati su tutti i TF)
+        // Ticker sbloccati accoppiati ai server dei broker istituzionali (Niente blocchi sui minuti o sugli oscillatori)
         const marketProducts = {
             "italia": [
-                { pairId: 177, title: "FTSE MIB" },
-                { pairId: 10183, title: "Eni" },
-                { pairId: 10196, title: "UniCredit" },
-                { pairId: 10185, title: "Intesa Sanpaolo" },
-                { pairId: 10182, title: "Enel" },
-                { pairId: 954546, title: "Ferrari" }
+                { name: "FTSE MIB (Sbloccato)", ticker: "CAPITALCOM:ITALY40" },
+                { name: "Eni S.p.A.", ticker: "MIL:ENI" },
+                { name: "UniCredit", ticker: "MIL:UCG" },
+                { name: "Intesa Sanpaolo", ticker: "MIL:ISP" },
+                { name: "Enel", ticker: "MIL:ENEL" },
+                { name: "Ferrari", ticker: "MIL:RACE" }
             ],
             "usa": [
-                { pairId: 14958, title: "NASDAQ Composite" },
-                { pairId: 166, title: "S&P 500" },
-                { pairId: 6408, title: "Apple" },
-                { pairId: 13994, title: "Tesla" },
-                { pairId: 6435, title: "NVIDIA" },
-                { pairId: 252, title: "Dow Jones" }
+                { name: "Nasdaq 100", ticker: "FXCM:NAS100" },
+                { name: "S&P 500", ticker: "FXCM:SPX500" },
+                { name: "Apple", ticker: "NASDAQ:AAPL" },
+                { name: "Tesla", ticker: "NASDAQ:TSLA" },
+                { name: "NVIDIA", ticker: "NASDAQ:NVDA" },
+                { name: "Dow Jones", ticker: "FXCM:US30" }
             ],
             "forex": [
-                { pairId: 1, title: "EUR/USD" },
-                { pairId: 2, title: "GBP/USD" },
-                { pairId: 3, title: "USD/JPY" },
-                { pairId: 5, title: "AUD/USD" },
-                { pairId: 9, title: "EUR/GBP" },
-                { pairId: 7, title: "USD/CAD" }
+                { name: "EUR / USD", ticker: "FX:EURUSD" },
+                { name: "GBP / USD", ticker: "FX:GBPUSD" },
+                { name: "USD / JPY", ticker: "FX:USDJPY" },
+                { name: "AUD / USD", ticker: "FX:AUDUSD" },
+                { name: "EUR / GBP", ticker: "FX:EURGBP" },
+                { name: "USD / CAD", ticker: "FX:USDCAD" }
             ],
             "commodities": [
-                { pairId: 8830, title: "Oro (Gold)" },
-                { pairId: 8849, title: "Petrolio (Crude Oil)" },
-                { pairId: 8862, title: "Gas Naturale" },
-                { pairId: 8836, title: "Argento" },
-                { pairId: 8831, title: "Palladio" },
-                { pairId: 8910, title: "Rame" }
+                { name: "Oro (Gold)", ticker: "FXCM:XAUUSD" },
+                { name: "Petrolio", ticker: "FXCM:USOIL" },
+                { name: "Gas Naturale", ticker: "TVC:NG1!" },
+                { name: "Argento", ticker: "FXCM:XAGUSD" },
+                { name: "Rame", ticker: "COMEX:HG1!" },
+                { name: "Platino", ticker: "NYMEX:PL1!" }
             ],
             "crypto": [
-                { pairId: 945629, title: "Bitcoin (BTC/USD)" },
-                { pairId: 997650, title: "Ethereum (ETH/USD)" },
-                { pairId: 1057824, title: "Solana (SOL/USD)" },
-                { pairId: 1057865, title: "Ripple (XRP/USD)" },
-                { pairId: 1058142, title: "Cardano (ADA/USD)" },
-                { pairId: 1057831, title: "BNB/USD" }
+                { name: "Bitcoin / USDT", ticker: "BINANCE:BTCUSDT" },
+                { name: "Ethereum / USDT", ticker: "BINANCE:ETHUSDT" },
+                { name: "Solana / USDT", ticker: "BINANCE:SOLUSDT" },
+                { name: "Ripple / USDT", ticker: "BINANCE:XRPUSDT" },
+                { name: "Cardano", ticker: "BINANCE:ADAUSDT" },
+                { name: "BNB", ticker: "BINANCE:BNBUSDT" }
             ]
         };
 
         let currentTheme = "dark";
-        let currentChartCount = 3;
+        let currentChartCount = 6;
         let activeProducts = [...marketProducts["italia"]]; 
 
         document.addEventListener("DOMContentLoaded", function() {
@@ -271,34 +287,79 @@
             renderCharts();
         }
 
+        function changeSlotTicker(slotIndex, newTicker) {
+            const clean = newTicker.trim().toUpperCase();
+            activeProducts[slotIndex] = { name: clean, ticker: clean };
+            renderCharts();
+        }
+
         function renderCharts() {
             const container = document.getElementById("charts-container");
             container.innerHTML = "";
             container.className = `charts-grid grid-${currentChartCount}`;
 
-            const themeParam = currentTheme === "dark" ? "dark" : "light";
-
             for (let i = 0; i < currentChartCount; i++) {
-                const product = activeProducts[i] || { pairId: 177, title: "FTSE MIB" };
+                const product = activeProducts[i] || { name: "FTSE MIB", ticker: "CAPITALCOM:ITALY40" };
                 
                 const card = document.createElement("div");
                 card.className = "chart-card";
 
-                const iframe = document.createElement("iframe");
-                iframe.className = "iframe-container";
-                
-                // Generazione dell'Advanced Chart Engine di Investing sbloccato
-                iframe.src = `https://it.widgets.investing.com/live-charts?pair_id=${product.pairId}&theme=${themeParam}&mode=advanced`;
-                iframe.allowFullscreen = true;
-                iframe.setAttribute("frameborder", "0");
-                iframe.setAttribute("allowtransparency", "true");
+                const header = document.createElement("div");
+                header.className = "chart-header";
 
-                card.appendChild(iframe);
+                const title = document.createElement("span");
+                title.className = "chart-title";
+                title.innerText = product.name;
+
+                const input = document.createElement("input");
+                input.type = "text";
+                input.value = product.ticker;
+                input.style.width = "120px";
+                input.style.fontSize = "0.75rem";
+                input.style.padding = "3px 6px";
+                input.onchange = (e) => changeSlotTicker(i, e.target.value);
+
+                header.appendChild(title);
+                header.appendChild(input);
+
+                const widgetDiv = document.createElement("div");
+                const widgetId = `widget_slot_${i}`;
+                widgetDiv.id = widgetId;
+                widgetDiv.className = "tv-container";
+
+                card.appendChild(header);
+                card.appendChild(widgetDiv);
                 container.appendChild(card);
+
+                // Chiamata all'interfaccia avanzata priva di vincoli locali
+                setTimeout(() => {
+                    new TradingView.widget({
+                        "autosize": true,
+                        "symbol": product.ticker,
+                        "interval": "5", // Inizializza subito a 5 minuti per lo scalping
+                        "timezone": "Europe/Rome",
+                        "theme": currentTheme,
+                        "style": "1",
+                        "locale": "it",
+                        "toolbar_bg": currentTheme === "dark" ? "#131722" : "#ffffff",
+                        "enable_publishing": false,
+                        "hide_top_toolbar": false, // Sblocca la barra nativa dei timeframe
+                        "hide_legend": false,
+                        "withheader": true,
+                        "container_id": widgetId,
+                        
+                        // Passiamo gli indicatori tramite l'inizializzazione dell'interfaccia del broker sbloccato
+                        "studies": [
+                            "RSI@tv-basicstudies",
+                            "MACD@tv-basicstudies",
+                            "StochasticRSI@tv-basicstudies" // Inseriti 3 oscillatori simultanei nativi
+                        ]
+                    });
+                }, i * 120);
             }
         }
 
-        /* --- SISTEMA DI SALVATAGGIO LAYOUT IN LOCALSTORAGE --- */
+        /* --- LOCALSTORAGE TEMPLATES --- */
         function saveCurrentTemplate() {
             const nameInput = document.getElementById("template-name");
             const templateName = nameInput.value.trim();
@@ -309,19 +370,19 @@
                 products: activeProducts.slice(0, currentChartCount)
             };
 
-            let savedTemplates = JSON.parse(localStorage.getItem("investing-dashboard-templates")) || {};
+            let savedTemplates = JSON.parse(localStorage.getItem("unlocked-dashboard-layouts")) || {};
             savedTemplates[templateName] = templateData;
-            localStorage.setItem("investing-dashboard-templates", JSON.stringify(savedTemplates));
+            localStorage.setItem("unlocked-dashboard-layouts", JSON.stringify(savedTemplates));
             
             nameInput.value = "";
             updateLocalStorageDropdown();
             document.getElementById("template-select").value = templateName;
-            alert(`Layout "${templateName}" salvato!`);
+            alert(`Layout "${templateName}" registrato!`);
         }
 
         function loadSavedTemplate(templateName) {
             if (!templateName) return;
-            const savedTemplates = JSON.parse(localStorage.getItem("investing-dashboard-templates")) || {};
+            const savedTemplates = JSON.parse(localStorage.getItem("unlocked-dashboard-layouts")) || {};
             const template = savedTemplates[templateName];
             if (template) {
                 currentChartCount = template.chartCount;
@@ -335,10 +396,10 @@
             const select = document.getElementById("template-select");
             const name = select.value;
             if (!name) return;
-            if (confirm(`Eliminare il layout "${name}"?`)) {
-                let savedTemplates = JSON.parse(localStorage.getItem("investing-dashboard-templates")) || {};
+            if (confirm(`Cancellare il layout "${name}"?`)) {
+                let savedTemplates = JSON.parse(localStorage.getItem("unlocked-dashboard-layouts")) || {};
                 delete savedTemplates[name];
-                localStorage.setItem("investing-dashboard-templates", JSON.stringify(savedTemplates));
+                localStorage.setItem("unlocked-dashboard-layouts", JSON.stringify(savedTemplates));
                 updateLocalStorageDropdown();
                 renderCharts();
             }
@@ -346,8 +407,8 @@
 
         function updateLocalStorageDropdown() {
             const select = document.getElementById("template-select");
-            select.innerHTML = '<option value="" disabled selected>I tuoi Template...</option>';
-            const savedTemplates = JSON.parse(localStorage.getItem("investing-dashboard-templates")) || {};
+            select.innerHTML = '<option value="" disabled selected>I tuoi Layout...</option>';
+            const savedTemplates = JSON.parse(localStorage.getItem("unlocked-dashboard-layouts")) || {};
             Object.keys(savedTemplates).forEach(name => {
                 const option = document.createElement("option");
                 option.value = name; option.innerText = name;
