@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financial Dashboard Avanzata</title>
-    <!-- Script ufficiale di TradingView per i grafici avanzati -->
+    <title>Financial Dashboard Professionale</title>
+    <!-- Script ufficiale avanzato di TradingView per sbloccare la barra degli indicatori completa -->
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <style>
-        /* Variabili CSS per la gestione dinamica del Tema (Chiaro/Scuro) */
         :root {
             --bg-main: #0c0f12;
             --bg-navbar: #131722;
@@ -45,7 +44,6 @@
             transition: background-color 0.3s, color 0.3s;
         }
 
-        /* Barra di Controllo Superiore (Navbar) */
         .navbar {
             background-color: var(--bg-navbar);
             border-bottom: 1px solid var(--border-color);
@@ -113,7 +111,6 @@
             padding: 4px 10px;
         }
 
-        /* Area Principale dei Grafici */
         .main-content {
             flex-grow: 1;
             padding: 15px;
@@ -123,7 +120,6 @@
             flex-direction: column;
         }
 
-        /* Griglia Dinamica per i Grafici */
         .charts-grid {
             display: grid;
             gap: 15px;
@@ -132,7 +128,6 @@
             flex-grow: 1;
         }
 
-        /* Classi CSS per gestire il numero di grafici (da 1 a 6) */
         .grid-1 { grid-template-columns: 1fr; grid-template-rows: 1fr; }
         .grid-2 { grid-template-columns: repeat(2, 1fr); grid-template-rows: 1fr; }
         .grid-3 { grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr; }
@@ -155,7 +150,7 @@
             display: flex;
             flex-direction: column;
             box-sizing: border-box;
-            min-height: 300px;
+            min-height: 350px;
         }
 
         .chart-header {
@@ -178,7 +173,6 @@
             overflow: hidden;
         }
 
-        /* Sezione Gestione Template */
         .template-section {
             border-left: 1px solid var(--border-color);
             padding-left: 15px;
@@ -192,14 +186,15 @@
 
     <!-- Barra Superiore di Controllo -->
     <div class="navbar">
-        <div class="brand">📈 Multi-Market Dash</div>
+        <div class="brand">📊 Multi-Market Dash Pro</div>
         
         <div class="controls-group">
-            <!-- Menu a tendina per i Mercati Predefiniti -->
+            <!-- Menu a tendina per i Mercati Predefiniti (Inclusa nuova sezione Indici) -->
             <div>
                 <label for="market-select">Mercato:</label>
                 <select id="market-select" onchange="loadPredefinedMarket(this.value)">
                     <option value="crypto">🪙 Crypto</option>
+                    <option value="indices">📉 Indici Mondiali</option>
                     <option value="usa">🇺🇸 Azionario USA</option>
                     <option value="italia">🇮🇹 Azionario Italia</option>
                     <option value="forex">💱 Forex</option>
@@ -247,7 +242,7 @@
     </div>
 
     <script type="text/javascript">
-        // Database dei prodotti finanziari predefiniti
+        // Database dei prodotti finanziari aggiornato con la sezione INDICI mondiali
         const marketProducts = {
             "crypto": [
                 { name: "Bitcoin", ticker: "BINANCE:BTCUSDT" },
@@ -257,13 +252,21 @@
                 { name: "Cardano", ticker: "BINANCE:ADAUSDT" },
                 { name: "BNB", ticker: "BINANCE:BNBUSDT" }
             ],
-            "usa": [
-                { name: "S&P 500", ticker: "SPIMS:SPX" },
+            "indices": [
+                { name: "S&P 500 Index", ticker: "SPIMS:SPX" },
                 { name: "NASDAQ 100", ticker: "NASDAQ:NDX" },
+                { name: "Dow Jones 30", ticker: "DJ:DJI" },
+                { name: "DAX 40 (Germania)", ticker: "XETR:DAX" },
+                { name: "CAC 40 (Francia)", ticker: "EURONEXT:PX1" },
+                { name: "Nikkei 225 (Giappone)", ticker: "TVC:NI225" }
+            ],
+            "usa": [
                 { name: "Apple", ticker: "NASDAQ:AAPL" },
                 { name: "Tesla", ticker: "NASDAQ:TSLA" },
                 { name: "NVIDIA", ticker: "NASDAQ:NVDA" },
-                { name: "Microsoft", ticker: "NASDAQ:MSFT" }
+                { name: "Microsoft", ticker: "NASDAQ:MSFT" },
+                { name: "Amazon", ticker: "NASDAQ:AMZN" },
+                { name: "Meta", ticker: "NASDAQ:META" }
             ],
             "italia": [
                 { name: "FTSE MIB Index", ticker: "INDEX:FTSEMIB" },
@@ -291,15 +294,11 @@
             ]
         };
 
-        // Stato globale dell'applicazione
         let currentTheme = "dark";
         let currentChartCount = 3;
-        // Array dei prodotti attualmente visualizzati nei vari slot (fino a 6 elementi)
         let activeProducts = [...marketProducts["crypto"]]; 
 
-        // Inizializzazione al caricamento della pagina
         document.addEventListener("DOMContentLoaded", function() {
-            // Carica l'eventuale tema salvato nel browser
             if (localStorage.getItem("dashboard-theme")) {
                 currentTheme = localStorage.getItem("dashboard-theme");
                 document.documentElement.setAttribute("data-theme", currentTheme);
@@ -309,58 +308,47 @@
             renderCharts();
         });
 
-        // Funzione per cambiare il Tema (Chiaro / Scuro)
         function toggleTheme() {
             currentTheme = (currentTheme === "dark") ? "light" : "dark";
             document.documentElement.setAttribute("data-theme", currentTheme);
             localStorage.setItem("dashboard-theme", currentTheme);
-            // I widget di TradingView richiedono il reload per aggiornare il tema interno
             renderCharts();
         }
 
-        // Modifica del numero di grafici visualizzati
         function updateChartCount(count) {
             currentChartCount = count;
             renderCharts();
         }
 
-        // Caricamento dei mercati dal menu a tendina predefinito
         function loadPredefinedMarket(marketKey) {
+            if(!marketKey) return;
             activeProducts = [...marketProducts[marketKey]];
             renderCharts();
         }
 
-        // Funzione di cambio ticker dinamico per il singolo slot del grafico
         function changeSlotTicker(slotIndex, newTicker) {
-            activeProducts[slotIndex] = { name: newTicker.split(':')[1] || newTicker, ticker: newTicker };
-            // Rigenera solo quel grafico specifico per performance ottimale
-            initTradingViewWidget(`tv_widget_${slotIndex}`, newTicker);
+            activeProducts[slotIndex] = { name: newTicker.toUpperCase(), ticker: newTicker.toUpperCase() };
+            initTradingViewWidget(`tv_widget_${slotIndex}`, newTicker.toUpperCase());
         }
 
-        // Rendering e calcolo della griglia dei grafici
         function renderCharts() {
             const container = document.getElementById("charts-container");
             container.innerHTML = "";
-            
-            // Aggiorna le classi CSS della griglia in base al numero di grafici scelti
             container.className = `charts-grid grid-${currentChartCount}`;
 
             for (let i = 0; i < currentChartCount; i++) {
                 const product = activeProducts[i] || { name: "Seleziona Prodotto", ticker: "BINANCE:BTCUSDT" };
                 
-                // Crea la card contenitore del grafico
                 const card = document.createElement("div");
                 card.className = "chart-card";
 
-                // Barra di controllo interna alla card del grafico
                 const header = document.createElement("div");
                 header.className = "chart-header";
 
                 const title = document.createElement("span");
                 title.className = "chart-title";
-                title.innerText = `Slot ${i + 1}: ${product.name}`;
+                title.innerText = `${product.name}`;
 
-                // Input per cambiare prodotto al volo nello specifico slot
                 const input = document.createElement("input");
                 input.type = "text";
                 input.value = product.ticker;
@@ -373,7 +361,6 @@
                 header.appendChild(title);
                 header.appendChild(input);
 
-                // Div per il Widget TradingView
                 const widgetDiv = document.createElement("div");
                 const widgetId = `tv_widget_${i}`;
                 widgetDiv.id = widgetId;
@@ -383,12 +370,11 @@
                 card.appendChild(widgetDiv);
                 container.appendChild(card);
 
-                // Inizializza il widget grafico
                 initTradingViewWidget(widgetId, product.ticker);
             }
         }
 
-        // Inizializzazione dell'oggetto TradingView originale
+        // Configurazione SBLOCCATA: Ora include barre laterali e pulsanti superiori per inserire infiniti oscillatori/indicatori
         function initTradingViewWidget(divId, ticker) {
             new TradingView.widget({
                 "autosize": true,
@@ -398,50 +384,44 @@
                 "theme": currentTheme,
                 "style": "1",
                 "locale": "it",
-                "toolbar_bg": currentTheme === "dark" ? "#131722" : "#f1f3f6",
                 "enable_publishing": false,
-                "hide_side_toolbar": false,
-                "allow_symbol_change": true,
+                "withheader": true,            // Sblocca la barra superiore con gli indicatori custom
+                "hide_side_toolbar": false,     // Sblocca gli strumenti di disegno laterali (linee di trend, canali)
+                "allow_symbol_change": true,    // Sblocca il cambio simbolo nativo di TradingView
                 "container_id": divId,
-                "studies": [
+                "studies": [                    // Indicatori caricati di base (puoi toglierli o aggiungerne altri dal menu del sito)
                     "RSI@tv-basicstudies",
                     "MASimple@tv-basicstudies"
                 ]
             });
         }
 
-        /* --- LOGICA DI GESTIONE DEI TEMPLATE (LOCAL STORAGE) --- */
+        /* --- GESTIONE TEMPLATE LOCAL STORAGE --- */
 
-        // Salva il template configurato dall'utente
         function saveCurrentTemplate() {
             const nameInput = document.getElementById("template-name");
             const templateName = nameInput.value.trim();
 
             if (!templateName) {
-                alert("Per favore, inserisci un nome valido per il template prima di salvare.");
+                alert("Inserisci un nome per il template.");
                 return;
             }
 
-            // Crea l'oggetto strutturato da salvare
             const templateData = {
                 chartCount: currentChartCount,
                 products: activeProducts.slice(0, currentChartCount)
             };
 
-            // Recupera i template vecchi o ne inizializza uno nuovo
             let savedTemplates = JSON.parse(localStorage.getItem("dashboard-custom-templates")) || {};
             savedTemplates[templateName] = templateData;
-
-            // Salva nel LocalStorage del browser
             localStorage.setItem("dashboard-custom-templates", JSON.stringify(savedTemplates));
             
             nameInput.value = "";
             updateLocalStorageDropdown();
             document.getElementById("template-select").value = templateName;
-            alert(`Template "${templateName}" salvato con successo!`);
+            alert(`Template "${templateName}" salvato!`);
         }
 
-        // Carica un template precedentemente salvato
         function loadSavedTemplate(templateName) {
             if (!templateName) return;
 
@@ -452,25 +432,23 @@
                 currentChartCount = template.chartCount;
                 activeProducts = [...template.products];
                 
-                // Sincronizza i selettori grafici della barra superiore
                 document.getElementById("chart-count").value = currentChartCount;
-                document.getElementById("market-select").value = ""; // Resetta selezione mercato predefinita
+                document.getElementById("market-select").value = ""; 
                 
                 renderCharts();
             }
         }
 
-        // Elimina il template personalizzato selezionato
         function deleteSelectedTemplate() {
             const select = document.getElementById("template-select");
             const selectedName = select.value;
 
             if (!selectedName) {
-                alert("Seleziona prima un template dall'elenco per poterlo eliminare.");
+                alert("Seleziona un template da eliminare.");
                 return;
             }
 
-            if (confirm(`Sei sicuro di voler eliminare il template "${selectedName}"?`)) {
+            if (confirm(`Eliminare il template "${selectedName}"?`)) {
                 let savedTemplates = JSON.parse(localStorage.getItem("dashboard-custom-templates")) || {};
                 delete savedTemplates[selectedName];
                 localStorage.setItem("dashboard-custom-templates", JSON.stringify(savedTemplates));
@@ -480,7 +458,6 @@
             }
         }
 
-        // Aggiorna le opzioni disponibili nel menu a tendina dei template personalizzati
         function updateLocalStorageDropdown() {
             const select = document.getElementById("template-select");
             select.innerHTML = '<option value="" disabled selected>I tuoi Template...</option>';
