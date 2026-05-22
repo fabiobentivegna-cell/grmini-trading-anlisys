@@ -183,14 +183,13 @@
             <label class="ind-chip"><input type="checkbox" value="RSI@tv-basicstudies" checked> RSI</label>
             <label class="ind-chip"><input type="checkbox" value="MACD@tv-basicstudies" checked> MACD</label>
             <label class="ind-chip"><input type="checkbox" value="BB@tv-basicstudies"> BB</label>
-            <label class="ind-chip"><input type="checkbox" value="MAExp@tv-basicstudies" data-inputs='{"length":20}'> EMA 20</label>
-            <label class="ind-chip"><input type="checkbox" value="MAExp@tv-basicstudies" data-inputs='{"length":50}' data-id="ema50"> EMA 50</label>
-            <label class="ind-chip"><input type="checkbox" value="MAExp@tv-basicstudies" data-inputs='{"length":200}' data-id="ema200"> EMA 200</label>
+            <label class="ind-chip"><input type="checkbox" value="MAExp@tv-basicstudies"> EMA 20</label>
+            <label class="ind-chip"><input type="checkbox" value="MASimple@tv-basicstudies"> SMA 50</label>
+            <label class="ind-chip"><input type="checkbox" value="MASimple@tv-basicstudies"> SMA 200</label>
             <label class="ind-chip"><input type="checkbox" value="Volume@tv-basicstudies"> Vol</label>
             <label class="ind-chip"><input type="checkbox" value="Stochastic@tv-basicstudies"> Stoch</label>
             <label class="ind-chip"><input type="checkbox" value="ATR@tv-basicstudies"> ATR</label>
             <label class="ind-chip"><input type="checkbox" value="VWAP@tv-basicstudies"> VWAP</label>
-            <label class="ind-chip"><input type="checkbox" value="VolumeProfile@tv-volumestudies"> VP</label>
         </div>
     </div>
 
@@ -305,9 +304,8 @@ let activeMarket = "italia";
 function getActiveStudies() {
     const studies = [];
     document.querySelectorAll("#ind-panel input[type=checkbox]:checked").forEach(cb => {
-        studies.push(cb.value);
+        if (!studies.includes(cb.value)) studies.push(cb.value);
     });
-    // Aggiungi ri-render quando cambiano le checkbox
     return studies;
 }
 
