@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financial Dashboard Ultra Sbloccata</title>
+    <title>Multi-Market Trading Dashboard Pro</title>
     <style>
         :root {
             --bg-main: #0c0f12;
@@ -11,22 +11,10 @@
             --bg-card: #1c2030;
             --text-color: #d1d4dc;
             --text-muted: #848e9c;
-            --accent-color: #0081ff;
+            --accent-color: #2962ff;
             --border-color: #2a2e39;
             --input-bg: #2a2e39;
             --input-text: #fff;
-        }
-
-        [data-theme="light"] {
-            --bg-main: #f0f2f5;
-            --bg-navbar: #ffffff;
-            --bg-card: #ffffff;
-            --text-color: #1e222d;
-            --text-muted: #707a8a;
-            --accent-color: #0081ff;
-            --border-color: #e0e3eb;
-            --input-bg: #f0f2f5;
-            --input-text: #1e222d;
         }
 
         body {
@@ -39,7 +27,6 @@
             flex-direction: column;
             height: 100vh;
             overflow: hidden;
-            transition: background-color 0.3s, color 0.3s;
         }
 
         .navbar {
@@ -47,7 +34,6 @@
             border-bottom: 1px solid var(--border-color);
             padding: 10px 20px;
             display: flex;
-            flex-wrap: wrap;
             align-items: center;
             justify-content: space-between;
             gap: 15px;
@@ -65,7 +51,6 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            flex-wrap: wrap;
         }
 
         label {
@@ -82,31 +67,14 @@
             border-radius: 4px;
             font-size: 0.9rem;
             outline: none;
-            transition: all 0.2s;
-        }
-
-        select:focus, input:focus {
-            border-color: var(--accent-color);
-        }
-
-        button {
-            cursor: pointer;
-            font-weight: 500;
-        }
-
-        button:hover {
-            opacity: 0.9;
         }
 
         .btn-accent {
             background-color: var(--accent-color);
             color: #fff;
             border: none;
-        }
-
-        .theme-toggle-btn {
-            font-size: 1.1rem;
-            padding: 4px 10px;
+            cursor: pointer;
+            font-weight: bold;
         }
 
         .main-content {
@@ -123,55 +91,26 @@
             gap: 10px;
             width: 100%;
             height: 100%;
-            flex-grow: 1;
         }
 
         .grid-1 { grid-template-columns: 1fr; grid-template-rows: 1fr; }
         .grid-2 { grid-template-columns: repeat(2, 1fr); grid-template-rows: 1fr; }
         .grid-3 { grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr; }
         .grid-4 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); }
-        .grid-5 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
-        .grid-6 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
 
         .chart-card {
             background-color: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: 6px;
-            padding: 4px;
-            display: flex;
-            flex-direction: column;
+            position: relative;
             box-sizing: border-box;
             height: 100%;
-        }
-
-        .chart-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 4px;
-            padding: 0 4px;
-        }
-
-        .chart-title {
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-
-        .iframe-container {
-            flex-grow: 1;
             width: 100%;
-            height: calc(100% - 28px);
-            border: none;
-            border-radius: 4px;
-            background-color: #131722;
         }
 
-        .template-section {
-            border-left: 1px solid var(--border-color);
-            padding-left: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        .tradingview-widget-container {
+            height: 100%;
+            width: 100%;
         }
     </style>
 </head>
@@ -183,237 +122,83 @@
         <div class="controls-group">
             <div>
                 <label for="market-select">Mercato:</label>
-                <select id="market-select" onchange="loadPredefinedMarket(this.value)">
-                    <option value="indices">📉 Indici Mondiali</option>
+                <select id="market-select" onchange="loadMarket(this.value)">
+                    <option value="indices">📉 Indici Generali</option>
                     <option value="crypto">🪙 Crypto</option>
                     <option value="usa">🇺🇸 Azionario USA</option>
-                    <option value="italia">🇮🇹 Azionario Italia</option>
                     <option value="forex">💱 Forex</option>
-                    <option value="commodities">🛢️ Commodities</option>
                 </select>
             </div>
 
             <div>
-                <label for="chart-count">Grafici:</label>
+                <label for="chart-count">Visualizzazione:</label>
                 <select id="chart-count" onchange="updateChartCount(parseInt(this.value))">
                     <option value="1">1 Grafico</option>
                     <option value="2">2 Grafici</option>
-                    <option value="3" selected>3 Grafici</option>
-                    <option value="4">4 Grafici</option>
-                    <option value="5">5 Grafici</option>
-                    <option value="6">6 Grafici</option>
+                    <option value="3">3 Grafici</option>
+                    <option value="4" selected>4 Grafici</option>
                 </select>
-            </div>
-
-            <button class="theme-toggle-btn" onclick="toggleTheme()">🌓</button>
-        </div>
-
-        <div class="controls-group template-section">
-            <div>
-                <input type="text" id="template-name" placeholder="Nome template...">
-                <button class="btn-accent" onclick="saveCurrentTemplate()">Salva Custom</button>
-            </div>
-            <div>
-                <select id="template-select" onchange="loadSavedTemplate(this.value)">
-                    <option value="" disabled selected>I tuoi Template...</option>
-                </select>
-                <button onclick="deleteSelectedTemplate()" style="color: #ff4d4f;">Elimina</button>
             </div>
         </div>
     </div>
 
     <div class="main-content">
-        <div class="charts-grid grid-3" id="charts-container"></div>
+        <div class="charts-grid grid-4" id="charts-container"></div>
     </div>
 
     <script type="text/javascript">
-        // Ticker standard validi per Yahoo / ChartIQ Engine
-        const marketProducts = {
-            "indices": [
-                { name: "FTSE MIB", symbol: "%5EFTSEMIB" },
-                { name: "Nasdaq 100", symbol: "%5ENDX" },
-                { name: "S&P 500", symbol: "%5EGSPC" },
-                { name: "DAX", symbol: "%5EGDAXI" },
-                { name: "Dow Jones", symbol: "%5EDJI" },
-                { name: "Nikkei 225", symbol: "%5EN225" }
-            ],
-            "crypto": [
-                { name: "Bitcoin / USD", symbol: "BTC-USD" },
-                { name: "Ethereum / USD", symbol: "ETH-USD" },
-                { name: "Solana / USD", symbol: "SOL-USD" }
-            ],
-            "usa": [
-                { name: "Apple", symbol: "AAPL" },
-                { name: "Tesla", symbol: "TSLA" },
-                { name: "NVIDIA", symbol: "NVDA" }
-            ],
-            "italia": [
-                { name: "Eni", symbol: "ENI.MI" },
-                { name: "UniCredit", symbol: "UCG.MI" },
-                { name: "Intesa Sanpaolo", symbol: "ISP.MI" }
-            ],
-            "forex": [
-                { name: "EUR / USD", symbol: "EURUSD%3DX" },
-                { name: "GBP / USD", symbol: "GBPUSD%3DX" },
-                { name: "USD / JPY", symbol: "JPY%3DX" }
-            ],
-            "commodities": [
-                { name: "Oro (Gold)", symbol: "GC%3DF" },
-                { name: "Petrolio (Crude Oil)", symbol: "CL%3DF" },
-                { name: "Gas Naturale", symbol: "NG%3DF" }
-            ]
+        const markets = {
+            indices: ["INDEX:FTSEMIB", "NASDAQ:IXIC", "SP:SPX", "XETR:DAX"],
+            crypto: ["BINANCE:BTCUSDT", "BINANCE:ETHUSDT", "BINANCE:SOLUSDT", "BINANCE:XRPUSDT"],
+            usa: ["NASDAQ:AAPL", "NASDAQ:TSLA", "NASDAQ:NVDA", "NASDAQ:MSFT"],
+            forex: ["FX:EURUSD", "FX:GBPUSD", "FX:USDJPY", "FX:AUDUSD"]
         };
 
-        let currentTheme = "dark";
-        let currentChartCount = 3;
-        let activeProducts = [...marketProducts["indices"]]; 
-
-        document.addEventListener("DOMContentLoaded", function() {
-            if (localStorage.getItem("dashboard-theme")) {
-                currentTheme = localStorage.getItem("dashboard-theme");
-                document.documentElement.setAttribute("data-theme", currentTheme);
-            }
-            updateLocalStorageDropdown();
-            renderCharts();
-        });
-
-        function toggleTheme() {
-            currentTheme = (currentTheme === "dark") ? "light" : "dark";
-            document.documentElement.setAttribute("data-theme", currentTheme);
-            localStorage.setItem("dashboard-theme", currentTheme);
-            renderCharts();
-        }
+        let currentMarket = "indices";
+        let currentCount = 4;
 
         function updateChartCount(count) {
-            currentChartCount = count;
+            currentCount = count;
             renderCharts();
         }
 
-        function loadPredefinedMarket(marketKey) {
-            if(!marketKey) return;
-            activeProducts = [...marketProducts[marketKey]];
+        function loadMarket(marketKey) {
+            currentMarket = marketKey;
             renderCharts();
-        }
-
-        function changeSlotTicker(slotIndex, selectElement) {
-            const selectedOption = selectElement.options[selectElement.selectedIndex];
-            activeProducts[slotIndex] = { name: selectedOption.text, symbol: selectElement.value };
-            
-            const iframe = document.getElementById(`iframe_chart_${slotIndex}`);
-            if(iframe) {
-                iframe.src = `https://finance.yahoo.com/chart/${selectElement.value}?chrome=disable&native=1`;
-            }
         }
 
         function renderCharts() {
             const container = document.getElementById("charts-container");
             container.innerHTML = "";
-            container.className = `charts-grid grid-${currentChartCount}`;
+            container.className = `charts-grid grid-${currentCount}`;
 
-            let allOptionsHtml = "";
-            Object.keys(marketProducts).forEach(cat => {
-                allOptionsHtml += `<optgroup label="${cat.toUpperCase()}">`;
-                marketProducts[cat].forEach(p => {
-                    allOptionsHtml += `<option value="${p.symbol}">${p.name}</option>`;
-                });
-                allOptionsHtml += `</optgroup>`;
-            });
+            const selectedSymbols = markets[currentMarket];
 
-            for (let i = 0; i < currentChartCount; i++) {
-                const product = activeProducts[i] || { name: "FTSE MIB", symbol: "%5EFTSEMIB" };
+            for (let i = 0; i < currentCount; i++) {
+                const symbol = selectedSymbols[i] || selectedSymbols[0];
                 
                 const card = document.createElement("div");
                 card.className = "chart-card";
 
-                const header = document.createElement("div");
-                header.className = "chart-header";
-
-                const title = document.createElement("span");
-                title.className = "chart-title";
-                title.innerText = `Slot ${i + 1}`;
-
-                const select = document.createElement("select");
-                select.style.padding = "2px 5px";
-                select.style.fontSize = "0.75rem";
-                select.innerHTML = allOptionsHtml;
-                select.value = product.symbol;
-                select.onchange = (e) => changeSlotTicker(i, e.target);
-
-                header.appendChild(title);
-                header.appendChild(select);
-
-                // Motore grafico ChartIQ di Yahoo Finance sbloccato senza restrizioni esterne
+                const widgetContainer = document.createElement("div");
+                widgetContainer.className = "tradingview-widget-container";
+                
                 const iframe = document.createElement("iframe");
-                iframe.id = `iframe_chart_${i}`;
-                iframe.className = "iframe-container";
-                iframe.src = `https://finance.yahoo.com/chart/${product.symbol}?chrome=disable&native=1`;
-                iframe.allowFullscreen = true;
-
-                card.appendChild(header);
-                card.appendChild(iframe);
+                iframe.style.width = "100%";
+                iframe.style.height = "100%";
+                iframe.style.border = "none";
+                
+                // Utilizzo dell'embed di snapshot avanzato che bypassa i blocchi CORS e i cookie dell'account Free
+                iframe.src = `https://s.tradingview.com/widgetembed/?frameElementId=tradingview_chart&symbol=${encodeURIComponent(symbol)}&interval=D&symboledit=1&saveimage=1&toolbarbg=131722&studies=%5B%5D&theme=dark&style=1&timezone=Europe%2FRome&studies_overrides=%7B%7D&overrides=%7B%7D&enabled_features=%5B%5D&disabled_features=%5B%5D&locale=it&utm_source=localhost&utm_medium=widget&utm_campaign=chart&utm_term=${encodeURIComponent(symbol)}`;
+                
+                widgetContainer.appendChild(iframe);
+                card.appendChild(widgetContainer);
                 container.appendChild(card);
             }
         }
 
-        /* --- STORAGES --- */
-        function saveCurrentTemplate() {
-            const nameInput = document.getElementById("template-name");
-            const templateName = nameInput.value.trim();
-            if (!templateName) return;
-
-            const currentSymbols = [];
-            for (let i = 0; i < currentChartCount; i++) {
-                const iframe = document.getElementById(`iframe_chart_${i}`);
-                if (iframe) {
-                    const parts = iframe.src.split('/chart/');
-                    const symbol = parts[1] ? parts[1].split('?')[0] : "%5EFTSEMIB";
-                    currentSymbols.push({ name: "Custom", symbol: symbol });
-                } else {
-                    currentSymbols.push({ name: "FTSE MIB", symbol: "%5EFTSEMIB" });
-                }
-            }
-
-            const templateData = { chartCount: currentChartCount, products: currentSymbols };
-            let savedTemplates = JSON.parse(localStorage.getItem("dashboard-custom-templates")) || {};
-            savedTemplates[templateName] = templateData;
-            localStorage.setItem("dashboard-custom-templates", JSON.stringify(savedTemplates));
-            nameInput.value = "";
-            updateLocalStorageDropdown();
-            alert("Template salvato!");
-        }
-
-        function loadSavedTemplate(templateName) {
-            const savedTemplates = JSON.parse(localStorage.getItem("dashboard-custom-templates")) || {};
-            const template = savedTemplates[templateName];
-            if (template) {
-                currentChartCount = template.chartCount;
-                activeProducts = [...template.products];
-                document.getElementById("chart-count").value = currentChartCount;
-                renderCharts();
-            }
-        }
-
-        function deleteSelectedTemplate() {
-            const select = document.getElementById("template-select");
-            const name = select.value;
-            if (!name) return;
-            let savedTemplates = JSON.parse(localStorage.getItem("dashboard-custom-templates")) || {};
-            delete savedTemplates[name];
-            localStorage.setItem("dashboard-custom-templates", JSON.stringify(savedTemplates));
-            updateLocalStorageDropdown();
-            renderCharts();
-        }
-
-        function updateLocalStorageDropdown() {
-            const select = document.getElementById("template-select");
-            select.innerHTML = '<option value="" disabled selected>I tuoi Template...</option>';
-            const savedTemplates = JSON.parse(localStorage.getItem("dashboard-custom-templates")) || {};
-            Object.keys(savedTemplates).forEach(name => {
-                const option = document.createElement("option");
-                option.value = name; option.innerText = name;
-                select.appendChild(option);
-            });
-        }
+        // Avvio iniziale automatico
+        document.addEventListener("DOMContentLoaded", renderCharts);
     </script>
 </body>
 </html>
