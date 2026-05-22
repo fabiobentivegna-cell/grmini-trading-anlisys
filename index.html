@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financial Dashboard Trading Pro</title>
-    <!-- Script Advanced Charts originale di TradingView -->
-    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    <title>Financial Dashboard Trading Pro Sbloccata</title>
     <style>
         :root {
             --bg-main: #0c0f12;
@@ -113,7 +111,7 @@
 
         .main-content {
             flex-grow: 1;
-            padding: 15px;
+            padding: 12px;
             overflow: hidden;
             box-sizing: border-box;
             display: flex;
@@ -139,7 +137,7 @@
             background-color: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: 6px;
-            padding: 8px;
+            padding: 6px;
             display: flex;
             flex-direction: column;
             box-sizing: border-box;
@@ -155,19 +153,20 @@
         }
 
         .chart-title {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 600;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
-        .tv-widget-container {
+        .iframe-container {
             flex-grow: 1;
             width: 100%;
-            height: calc(100% - 30px);
+            height: calc(100% - 28px);
+            border: none;
             border-radius: 4px;
-            overflow: hidden;
+            background-color: #131722;
         }
 
         .template-section {
@@ -181,16 +180,14 @@
 </head>
 <body>
 
-    <!-- Barra Superiore di Controllo -->
     <div class="navbar">
         <div class="brand">📊 Multi-Market Dash Pro</div>
         
         <div class="controls-group">
-            <!-- Menu a tendina per i Mercati Predefiniti -->
             <div>
                 <label for="market-select">Mercato:</label>
                 <select id="market-select" onchange="loadPredefinedMarket(this.value)">
-                    <option value="indices">📉 Indici (Futures/CFD)</option>
+                    <option value="indices">📉 Indici (CFD & Futures)</option>
                     <option value="crypto">🪙 Crypto</option>
                     <option value="usa">🇺🇸 Azionario USA</option>
                     <option value="italia">🇮🇹 Azionario Italia</option>
@@ -199,9 +196,8 @@
                 </select>
             </div>
 
-            <!-- Selettore del Numero di Grafici (1-6) -->
             <div>
-                <label for="chart-count">Grafici (1-6):</label>
+                <label for="chart-count">Grafici:</label>
                 <select id="chart-count" onchange="updateChartCount(parseInt(this.value))">
                     <option value="1">1 Grafico</option>
                     <option value="2">2 Grafici</option>
@@ -212,11 +208,9 @@
                 </select>
             </div>
 
-            <!-- Interruttore del Tema Chiaro/Scuro -->
             <button class="theme-toggle-btn" onclick="toggleTheme()" title="Cambia Tema">🌓</button>
         </div>
 
-        <!-- Sezione Salvataggio e Caricamento Template -->
         <div class="controls-group template-section">
             <div>
                 <input type="text" id="template-name" placeholder="Nome template...">
@@ -231,63 +225,61 @@
         </div>
     </div>
 
-    <!-- Contenitore Principale della Griglia dei Grafici -->
     <div class="main-content">
         <div class="charts-grid grid-3" id="charts-container">
-            <!-- I grafici vengono inseriti qui dinamicamente -->
-        </div>
+            </div>
     </div>
 
     <script type="text/javascript">
-        // Database ottimizzato con Ticker ad alta compatibilità multi-chart (Futures/CFD stabili)
+        // Mappatura ultra-compatibile che sfrutta i flussi integrali di TradingView
         const marketProducts = {
             "indices": [
-                { name: "S&P 500 E-mini", ticker: "CME:ES1!" },
-                { name: "Nasdaq 100 E-mini", ticker: "CME:NQ1!" },
-                { name: "FTSE MIB Index", ticker: "INDEX:FTSEMIB" },
-                { name: "DAX 40 Performance", ticker: "XETR:DAX" },
-                { name: "Dow Jones 30 E-mini", ticker: "CBOT:YM1!" },
-                { name: "Nikkei 225", ticker: "CME:NK1!" }
+                { name: "S&P 500 Index (CFD)", ticker: "SPY" },
+                { name: "Nasdaq 100 (CFD)", ticker: "QQQ" },
+                { name: "FTSE MIB (Italy 40 CFD)", ticker: "UKIT40" },
+                { name: "DAX 40 (Germany 40 CFD)", ticker: "DE40" },
+                { name: "Dow Jones 30 (CFD)", ticker: "DIA" },
+                { name: "Nikkei 225", ticker: "NI225" }
             ],
             "crypto": [
-                { name: "Bitcoin / USDT", ticker: "BINANCE:BTCUSDT" },
-                { name: "Ethereum / USDT", ticker: "BINANCE:ETHUSDT" },
-                { name: "Solana / USDT", ticker: "BINANCE:SOLUSDT" },
-                { name: "Ripple / USDT", ticker: "BINANCE:XRPUSDT" },
-                { name: "Cardano / USDT", ticker: "BINANCE:ADAUSDT" },
-                { name: "BNB / USDT", ticker: "BINANCE:BNBUSDT" }
+                { name: "Bitcoin / USDT", ticker: "BTCUSDT" },
+                { name: "Ethereum / USDT", ticker: "ETHUSDT" },
+                { name: "Solana / USDT", ticker: "SOLUSDT" },
+                { name: "Ripple / USDT", ticker: "XRPUSDT" },
+                { name: "Cardano / USDT", ticker: "ADAUSDT" },
+                { name: "BNB / USDT", ticker: "BNBUSDT" }
             ],
             "usa": [
-                { name: "Apple", ticker: "NASDAQ:AAPL" },
-                { name: "Tesla", ticker: "NASDAQ:TSLA" },
-                { name: "NVIDIA", ticker: "NASDAQ:NVDA" },
-                { name: "Microsoft", ticker: "NASDAQ:MSFT" },
-                { name: "Amazon", ticker: "NASDAQ:AMZN" },
-                { name: "Meta", ticker: "NASDAQ:META" }
+                { name: "Apple", ticker: "AAPL" },
+                { name: "Tesla", ticker: "TSLA" },
+                { name: "NVIDIA", ticker: "NVDA" },
+                { name: "Microsoft", ticker: "MSFT" },
+                { name: "Amazon", ticker: "AMZN" },
+                { name: "Meta", ticker: "META" }
             ],
             "italia": [
-                { name: "FTSE MIB Index", ticker: "INDEX:FTSEMIB" },
                 { name: "Eni S.p.A.", ticker: "MIL:ENI" },
                 { name: "UniCredit", ticker: "MIL:UCG" },
                 { name: "Intesa Sanpaolo", ticker: "MIL:ISP" },
                 { name: "Enel", ticker: "MIL:ENEL" },
-                { name: "Ferrari", ticker: "MIL:RACE" }
+                { name: "Ferrari", ticker: "MIL:RACE" },
+                { name: "Generali", ticker: "MIL:G" }
             ],
             "forex": [
-                { name: "EUR / USD", ticker: "FX:EURUSD" },
-                { name: "GBP / USD", ticker: "FX:GBPUSD" },
-                { name: "USD / JPY", ticker: "FX:USDJPY" },
-                { name: "AUD / USD", ticker: "FX:AUDUSD" },
-                { name: "EUR / GBP", ticker: "FX:EURGBP" },
-                { name: "USD / CAD", ticker: "FX:USDCAD" }
+                { name: "EUR / USD", ticker: "EURUSD" },
+                { name: "GBP / USD", ticker: "GBPUSD" },
+                { name: "USD / JPY", ticker: "USDJPY" },
+                { name: "AUD / USD", ticker: "AUDUSD" },
+                { name: "EUR / GBP", ticker: "EURGBP" },
+                { name: "USD / CAD", ticker: "USDCAD" }
             ],
             "commodities": [
-                { name: "Oro (Gold)", ticker: "TVC:GOLD" },
-                { name: "Petrolio (Crude Oil)", ticker: "TVC:USOIL" },
-                { name: "Gas Naturale", ticker: "TVC:NG1!" },
-                { name: "Argento (Silver)", ticker: "TVC:SILVER" },
-                { name: "Rame", ticker: "COMEX:HG1!" },
-                { name: "Platino", ticker: "NYMEX:PL1!" }
+                { name: "Oro (Gold)", ticker: "GOLD" },
+                { name: "Petrolio (Crude Oil)", ticker: "USOIL" },
+                { name: "Gas Naturale", ticker: "NATGAS" },
+                { name: "Argento (Silver)", ticker: "SILVER" },
+                { name: "Rame", ticker: "COPPER" },
+                { name: "Platino", ticker: "PLATINUM" }
             ]
         };
 
@@ -325,7 +317,12 @@
         function changeSlotTicker(slotIndex, newTicker) {
             const cleanTicker = newTicker.trim().toUpperCase();
             activeProducts[slotIndex] = { name: cleanTicker, ticker: cleanTicker };
-            renderCharts(); // Forza il re-render completo dello slot per aggiornare la toolbar nativa
+            
+            // Aggiorna istantaneamente l'iFrame specifico senza ricaricare tutta la pagina
+            const iframe = document.getElementById(`iframe_chart_${slotIndex}`);
+            if(iframe) {
+                iframe.src = `https://www.tradingview.com/widgetembed/?frameElementId=tv_chart&symbol=${cleanTicker}&interval=D&theme=${currentTheme}&style=1&timezone=Europe%2FRome&studies=%5B%5D`;
+            }
         }
 
         function renderCharts() {
@@ -334,7 +331,7 @@
             container.className = `charts-grid grid-${currentChartCount}`;
 
             for (let i = 0; i < currentChartCount; i++) {
-                const product = activeProducts[i] || { name: "S&P 500", ticker: "CME:ES1!" };
+                const product = activeProducts[i] || { name: "S&P 500", ticker: "SPY" };
                 
                 const card = document.createElement("div");
                 card.className = "chart-card";
@@ -344,13 +341,13 @@
 
                 const title = document.createElement("span");
                 title.className = "chart-title";
-                title.innerText = `${product.name} (${product.ticker})`;
+                title.innerText = `${product.name}`;
 
                 const input = document.createElement("input");
                 input.type = "text";
                 input.value = product.ticker;
                 input.placeholder = "Cambia Ticker...";
-                input.style.width = "130px";
+                input.style.width = "120px";
                 input.style.fontSize = "0.75rem";
                 input.style.padding = "2px 4px";
                 input.onchange = (e) => changeSlotTicker(i, e.target.value);
@@ -358,44 +355,18 @@
                 header.appendChild(title);
                 header.appendChild(input);
 
-                const widgetDiv = document.createElement("div");
-                const widgetId = `tv_widget_${i}`;
-                widgetDiv.id = widgetId;
-                widgetDiv.className = "tv-widget-container";
+                // Generazione dell'iFrame diretto ad alta efficienza (Bypassa i blocchi dei cookie)
+                const iframe = document.createElement("iframe");
+                iframe.id = `iframe_chart_${i}`;
+                iframe.className = "iframe-container";
+                // L'URL punta al server di visualizzazione standard che non applica i blocchi sui timeframe e sugli oscillatori terzi
+                iframe.src = `https://www.tradingview.com/widgetembed/?frameElementId=tv_chart&symbol=${product.ticker}&interval=D&theme=${currentTheme}&style=1&timezone=Europe%2FRome&studies=%5B%5D`;
+                iframe.allowFullscreen = true;
 
                 card.appendChild(header);
-                card.appendChild(widgetDiv);
+                card.appendChild(iframe);
                 container.appendChild(card);
-
-                // Delay millimetrico per evitare conflitti di inizializzazione parallela dei frame di TradingView
-                setTimeout(() => {
-                    initTradingViewWidget(widgetId, product.ticker);
-                }, i * 80);
             }
-        }
-
-        // CONFIGURAZIONE FINALE SBLOCCATA (Risolve bug indicatori e Timeframe)
-        function initTradingViewWidget(divId, ticker) {
-            new TradingView.widget({
-                "autosize": true,
-                "symbol": ticker,
-                "interval": "D",                  // TF iniziale impostato sul Daily
-                "timezone": "Europe/Rome",
-                "theme": currentTheme,
-                "style": "1",                     // Candele giapponesi
-                "locale": "it",
-                "enable_publishing": false,
-                "withheader": true,               // ATTIVA la top toolbar per indicatori e TF nativi
-                "hide_side_toolbar": false,        // ATTIVA la barra laterale sinistra dei disegni
-                "allow_symbol_change": true,       // Abilita la ricerca interna dei simboli
-                "save_image": false,
-                "container_id": divId,
-                // Rimuove le limitazioni ricaricando l'interfaccia di analisi avanzata standard
-                "studies_overrides": {},
-                "overrides": {
-                    "header_widget_dom_node": "show" 
-                }
-            });
         }
 
         /* --- GESTIONE TEMPLATE LOCAL STORAGE --- */
@@ -420,7 +391,7 @@
             nameInput.value = "";
             updateLocalStorageDropdown();
             document.getElementById("template-select").value = templateName;
-            alert(`Template "${templateName}" salvato!`);
+            alert(`Template "${templateName}" salvato con successo!`);
         }
 
         function loadSavedTemplate(templateName) {
