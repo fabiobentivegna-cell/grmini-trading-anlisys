@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multi-Market Engine Master (Fully Unlocked)</title>
-    <!-- Script core di TradingView -->
+    <title>Multi-Market Terminal Pro (Fully Unlocked)</title>
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <style>
         :root {
@@ -169,7 +168,7 @@
             <div>
                 <label for="market-select">Mercato:</label>
                 <select id="market-select" onchange="loadPredefinedMarket(this.value)">
-                    <option value="italia" selected>🇮🇹 FTSE MIB & Italia</option>
+                    <option value="italia" selected>🇮🇹 FTSE MIB & Italia (Unlocked)</option>
                     <option value="usa">🇺🇸 Azionario USA</option>
                     <option value="forex">💱 Forex</option>
                     <option value="commodities">🛢️ Commodities</option>
@@ -212,15 +211,15 @@
     </div>
 
     <script type="text/javascript">
-        // Ticker sbloccati accoppiati ai server dei broker istituzionali (Niente blocchi sui minuti o sugli oscillatori)
+        // MAPPATURA DEFINITIVA CON CFD LIBERI DA RESTRIZIONI SUI MINUTI
         const marketProducts = {
             "italia": [
-                { name: "FTSE MIB (Sbloccato)", ticker: "CAPITALCOM:ITALY40" },
-                { name: "Eni S.p.A.", ticker: "MIL:ENI" },
-                { name: "UniCredit", ticker: "MIL:UCG" },
-                { name: "Intesa Sanpaolo", ticker: "MIL:ISP" },
-                { name: "Enel", ticker: "MIL:ENEL" },
-                { name: "Ferrari", ticker: "MIL:RACE" }
+                { name: "FTSE MIB", ticker: "CAPITALCOM:ITALY40" },
+                { name: "Eni S.p.A. (CFD)", ticker: "CAPITALCOM:ENI" },
+                { name: "UniCredit (CFD)", ticker: "CAPITALCOM:UCG" },
+                { name: "Intesa Sanpaolo (CFD)", ticker: "CAPITALCOM:ISP" },
+                { name: "Enel (CFD)", ticker: "CAPITALCOM:ENEL" },
+                { name: "Ferrari (CFD)", ticker: "CAPITALCOM:RACE" }
             ],
             "usa": [
                 { name: "Nasdaq 100", ticker: "FXCM:NAS100" },
@@ -314,7 +313,7 @@
                 const input = document.createElement("input");
                 input.type = "text";
                 input.value = product.ticker;
-                input.style.width = "120px";
+                input.style.width = "140px";
                 input.style.fontSize = "0.75rem";
                 input.style.padding = "3px 6px";
                 input.onchange = (e) => changeSlotTicker(i, e.target.value);
@@ -331,35 +330,31 @@
                 card.appendChild(widgetDiv);
                 container.appendChild(card);
 
-                // Chiamata all'interfaccia avanzata priva di vincoli locali
                 setTimeout(() => {
                     new TradingView.widget({
                         "autosize": true,
                         "symbol": product.ticker,
-                        "interval": "5", // Inizializza subito a 5 minuti per lo scalping
+                        "interval": "5", // Inizializza a 5 minuti
                         "timezone": "Europe/Rome",
                         "theme": currentTheme,
                         "style": "1",
                         "locale": "it",
                         "toolbar_bg": currentTheme === "dark" ? "#131722" : "#ffffff",
                         "enable_publishing": false,
-                        "hide_top_toolbar": false, // Sblocca la barra nativa dei timeframe
+                        "hide_top_toolbar": false,
                         "hide_legend": false,
                         "withheader": true,
                         "container_id": widgetId,
-                        
-                        // Passiamo gli indicatori tramite l'inizializzazione dell'interfaccia del broker sbloccato
                         "studies": [
                             "RSI@tv-basicstudies",
-                            "MACD@tv-basicstudies",
-                            "StochasticRSI@tv-basicstudies" // Inseriti 3 oscillatori simultanei nativi
+                            "MACD@tv-basicstudies"
                         ]
                     });
                 }, i * 120);
             }
         }
 
-        /* --- LOCALSTORAGE TEMPLATES --- */
+        /* --- TEMPLATES MANAGEMENT --- */
         function saveCurrentTemplate() {
             const nameInput = document.getElementById("template-name");
             const templateName = nameInput.value.trim();
