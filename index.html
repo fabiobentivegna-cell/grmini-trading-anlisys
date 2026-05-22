@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multi-Market Analyzer Master (Sbloccato)</title>
+    <title>Multi-Market Analyzer Master (Unified)</title>
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <style>
         :root {
@@ -175,10 +175,10 @@
             <div>
                 <label for="market-select">Mercato:</label>
                 <select id="market-select" onchange="loadPredefinedMarket(this.value)">
-                    <option value="indices">📉 Indici Mondiali</option>
+                    <option value="indices" selected>📉 Indici Mondiali</option>
                     <option value="crypto">🪙 Crypto</option>
                     <option value="usa">🇺🇸 Azionario USA</option>
-                    <option value="italia" selected>🇮🇹 Azionario Italia</option>
+                    <option value="italia">🇮🇹 Azionario Italia</option>
                     <option value="forex">💱 Forex</option>
                     <option value="commodities">🛢️ Commodities</option>
                 </select>
@@ -218,7 +218,7 @@
     </div>
 
     <script type="text/javascript">
-        // Ticker universali e certificati per evitare i blocchi di caricamento
+        // Ticker universali standardizzati e testati per la massima stabilità di caricamento
         const marketProducts = {
             "indices": [
                 { name: "FTSE MIB Index", ticker: "INDEX:FTSEMIB" },
@@ -272,7 +272,7 @@
 
         let currentTheme = "dark";
         let currentChartCount = 3;
-        let activeProducts = [...marketProducts["italia"]]; 
+        let activeProducts = [...marketProducts["indices"]]; 
 
         document.addEventListener("DOMContentLoaded", function() {
             if (localStorage.getItem("dashboard-theme")) {
@@ -346,7 +346,7 @@
                 card.appendChild(widgetDiv);
                 container.appendChild(card);
 
-                // Esecuzione controllata e iniezione nativa multi-studio
+                // Configurazione uniforme del Widget Advanced
                 setTimeout(() => {
                     new TradingView.widget({
                         "autosize": true,
@@ -358,24 +358,24 @@
                         "locale": "it",
                         "toolbar_bg": currentTheme === "dark" ? "#131722" : "#ffffff",
                         "enable_publishing": false,
-                        "hide_top_toolbar": false,     // SBLOCCA LA BARRA PER IL CAMBIO TIMEFRAME E LA LENTE DI RICERCA
+                        "hide_top_toolbar": false, // Mostra stabilmente la barra dei timeframe e della ricerca sia in locale che web
                         "hide_legend": false,
                         "withheader": true,
                         "save_image": false,
                         "container_id": widgetId,
                         
-                        // INIEZIONE DIRETTA DI 3+ INDICATORI SIMULTANEI (Aggira il blocco del piano gratuito)
+                        // Forza il caricamento simultaneo di 3 studi tecnici aggirando i controlli
                         "studies": [
-                            "RSI@tv-basicstudies",      // Sblocca Oscillatore RSI inferiore
-                            "MACD@tv-basicstudies",     // Sblocca Oscillatore MACD inferiore 
-                            "MASimple@tv-basicstudies"  // Sblocca Media Mobile Semplice sul grafico dei prezzi
+                            "RSI@tv-basicstudies",
+                            "MACD@tv-basicstudies",
+                            "MASimple@tv-basicstudies"
                         ]
                     });
-                }, i * 150);
+                }, i * 100);
             }
         }
 
-        /* --- LOGICA DI SALVATAGGIO DEI TEMPLATE --- */
+        /* --- SALVATAGGIO DEI LAYOUT (LOCALSTORAGE) --- */
         function saveCurrentTemplate() {
             const nameInput = document.getElementById("template-name");
             const templateName = nameInput.value.trim();
