@@ -222,7 +222,7 @@
    ═══════════════════════════════════════════ */
 const TICKER_DB = [
     // ── ITALIA ──
-    { name:"FTSE MIB", ticker:"CAPITALCOM:ITALY40", interval:"D", cat:"🇮🇹 Italia" },
+    { name:"FTSE MIB", ticker:"SPREADEX:ITALY40", interval:"D", cat:"🇮🇹 Italia" },
     { name:"Eni", ticker:"CAPITALCOM:ENI", interval:"D", cat:"🇮🇹 Italia" },
     { name:"UniCredit", ticker:"CAPITALCOM:UCG", interval:"D", cat:"🇮🇹 Italia" },
     { name:"Intesa Sanpaolo", ticker:"CAPITALCOM:ISP", interval:"D", cat:"🇮🇹 Italia" },
@@ -452,7 +452,7 @@ function renderCharts() {
     const quickItems = marketProducts[activeMarket] || [];
 
     for (let i = 0; i < currentChartCount; i++) {
-        const product = activeProducts[i] || { name:"FTSE MIB", ticker:"CAPITALCOM:ITALY40", interval:"D" };
+        const product = activeProducts[i] || { name:"FTSE MIB", ticker:"SPREADEX:ITALY40", interval:"D" };
 
         const card = document.createElement("div");
         card.className = "chart-card";
