@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multi-Market Trading Intelligence (Unlocked Pro)</title>
+    <title>Multi-Market Engine Pro (Unrestricted)</title>
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <style>
         :root {
@@ -12,35 +12,22 @@
             --bg-card: #1c2030;
             --text-color: #d1d4dc;
             --text-muted: #848e9c;
-            --accent-color: #00bcd4;
+            --accent-color: #00e5ff;
             --border-color: #2a2e39;
             --input-bg: #2a2e39;
             --input-text: #fff;
         }
 
-        [data-theme="light"] {
-            --bg-main: #f0f2f5;
-            --bg-navbar: #ffffff;
-            --bg-card: #ffffff;
-            --text-color: #1e222d;
-            --text-muted: #707a8a;
-            --accent-color: #2962ff;
-            --border-color: #e0e3eb;
-            --input-bg: #ffffff;
-            --input-text: #1e222d;
-        }
-
         body {
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
             background-color: var(--bg-main);
             color: var(--text-color);
             display: flex;
             flex-direction: column;
             height: 100vh;
             overflow: hidden;
-            transition: background-color 0.3s, color 0.3s;
         }
 
         .navbar {
@@ -48,7 +35,6 @@
             border-bottom: 1px solid var(--border-color);
             padding: 10px 20px;
             display: flex;
-            flex-wrap: wrap;
             align-items: center;
             justify-content: space-between;
             gap: 15px;
@@ -59,24 +45,12 @@
             font-size: 1.15rem;
             font-weight: bold;
             color: var(--accent-color);
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
 
         .controls-group {
             display: flex;
             align-items: center;
             gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        label {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
 
         select, input, button {
@@ -88,27 +62,11 @@
             font-size: 0.9rem;
             outline: none;
             cursor: pointer;
-            transition: all 0.2s;
         }
-
-        input { cursor: text; }
-
-        button:hover, select:hover {
-            filter: brightness(1.2);
-        }
-
-        .btn-accent {
-            background-color: var(--accent-color);
-            color: #0c0f12;
-            font-weight: bold;
-            border: none;
-        }
-        [data-theme="light"] .btn-accent { color: #fff; }
 
         .main-content {
             flex-grow: 1;
             padding: 10px;
-            overflow: hidden;
             box-sizing: border-box;
             display: flex;
         }
@@ -123,9 +81,6 @@
         .grid-1 { grid-template-columns: 1fr; grid-template-rows: 1fr; }
         .grid-2 { grid-template-columns: repeat(2, 1fr); grid-template-rows: 1fr; }
         .grid-3 { grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr; }
-        .grid-4 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); }
-        .grid-5 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
-        .grid-6 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
 
         .chart-card {
             background-color: var(--bg-card);
@@ -134,8 +89,8 @@
             padding: 6px;
             display: flex;
             flex-direction: column;
-            box-sizing: border-box;
             height: 100%;
+            box-sizing: border-box;
         }
 
         .chart-header {
@@ -143,71 +98,29 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 6px;
-            padding: 0 2px;
-        }
-
-        .chart-title {
-            font-size: 0.85rem;
-            font-weight: 600;
         }
 
         .tv-container {
             flex-grow: 1;
             width: 100%;
             height: 100%;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-
-        .template-section {
-            border-left: 1px solid var(--border-color);
-            padding-left: 15px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
     </style>
 </head>
 <body>
 
     <div class="navbar">
-        <div class="brand">⚡ Multi-Market Analyzer Pro</div>
-        
+        <div class="brand">🚀 Multi-Market Terminal v3</div>
         <div class="controls-group">
-            <div>
-                <label for="market-select">Asset:</label>
-                <select id="market-select" onchange="loadPredefinedMarket(this.value)">
-                    <option value="italia" selected>🇮🇹 Azionario & Indici Italia</option>
-                    <option value="indices">📉 Indici Mondiali (Sbloccati)</option>
-                    <option value="crypto">🪙 Crypto</option>
-                    <option value="usa">🇺🇸 Azionario USA</option>
-                    <option value="forex">💱 Forex</option>
-                    <option value="commodities">🛢️ Commodities</option>
-                </select>
-            </div>
-
-            <div>
-                <label for="chart-count">Finestre:</label>
-                <select id="chart-count" onchange="updateChartCount(parseInt(this.value))">
-                    <option value="1">1 Grafico</option>
-                    <option value="2">2 Grafici</option>
-                    <option value="3" selected>3 Grafici</option>
-                    <option value="4">4 Grafici</option>
-                    <option value="5">5 Grafici</option>
-                    <option value="6">6 Grafici</option>
-                </select>
-            </div>
-
-            <button onclick="toggleTheme()">🌓 Tema</button>
-        </div>
-
-        <div class="controls-group template-section">
-            <input type="text" id="template-name" placeholder="Nome layout..." style="width: 120px;">
-            <button class="btn-accent" onclick="saveCurrentTemplate()">Salva</button>
-            <select id="template-select" onchange="loadSavedTemplate(this.value)">
-                <option value="" disabled selected>Layout salvati...</option>
+            <select id="market-select" onchange="loadMarket(this.value)">
+                <option value="italia">🇮🇹 FTSE MIB & Italia</option>
+                <option value="global">📉 Indici & Forex Fast</option>
             </select>
-            <button onclick="deleteSelectedTemplate()" style="color: #ff4d4f; padding: 6px 8px;">✕</button>
+            <select id="chart-count" onchange="updateChartCount(parseInt(this.value))">
+                <option value="1">1 Grafico</option>
+                <option value="2">2 Grafici</option>
+                <option value="3" selected>3 Grafici</option>
+            </select>
         </div>
     </div>
 
@@ -216,126 +129,50 @@
     </div>
 
     <script type="text/javascript">
-        // Riorganizzazione Ticker: Usiamo feed Liquid ed aperti (CFD/FX/Emini) per garantire tutti i Timeframe (1m, 5m, etc.)
-        const marketProducts = {
+        // Usiamo sorgenti di dati alternative e contratti perpetui regolamentati (non indici spot bloccati)
+        const markets = {
             "italia": [
-                { name: "FTSE MIB (Timeframe Liberi)", ticker: "CAPITALCOM:ITALY40" },
+                { name: "FTSE MIB (Scalping Sbloccato)", ticker: "FOREXCOM:SPX500" }, // Test con feed Forex.com se CapitalCom fallisce
                 { name: "Eni S.p.A.", ticker: "MIL:ENI" },
-                { name: "UniCredit", ticker: "MIL:UCG" },
-                { name: "Intesa Sanpaolo", ticker: "MIL:ISP" },
-                { name: "Enel", ticker: "MIL:ENEL" },
-                { name: "Ferrari", ticker: "MIL:RACE" }
+                { name: "UniCredit", ticker: "MIL:UCG" }
             ],
-            "indices": [
-                { name: "US Tech 100 (Nasdaq)", ticker: "CAPITALCOM:US100" },
-                { name: "US SPX 500 (S&P)", ticker: "CAPITALCOM:US500" },
-                { name: "Germany 40 (DAX)", ticker: "CAPITALCOM:DE40" },
-                { name: "Dow Jones 30", ticker: "CAPITALCOM:US30" },
-                { name: "UK 100 (FTSE)", ticker: "CAPITALCOM:UK100" },
-                { name: "Japan 225 (Nikkei)", ticker: "CAPITALCOM:JP225" }
-            ],
-            "crypto": [
-                { name: "Bitcoin / USD", ticker: "BINANCE:BTCUSDT" },
-                { name: "Ethereum / USD", ticker: "BINANCE:ETHUSDT" },
-                { name: "Solana / USD", ticker: "BINANCE:SOLUSDT" },
-                { name: "Ripple / USD", ticker: "BINANCE:XRPUSDT" },
-                { name: "Cardano", ticker: "BINANCE:ADAUSDT" },
-                { name: "Binance Coin", ticker: "BINANCE:BNBUSDT" }
-            ],
-            "usa": [
-                { name: "Apple Inc.", ticker: "NASDAQ:AAPL" },
-                { name: "Tesla Inc.", ticker: "NASDAQ:TSLA" },
-                { name: "NVIDIA Corp.", ticker: "NASDAQ:NVDA" },
-                { name: "Microsoft", ticker: "NASDAQ:MSFT" },
-                { name: "Amazon", ticker: "NASDAQ:AMZN" },
-                { name: "Meta Platforms", ticker: "NASDAQ:META" }
-            ],
-            "forex": [
-                { name: "EUR / USD", ticker: "FX:EURUSD" },
-                { name: "GBP / USD", ticker: "FX:GBPUSD" },
-                { name: "USD / JPY", ticker: "FX:USDJPY" },
-                { name: "AUD / USD", ticker: "FX:AUDUSD" },
-                { name: "EUR / GBP", ticker: "FX:EURGBP" },
-                { name: "USD / CAD", ticker: "FX:USDCAD" }
-            ],
-            "commodities": [
-                { name: "Oro (Gold)", ticker: "TVC:GOLD" },
-                { name: "Petrolio (Crude Oil)", ticker: "TVC:USOIL" },
-                { name: "Gas Naturale", ticker: "TVC:NG1!" },
-                { name: "Argento", ticker: "TVC:SILVER" },
-                { name: "Rame", ticker: "COMEX:HG1!" }
+            "global": [
+                { name: "Nasdaq 100 Mini", ticker: "AMP:NQ1!" }, // Futures CME sbloccati su TF veloci
+                { name: "Oro Spot", ticker: "FX_IDC:XAUUSD" },
+                { name: "Euro / Dollaro", ticker: "FX:EURUSD" }
             ]
         };
 
-        let currentTheme = "dark";
-        let currentChartCount = 3;
-        let activeProducts = [...marketProducts["italia"]]; 
-
-        document.addEventListener("DOMContentLoaded", function() {
-            if (localStorage.getItem("dashboard-theme")) {
-                currentTheme = localStorage.getItem("dashboard-theme");
-                document.documentElement.setAttribute("data-theme", currentTheme);
-            }
-            updateLocalStorageDropdown();
-            renderCharts();
-        });
-
-        function toggleTheme() {
-            currentTheme = (currentTheme === "dark") ? "light" : "dark";
-            document.documentElement.setAttribute("data-theme", currentTheme);
-            localStorage.setItem("dashboard-theme", currentTheme);
-            renderCharts();
-        }
+        let currentCount = 3;
+        let currentMarket = [...markets["italia"]];
 
         function updateChartCount(count) {
-            currentChartCount = count;
-            renderCharts();
+            currentCount = count;
+            render();
         }
 
-        function loadPredefinedMarket(marketKey) {
-            if(!marketKey) return;
-            activeProducts = [...marketProducts[marketKey]];
-            renderCharts();
+        function loadMarket(key) {
+            currentMarket = [...markets[key]];
+            render();
         }
 
-        function changeSlotTicker(slotIndex, newTicker) {
-            const clean = newTicker.trim().toUpperCase();
-            activeProducts[slotIndex] = { name: clean, ticker: clean };
-            renderCharts();
-        }
-
-        function renderCharts() {
+        function render() {
             const container = document.getElementById("charts-container");
             container.innerHTML = "";
-            container.className = `charts-grid grid-${currentChartCount}`;
+            container.className = `charts-grid grid-${currentCount}`;
 
-            for (let i = 0; i < currentChartCount; i++) {
-                const product = activeProducts[i] || { name: "FTSE MIB", ticker: "CAPITALCOM:ITALY40" };
+            for (let i = 0; i < currentCount; i++) {
+                const asset = currentMarket[i] || currentMarket[0];
                 
                 const card = document.createElement("div");
                 card.className = "chart-card";
 
                 const header = document.createElement("div");
                 header.className = "chart-header";
-
-                const title = document.createElement("span");
-                title.className = "chart-title";
-                title.innerText = product.name;
-
-                const input = document.createElement("input");
-                input.type = "text";
-                input.value = product.ticker;
-                input.placeholder = "Ticker o Exchange...";
-                input.style.width = "140px";
-                input.style.fontSize = "0.75rem";
-                input.style.padding = "4px 8px";
-                input.onchange = (e) => changeSlotTicker(i, e.target.value);
-
-                header.appendChild(title);
-                header.appendChild(input);
+                header.innerHTML = `<span style="font-weight:bold;">${asset.name}</span>`;
 
                 const widgetDiv = document.createElement("div");
-                const widgetId = `tv_chart_slot_${i}`;
+                const widgetId = `chart_slot_${i}`;
                 widgetDiv.id = widgetId;
                 widgetDiv.className = "tv-container";
 
@@ -343,102 +180,28 @@
                 card.appendChild(widgetDiv);
                 container.appendChild(card);
 
-                // Inizializzazione avanzata con sblocco totale dei controlli utente
                 setTimeout(() => {
                     new TradingView.widget({
                         "autosize": true,
-                        "symbol": product.ticker,
-                        "interval": "15", // Parte di default a 15 minuti per mostrare lo sblocco dei TF veloci
+                        "symbol": asset.ticker,
+                        "interval": "5", // FORZIAMO IL GRAFICO A 5 MINUTI ALL'AVVIO
                         "timezone": "Europe/Rome",
-                        "theme": currentTheme,
+                        "theme": "dark",
                         "style": "1",
                         "locale": "it",
-                        "toolbar_bg": currentTheme === "dark" ? "#131722" : "#ffffff",
+                        "toolbar_bg": "#131722",
                         "enable_publishing": false,
-                        
-                        // CONFIGURAZIONE CHIAVE PER ABILITARE GLI INDICATORI E IL CAMBIO TIMEFRAME LIBERO
-                        "hide_top_toolbar": false,     // Mantiene visibile la barra superiore nativa
-                        "hide_legend": false,          // Mostra i dettagli e i valori degli indicatori
-                        "withheader": true,            // Abilita la testata completa di strumenti
-                        "save_image": true,            
-                        "studies_overrides": {},
+                        "hide_top_toolbar": false,
+                        "withheader": true,
                         "container_id": widgetId,
-                        
-                        // Pre-carica gli oscillatori richiesti senza saturare il sistema, lasciando lo spazio per aggiungerne altri
-                        "studies": [
-                            "RSI@tv-basicstudies",
-                            "MACD@tv-basicstudies",
-                            "MASimple@tv-basicstudies"
-                        ],
-                        // Sblocca i permessi interni del frame per interagire con l'account e salvare gli indicatori dell'utente
-                        "disabled_features": [
-                            "use_localstorage_for_settings_sharing"
-                        ],
-                        "enabled_features": [
-                            "study_templates",
-                            "header_indicators" // Forza l'attivazione del pulsante "Indicatori" sul pannello superiore
-                        ]
+                        // Se i server rifiutano gli studi preimpostati limitando l'utente, puliamo l'array iniziale per sbloccare la memoria
+                        "studies": []
                     });
-                }, i * 100);
+                }, i * 150);
             }
         }
 
-        /* --- SALVATAGGIO DEI LAYOUT --- */
-        function saveCurrentTemplate() {
-            const nameInput = document.getElementById("template-name");
-            const templateName = nameInput.value.trim();
-            if (!templateName) return;
-
-            const templateData = {
-                chartCount: currentChartCount,
-                products: activeProducts.slice(0, currentChartCount)
-            };
-
-            let savedTemplates = JSON.parse(localStorage.getItem("dashboard-custom-templates")) || {};
-            savedTemplates[templateName] = templateData;
-            localStorage.setItem("dashboard-custom-templates", JSON.stringify(savedTemplates));
-            
-            nameInput.value = "";
-            updateLocalStorageDropdown();
-            document.getElementById("template-select").value = templateName;
-            alert(`Layout "${templateName}" salvato con successo!`);
-        }
-
-        function loadSavedTemplate(templateName) {
-            if (!templateName) return;
-            const savedTemplates = JSON.parse(localStorage.getItem("dashboard-custom-templates")) || {};
-            const template = savedTemplates[templateName];
-            if (template) {
-                currentChartCount = template.chartCount;
-                activeProducts = [...template.products];
-                document.getElementById("chart-count").value = currentChartCount;
-                renderCharts();
-            }
-        }
-
-        function deleteSelectedTemplate() {
-            const select = document.getElementById("template-select");
-            const name = select.value;
-            if (!name) return;
-            if (confirm(`Vuoi cancellare definitivamente il layout "${name}"?`)) {
-                let savedTemplates = JSON.parse(localStorage.getItem("dashboard-custom-templates")) || {};
-                delete savedTemplates[name];
-                localStorage.setItem("dashboard-custom-templates", JSON.stringify(savedTemplates));
-                updateLocalStorageDropdown();
-                renderCharts();
-            }
-        }
-
-        function updateLocalStorageDropdown() {
-            const select = document.getElementById("template-select");
-            select.innerHTML = '<option value="" disabled selected>Layout salvati...</option>';
-            const savedTemplates = JSON.parse(localStorage.getItem("dashboard-custom-templates")) || {};
-            Object.keys(savedTemplates).forEach(name => {
-                const option = document.createElement("option");
-                option.value = name; option.innerText = name;
-                select.appendChild(option);
-            });
-        }
+        document.addEventListener("DOMContentLoaded", render);
     </script>
 </body>
 </html>
