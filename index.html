@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multi-Market Terminal Pro (Fully Unlocked)</title>
+    <title>Multi-Market Terminal Pro (Search Autocomplete)</title>
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <style>
         :root {
@@ -87,6 +87,10 @@
             transition: all 0.2s;
         }
 
+        input[type="text"] {
+            cursor: text;
+        }
+
         .btn-accent {
             background-color: var(--accent-color);
             color: #fff;
@@ -140,6 +144,10 @@
         .chart-title {
             font-size: 0.9rem;
             font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 50%;
         }
 
         .tv-container {
@@ -161,6 +169,43 @@
 </head>
 <body>
 
+    <!-- Lista di completamento automatico globale per i campi di ricerca -->
+    <datalist id="ticker-suggestions">
+        <!-- Italia & FTSE MIB (CFD Sbloccati) -->
+        <option value="CAPITALCOM:ITALY40">FTSE MIB Index (CFD)</option>
+        <option value="CAPITALCOM:ENI">Eni S.p.A. (CFD)</option>
+        <option value="CAPITALCOM:UCG">UniCredit (CFD)</option>
+        <option value="CAPITALCOM:ISP">Intesa Sanpaolo (CFD)</option>
+        <option value="CAPITALCOM:ENEL">Enel (CFD)</option>
+        <option value="CAPITALCOM:RACE">Ferrari (CFD)</option>
+        <option value="MIL:TIT">Telecom Italia</option>
+        <option value="MIL:G">Generali Assicurazioni</option>
+        <!-- USA Indici & Stocks -->
+        <option value="FXCM:NAS100">Nasdaq 100 Mini</option>
+        <option value="FXCM:SPX500">S&P 500 Index</option>
+        <option value="FXCM:US30">Dow Jones 30</option>
+        <option value="NASDAQ:AAPL">Apple Inc.</option>
+        <option value="NASDAQ:TSLA">Tesla Inc.</option>
+        <option value="NASDAQ:NVDA">NVIDIA Corporation</option>
+        <option value="NASDAQ:AMZN">Amazon.com Inc.</option>
+        <option value="NASDAQ:MSFT">Microsoft Corp.</option>
+        <!-- Forex Pairs -->
+        <option value="FX:EURUSD">Euro / US Dollar</option>
+        <option value="FX:GBPUSD">British Pound / US Dollar</option>
+        <option value="FX:USDJPY">US Dollar / Japanese Yen</option>
+        <option value="FX:EURGBP">Euro / British Pound</option>
+        <option value="FX:AUDUSD">Australian Dollar / US Dollar</option>
+        <!-- Commodities -->
+        <option value="FXCM:XAUUSD">Oro Spot (Gold)</option>
+        <option value="FXCM:USOIL">Petrolio (Crude Oil)</option>
+        <option value="TVC:NG1!">Gas Naturale Futures</option>
+        <option value="FXCM:XAGUSD">Argento Spot (Silver)</option>
+        <!-- Crypto -->
+        <option value="BINANCE:BTCUSDT">Bitcoin / USDT</option>
+        <option value="BINANCE:ETHUSDT">Ethereum / USDT</option>
+        <option value="BINANCE:SOLUSDT">Solana / USDT</option>
+    </datalist>
+
     <div class="navbar">
         <div class="brand">📊 Terminal Live Analyzer</div>
         
@@ -168,7 +213,7 @@
             <div>
                 <label for="market-select">Mercato:</label>
                 <select id="market-select" onchange="loadPredefinedMarket(this.value)">
-                    <option value="italia" selected>🇮🇹 FTSE MIB & Italia (Unlocked)</option>
+                    <option value="italia" selected>🇮🇹 FTSE MIB & Italia</option>
                     <option value="usa">🇺🇸 Azionario USA</option>
                     <option value="forex">💱 Forex</option>
                     <option value="commodities">🛢️ Commodities</option>
@@ -211,15 +256,14 @@
     </div>
 
     <script type="text/javascript">
-        // MAPPATURA DEFINITIVA CON CFD LIBERI DA RESTRIZIONI SUI MINUTI
         const marketProducts = {
             "italia": [
                 { name: "FTSE MIB", ticker: "CAPITALCOM:ITALY40" },
-                { name: "Eni S.p.A. (CFD)", ticker: "CAPITALCOM:ENI" },
-                { name: "UniCredit (CFD)", ticker: "CAPITALCOM:UCG" },
-                { name: "Intesa Sanpaolo (CFD)", ticker: "CAPITALCOM:ISP" },
-                { name: "Enel (CFD)", ticker: "CAPITALCOM:ENEL" },
-                { name: "Ferrari (CFD)", ticker: "CAPITALCOM:RACE" }
+                { name: "Eni S.p.A.", ticker: "CAPITALCOM:ENI" },
+                { name: "UniCredit", ticker: "CAPITALCOM:UCG" },
+                { name: "Intesa Sanpaolo", ticker: "CAPITALCOM:ISP" },
+                { name: "Enel", ticker: "CAPITALCOM:ENEL" },
+                { name: "Ferrari", ticker: "CAPITALCOM:RACE" }
             ],
             "usa": [
                 { name: "Nasdaq 100", ticker: "FXCM:NAS100" },
@@ -288,7 +332,16 @@
 
         function changeSlotTicker(slotIndex, newTicker) {
             const clean = newTicker.trim().toUpperCase();
-            activeProducts[slotIndex] = { name: clean, ticker: clean };
+            // Trova se esiste un nome pulito nella nostra datalist per abbellire l'header
+            let displayName = clean;
+            const options = document.querySelectorAll("#ticker-suggestions option");
+            for (let opt of options) {
+                if (opt.value === clean) {
+                    displayName = opt.text.split(" (")[0]; // Prende il nome pulito senza parentesi
+                    break;
+                }
+            }
+            activeProducts[slotIndex] = { name: displayName, ticker: clean };
             renderCharts();
         }
 
@@ -310,12 +363,15 @@
                 title.className = "chart-title";
                 title.innerText = product.name;
 
+                // Creazione input collegato alla datalist globale
                 const input = document.createElement("input");
                 input.type = "text";
                 input.value = product.ticker;
-                input.style.width = "140px";
-                input.style.fontSize = "0.75rem";
-                input.style.padding = "3px 6px";
+                input.setAttribute("list", "ticker-suggestions"); // Collegamento al menu a tendina
+                input.style.width = "160px";
+                input.style.fontSize = "0.78rem";
+                input.style.padding = "4px 8px";
+                input.placeholder = "Cerca titolo...";
                 input.onchange = (e) => changeSlotTicker(i, e.target.value);
 
                 header.appendChild(title);
@@ -334,7 +390,7 @@
                     new TradingView.widget({
                         "autosize": true,
                         "symbol": product.ticker,
-                        "interval": "5", // Inizializza a 5 minuti
+                        "interval": "5",
                         "timezone": "Europe/Rome",
                         "theme": currentTheme,
                         "style": "1",
