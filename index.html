@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financial Multi-Chart Dashboard Pro (eToro Engine)</title>
+    <title>Financial Multi-Chart Dashboard Pro (Sbloccata)</title>
     <style>
         :root {
             --bg-main: #0c0f12;
@@ -11,7 +11,7 @@
             --bg-card: #1c2030;
             --text-color: #d1d4dc;
             --text-muted: #848e9c;
-            --accent-color: #4bff62; /* Colore eToro Green */
+            --accent-color: #2962ff;
             --border-color: #2a2e39;
             --input-bg: #2a2e39;
             --input-text: #fff;
@@ -24,7 +24,7 @@
             --bg-card: #ffffff;
             --text-color: #1e222d;
             --text-muted: #707a8a;
-            --accent-color: #00b018;
+            --accent-color: #2962ff;
             --border-color: #e0e3eb;
             --input-bg: #ffffff;
             --input-text: #1e222d;
@@ -93,17 +93,9 @@
             cursor: text;
         }
 
-        button {
-            font-weight: 500;
-        }
-
-        button:hover {
-            opacity: 0.9;
-        }
-
         .btn-accent {
             background-color: var(--accent-color);
-            color: #000;
+            color: #fff;
             font-weight: bold;
             border: none;
         }
@@ -162,7 +154,7 @@
             height: 100%;
             border: none;
             border-radius: 4px;
-            background-color: #131722;
+            background-color: #1c2030;
         }
 
         .template-section {
@@ -177,7 +169,7 @@
 <body>
 
     <div class="navbar">
-        <div class="brand">📊 Multi-Market Engine Pro (eToro Base)</div>
+        <div class="brand">📊 Multi-Market Engine Pro</div>
         
         <div class="controls-group">
             <div>
@@ -226,55 +218,55 @@
     </div>
 
     <script type="text/javascript">
-        // Mappatura ID simboli ufficiali eToro (Senza alcuna limitazione di flussi)
+        // Elenco simboli universali Barchart / ChartIQ
         const marketProducts = {
             "indices": [
-                { name: "FTSE MIB (Italia)", symbol: "1040" },
-                { name: "Nasdaq 100", symbol: "1004" },
-                { name: "S&P 500", symbol: "1001" },
-                { name: "DAX 40", symbol: "1003" },
-                { name: "Dow Jones 30", symbol: "1002" },
-                { name: "Nikkei 225", symbol: "1007" }
+                { name: "FTSE MIB ($FTSEM)", ticker: "$FTSEM" },
+                { name: "Nasdaq 100 ($NASX)", ticker: "$NASX" },
+                { name: "S&P 500 ($SPX)", ticker: "$SPX" },
+                { name: "DAX 40 ($DAX)", ticker: "$DAX" },
+                { name: "Dow Jones ($DOW)", ticker: "$DOW" },
+                { name: "Nikkei 225 ($NKI)", ticker: "$NKI" }
             ],
             "crypto": [
-                { name: "Bitcoin", symbol: "100000" },
-                { name: "Ethereum", symbol: "100001" },
-                { name: "Solana", symbol: "100024" },
-                { name: "Ripple", symbol: "100002" },
-                { name: "Cardano", symbol: "100013" },
-                { name: "Binance Coin", symbol: "100022" }
+                { name: "Bitcoin ($BTCUSD)", ticker: "$BTCUSD" },
+                { name: "Ethereum ($ETHUSD)", ticker: "$ETHUSD" },
+                { name: "Solana ($SOLUSD)", ticker: "$SOLUSD" },
+                { name: "Ripple ($XRPUSD)", ticker: "$XRPUSD" },
+                { name: "Cardano ($ADAUSD)", ticker: "$ADAUSD" },
+                { name: "Binance Coin", ticker: "$BNBUSD" }
             ],
             "usa": [
-                { name: "Apple", symbol: "1" },
-                { name: "Tesla", symbol: "4057" },
-                { name: "NVIDIA", symbol: "1009" },
-                { name: "Microsoft", symbol: "4" },
-                { name: "Amazon", symbol: "3" },
-                { name: "Meta (Facebook)", symbol: "3051" }
+                { name: "Apple (AAPL)", ticker: "AAPL" },
+                { name: "Tesla (TSLA)", ticker: "TSLA" },
+                { name: "NVIDIA (NVDA)", ticker: "NVDA" },
+                { name: "Microsoft (MSFT)", ticker: "MSFT" },
+                { name: "Amazon (AMZN)", ticker: "AMZN" },
+                { name: "Meta (META)", ticker: "META" }
             ],
             "italia": [
-                { name: "Eni", symbol: "2079" },
-                { name: "UniCredit", symbol: "2121" },
-                { name: "Intesa Sanpaolo", symbol: "2094" },
-                { name: "Enel", symbol: "2078" },
-                { name: "Ferrari", symbol: "4444" },
-                { name: "Stellantis", symbol: "2081" }
+                { name: "Eni (ENI.IT)", ticker: "ENI.IT" },
+                { name: "UniCredit (UCG.IT)", ticker: "UCG.IT" },
+                { name: "Intesa Sanpaolo (ISP.IT)", ticker: "ISP.IT" },
+                { name: "Enel (ENEL.IT)", ticker: "ENEL.IT" },
+                { name: "Ferrari (RACE.IT)", ticker: "RACE.IT" },
+                { name: "Stellantis (STLAM.IT)", ticker: "STLAM.IT" }
             ],
             "forex": [
-                { name: "EUR / USD", symbol: "7" },
-                { name: "GBP / USD", symbol: "2" },
-                { name: "USD / JPY", symbol: "4" },
-                { name: "AUD / USD", symbol: "5" },
-                { name: "EUR / GBP", symbol: "11" },
-                { name: "USD / CAD", symbol: "6" }
+                { name: "EUR / USD", ticker: "EURUSD" },
+                { name: "GBP / USD", ticker: "GBPUSD" },
+                { name: "USD / JPY", ticker: "USDJPY" },
+                { name: "AUD / USD", ticker: "AUDUSD" },
+                { name: "EUR / GBP", ticker: "EURGBP" },
+                { name: "USD / CAD", ticker: "USDCAD" }
             ],
             "commodities": [
-                { name: "Oro (Gold)", symbol: "10" },
-                { name: "Petrolio (Oil)", symbol: "11" },
-                { name: "Gas Naturale", symbol: "13" },
-                { name: "Argento (Silver)", symbol: "12" },
-                { name: "Rame", symbol: "14" },
-                { name: "Platino", symbol: "15" }
+                { name: "Oro (Gold)", ticker: "GCY00" },
+                { name: "Petrolio (Oil)", ticker: "CLY00" },
+                { name: "Gas Naturale", ticker: "NGY00" },
+                { name: "Argento (Silver)", ticker: "SIY00" },
+                { name: "Rame", ticker: "HGY00" },
+                { name: "Platino", ticker: "PLY00" }
             ]
         };
 
@@ -309,8 +301,9 @@
             renderCharts();
         }
 
-        function changeSlotTicker(slotIndex, newId) {
-            activeProducts[slotIndex] = { name: "Custom Asset", symbol: newId.trim() };
+        function changeSlotTicker(slotIndex, newTicker) {
+            const clean = newTicker.trim().toUpperCase();
+            activeProducts[slotIndex] = { name: `Asset: ${clean}`, ticker: clean };
             renderCharts();
         }
 
@@ -319,10 +312,10 @@
             container.innerHTML = "";
             container.className = `charts-grid grid-${currentChartCount}`;
 
-            const themeMode = currentTheme === "dark" ? "dark" : "light";
+            const themeMode = currentTheme === "dark" ? "barchart" : "light";
 
             for (let i = 0; i < currentChartCount; i++) {
-                const product = activeProducts[i] || { name: "FTSE MIB", symbol: "1040" };
+                const product = activeProducts[i] || { name: "FTSE MIB", ticker: "$FTSEM" };
                 
                 const card = document.createElement("div");
                 card.className = "chart-card";
@@ -336,9 +329,9 @@
 
                 const input = document.createElement("input");
                 input.type = "text";
-                input.value = product.symbol;
-                input.placeholder = "ID eToro...";
-                input.style.width = "80px";
+                input.value = product.ticker;
+                input.placeholder = "Cambia Simbolo...";
+                input.style.width = "110px";
                 input.style.fontSize = "0.75rem";
                 input.style.padding = "3px 6px";
                 input.onchange = (e) => changeSlotTicker(i, e.target.value);
@@ -346,11 +339,12 @@
                 header.appendChild(title);
                 header.appendChild(input);
 
-                // ENGINE INTEGRATO ETORO: Caricamento asincrono sbloccato senza restrizioni
+                // NUOVO ENGINE CHARTIQ EXTRA-FUNZIONANTE SENZA RESTRIZIONI DI RETE
                 const iframe = document.createElement("iframe");
                 iframe.className = "iframe-container";
-                // L'applicazione richiama l'interfaccia di analisi eToro a pieno schermo
-                iframe.src = `https://etoro.tw/charts/web/index.html?instrumentId=${product.symbol}&theme=${themeMode}&locale=it`;
+                
+                // Integrazione pulita della libreria di analisi Barchart Advanced Free
+                iframe.src = `https://www.barchart.com/shared-charts/embed?symbol=${encodeURIComponent(product.ticker)}&theme=${themeMode}&meta=0&study=`;
                 iframe.allowFullscreen = true;
 
                 card.appendChild(header);
@@ -359,7 +353,7 @@
             }
         }
 
-        /* --- LOGICA DI SALVATAGGIO DEI TEMPLATE --- */
+        /* --- LOGICA DI SALVATAGGIO DEI TEMPLATE (LOCALSTORAGE) --- */
         function saveCurrentTemplate() {
             const nameInput = document.getElementById("template-name");
             const templateName = nameInput.value.trim();
