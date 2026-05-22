@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Dashboard</title>
+    <!-- Script ufficiale di TradingView per caricare i grafici avanzati senza API key -->
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    <style>
+        :root {
+            --bg-main: #0c0f12;
+            --bg-sidebar: #131722;
+            --bg-card: #1c2030;
+            --text-color: #d1d4dc;
+            --accent-color: #2962ff;
+            --border-color: #2a2e39;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-color);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar di navigazione */
+        .sidebar {
+            width: 260px;
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 20px 0;
+            box-sizing: border-box;
+            flex-shrink: 0;
+        }
+
+        .sidebar h2 {
+            font-size: 1.1rem;
+            padding: 0 20px;
+            margin-bottom: 25px;
+            color: #fff;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .menu-btn {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            padding: 15px 20px;
+            text-align: left;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-left: 4px solid transparent;
+        }
+
+        .menu-btn:hover, .menu-btn.active {
+            background-color: var(--bg-card);
+            color: #fff;
+            border-left-color: var(--accent-color);
+        }
+
+        /* Area principale */
+        .main-content {
+            flex-grow: 1;
+            padding: 25px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+
+        .header-area h1 {
+            margin: 0 0 20px 0;
+            font-size: 1.6rem;
+            color: #fff;
+        }
+
+        /* Griglia flessibile per i grafici */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 20px;
+            width: 100%;
+        }
+
+        .chart-container {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            height: 480px; /* Altezza ottimale per contenere grafico e oscillatori */
+            box-sizing: border-box;
+        }
+
+        .chart-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #fff;
+        }
+
+        .tv-widget {
+            flex-grow: 1;
+            width: 100%;
+            height: 100%;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar con i mercati richiesti -->
+    <div class="sidebar">
+        <h2>Dashboard Mercati</h2>
+        <button class="menu-btn active" onclick="switchMarket('crypto', this)">🪙 Crypto</button>
+        <button class="menu-btn" onclick="switchMarket('usa', this)">🇺🇸 Azionario USA</button>
+        <button class="menu-btn" onclick="switchMarket('italia', this)">🇮🇹 Azionario Italia</button>
+        <button class="menu-btn" onclick="switchMarket('forex', this)">💱 Forex</button>
+        <button class="menu-btn" onclick="switchMarket('commodities', this)">🛢️ Commodities</button>
+    </div>
+
+    <!-- Area principale dei contenuti -->
+    <div class="main-content">
+        <div class="header-area">
+            <h1 id="market-title">Mercato Crypto</h1>
+        </div>
+        <div class="charts-grid" id="charts-grid">
+            <!-- I grafici vengono iniettati qui da JavaScript -->
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        // Configurazione statica dei mercati direttamente integrata nel client
+        const marketsData = {
+            "crypto": [
+                {"name": "Bitcoin (BTC/USDT)", "ticker": "BINANCE:BTCUSDT"},
+                {"name": "Ethereum (ETH/USDT)", "ticker": "BINANCE:ETHUSDT"},
+                {"name": "Solana (SOL/USDT)", "ticker": "BINANCE:SOLUSDT"}
+            ],
+            "usa": [
+                {"name": "S&P 500 Index", "ticker": "SPIMS:SPX"},
+                {"name": "NASDAQ 100 Index", "ticker": "NASDAQ:NDX"},
+                {"name": "Apple Inc.", "ticker": "NASDAQ:AAPL"}
+            ],
+            "italia": [
+                {"name": "FTSE MIB Index", "ticker": "INDEX:FTSEMIB"},
+                {"name": "Eni S.p.A.", "ticker": "MIL:ENI"},
+                {"name": "UniCredit S.p.A.", "ticker": "MIL:UCG"}
+            ],
+            "forex": [
+                {"name": "Euro / Dollaro USA", "ticker": "FX:EURUSD"},
+                {"name": "Sterlina / Dollaro USA", "ticker": "FX:GBPUSD"},
+                {"name": "Dollaro USA / Yen Giapponese", "ticker": "FX:USDJPY"}
+            ],
+            "commodities": [
+                {"name": "Oro (Gold)", "ticker": "TVC:GOLD"},
+                {"name": "Petrolio Greggio (Crude Oil)", "ticker": "TVC:USOIL"},
+                {"name": "Gas Naturale (Natural Gas)", "ticker": "TVC:NG1!"}
+            ]
+        };
+
+        // Caricamento iniziale (Default: Crypto)
+        document.addEventListener("DOMContentLoaded", function() {
+            switchMarket('crypto', document.querySelector('.menu-btn.active'));
+        });
+
+        function switchMarket(marketKey, element) {
+            // Rimuove la classe attiva dai vecchi pulsanti e la assegna al nuovo cliccato
+            document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('active'));
+            element.classList.add('active');
+
+            // Cambia dinamicamente il titolo superiore
+            const titles = {
+                crypto: "Mercato Crypto",
+                usa: "Indici & Azioni USA",
+                italia: "Borsa Italiana (FTSE MIB)",
+                forex: "Mercato Valutario (Forex)",
+                commodities: "Materie Prime & Energie"
+            };
+            document.getElementById('market-title').innerText = titles[marketKey];
+
+            // Svuota la griglia dai vecchi grafici per evitare sovrapposizioni
+            const grid = document.getElementById('charts-grid');
+            grid.innerHTML = '';
+
+            // Genera la struttura e inizializza i widget TradingView per ogni asset
+            marketsData[marketKey].forEach((asset, index) => {
+                const container = document.createElement('div');
+                container.className = 'chart-container';
+
+                const title = document.createElement('div');
+                title.className = 'chart-title';
+                title.innerText = asset.name;
+
+                const widgetDiv = document.createElement('div');
+                const widgetId = `tv_chart_${marketKey}_${index}`;
+                widgetDiv.id = widgetId;
+                widgetDiv.className = 'tv-widget';
+
+                container.appendChild(title);
+                container.appendChild(widgetDiv);
+                grid.appendChild(container);
+
+                // Istanzia il grafico avanzato originale di TradingView
+                new TradingView.widget({
+                    "autosize": true,
+                    "symbol": asset.ticker,
+                    "interval": "D",
+                    "timezone": "Europe/Rome",
+                    "theme": "dark",
+                    "style": "1",
+                    "locale": "it",
+                    "toolbar_bg": "#f1f3f6",
+                    "enable_publishing": false,
+                    "hide_side_toolbar": false,
+                    "allow_symbol_change": true,
+                    "container_id": widgetId,
+                    "studies": [
+                        "RSI@tv-basicstudies",
+                        "MASimple@tv-basicstudies"
+                    ]
+                });
+            });
+        }
+    </script>
+</body>
+</html>
