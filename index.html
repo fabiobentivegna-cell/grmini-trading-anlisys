@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multi-Market Trading Dashboard Pro</title>
+    <title>Multi-Market Analyzer Pro (Sbloccato)</title>
     <style>
         :root {
             --bg-main: #0c0f12;
@@ -15,6 +15,22 @@
             --border-color: #2a2e39;
             --input-bg: #2a2e39;
             --input-text: #fff;
+            --select-text: #fff;
+            --tv-theme: "dark";
+        }
+
+        [data-theme="light"] {
+            --bg-main: #f0f2f5;
+            --bg-navbar: #ffffff;
+            --bg-card: #ffffff;
+            --text-color: #1e222d;
+            --text-muted: #707a8a;
+            --accent-color: #2962ff;
+            --border-color: #e0e3eb;
+            --input-bg: #ffffff;
+            --input-text: #1e222d;
+            --select-text: #1e222d;
+            --tv-theme: "light";
         }
 
         body {
@@ -27,6 +43,7 @@
             flex-direction: column;
             height: 100vh;
             overflow: hidden;
+            transition: background-color 0.3s, color 0.3s;
         }
 
         .navbar {
@@ -34,6 +51,7 @@
             border-bottom: 1px solid var(--border-color);
             padding: 10px 20px;
             display: flex;
+            flex-wrap: wrap;
             align-items: center;
             justify-content: space-between;
             gap: 15px;
@@ -51,6 +69,7 @@
             display: flex;
             align-items: center;
             gap: 12px;
+            flex-wrap: wrap;
         }
 
         label {
@@ -61,25 +80,30 @@
 
         select, input, button {
             background-color: var(--input-bg);
-            color: var(--input-text);
+            color: var(--select-text);
             border: 1px solid var(--border-color);
             padding: 6px 12px;
             border-radius: 4px;
             font-size: 0.9rem;
             outline: none;
+            cursor: pointer;
+        }
+
+        input {
+            color: var(--input-text);
+            cursor: text;
         }
 
         .btn-accent {
             background-color: var(--accent-color);
             color: #fff;
             border: none;
-            cursor: pointer;
             font-weight: bold;
         }
 
         .main-content {
             flex-grow: 1;
-            padding: 10px;
+            padding: 12px;
             overflow: hidden;
             box-sizing: border-box;
             display: flex;
@@ -88,117 +112,302 @@
 
         .charts-grid {
             display: grid;
-            gap: 10px;
+            gap: 12px;
             width: 100%;
             height: 100%;
+            flex-grow: 1;
         }
 
         .grid-1 { grid-template-columns: 1fr; grid-template-rows: 1fr; }
         .grid-2 { grid-template-columns: repeat(2, 1fr); grid-template-rows: 1fr; }
         .grid-3 { grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr; }
         .grid-4 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); }
+        .grid-5 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
+        .grid-6 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
 
         .chart-card {
             background-color: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: 6px;
-            position: relative;
+            padding: 6px;
+            display: flex;
+            flex-direction: column;
             box-sizing: border-box;
             height: 100%;
-            width: 100%;
         }
 
-        .tradingview-widget-container {
-            height: 100%;
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            padding: 0 4px;
+        }
+
+        .chart-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .iframe-container {
+            flex-grow: 1;
             width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 4px;
+            background-color: #131722;
+        }
+
+        .template-section {
+            border-left: 1px solid var(--border-color);
+            padding-left: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
     </style>
 </head>
 <body>
 
     <div class="navbar">
-        <div class="brand">📊 Multi-Market Engine Pro</div>
+        <div class="brand">📈 Multi-Market Analyzer Pro</div>
         
         <div class="controls-group">
             <div>
                 <label for="market-select">Mercato:</label>
-                <select id="market-select" onchange="loadMarket(this.value)">
-                    <option value="indices">📉 Indici Generali</option>
+                <select id="market-select" onchange="loadPredefinedMarket(this.value)">
+                    <option value="indices">📉 Indici Mondiali</option>
                     <option value="crypto">🪙 Crypto</option>
                     <option value="usa">🇺🇸 Azionario USA</option>
+                    <option value="italia">🇮🇹 Azionario Italia</option>
                     <option value="forex">💱 Forex</option>
+                    <option value="commodities">🛢️ Commodities</option>
                 </select>
             </div>
 
             <div>
-                <label for="chart-count">Visualizzazione:</label>
+                <label for="chart-count">Grafici (1-6):</label>
                 <select id="chart-count" onchange="updateChartCount(parseInt(this.value))">
                     <option value="1">1 Grafico</option>
                     <option value="2">2 Grafici</option>
-                    <option value="3">3 Grafici</option>
-                    <option value="4" selected>4 Grafici</option>
+                    <option value="3" selected>3 Grafici</option>
+                    <option value="4">4 Grafici</option>
+                    <option value="5">5 Grafici</option>
+                    <option value="6">6 Grafici</option>
                 </select>
+            </div>
+
+            <button onclick="toggleTheme()">🌓 Cambia Tema</button>
+        </div>
+
+        <div class="controls-group template-section">
+            <div>
+                <input type="text" id="template-name" placeholder="Nome template...">
+                <button class="btn-accent" onclick="saveCurrentTemplate()">Salva Custom</button>
+            </div>
+            <div>
+                <select id="template-select" onchange="loadSavedTemplate(this.value)">
+                    <option value="" disabled selected>I tuoi Template...</option>
+                </select>
+                <button onclick="deleteSelectedTemplate()" style="color: #ff4d4f;">Elimina</button>
             </div>
         </div>
     </div>
 
     <div class="main-content">
-        <div class="charts-grid grid-4" id="charts-container"></div>
+        <div class="charts-grid grid-3" id="charts-container"></div>
     </div>
 
     <script type="text/javascript">
-        const markets = {
-            indices: ["INDEX:FTSEMIB", "NASDAQ:IXIC", "SP:SPX", "XETR:DAX"],
-            crypto: ["BINANCE:BTCUSDT", "BINANCE:ETHUSDT", "BINANCE:SOLUSDT", "BINANCE:XRPUSDT"],
-            usa: ["NASDAQ:AAPL", "NASDAQ:TSLA", "NASDAQ:NVDA", "NASDAQ:MSFT"],
-            forex: ["FX:EURUSD", "FX:GBPUSD", "FX:USDJPY", "FX:AUDUSD"]
+        // Lista dei simboli puliti e standardizzati
+        const marketProducts = {
+            "indices": [
+                { name: "FTSE MIB", ticker: "INDEX:FTSEMIB" },
+                { name: "Nasdaq 100", ticker: "NASDAQ:IXIC" },
+                { name: "S&P 500", ticker: "SP:SPX" },
+                { name: "DAX 40", ticker: "XETR:DAX" },
+                { name: "Dow Jones", ticker: "DJ:DJI" },
+                { name: "Nikkei 225", ticker: "INDEX:NKY" }
+            ],
+            "crypto": [
+                { name: "Bitcoin", ticker: "BINANCE:BTCUSDT" },
+                { name: "Ethereum", ticker: "BINANCE:ETHUSDT" },
+                { name: "Solana", ticker: "BINANCE:SOLUSDT" },
+                { name: "Ripple", ticker: "BINANCE:XRPUSDT" },
+                { name: "Cardano", ticker: "BINANCE:ADAUSDT" },
+                { name: "BNB", ticker: "BINANCE:BNBUSDT" }
+            ],
+            "usa": [
+                { name: "Apple", ticker: "NASDAQ:AAPL" },
+                { name: "Tesla", ticker: "NASDAQ:TSLA" },
+                { name: "NVIDIA", ticker: "NASDAQ:NVDA" },
+                { name: "Microsoft", ticker: "NASDAQ:MSFT" },
+                { name: "Amazon", ticker: "NASDAQ:AMZN" },
+                { name: "Meta", ticker: "NASDAQ:META" }
+            ],
+            "italia": [
+                { name: "Eni", ticker: "MIL:ENI" },
+                { name: "UniCredit", ticker: "MIL:UCG" },
+                { name: "Intesa Sanpaolo", ticker: "MIL:ISP" },
+                { name: "Enel", ticker: "MIL:ENEL" },
+                { name: "Ferrari", ticker: "MIL:RACE" },
+                { name: "Stellantis", ticker: "MIL:STLAM" }
+            ],
+            "forex": [
+                { name: "EUR / USD", ticker: "FX:EURUSD" },
+                { name: "GBP / USD", ticker: "FX:GBPUSD" },
+                { name: "USD / JPY", ticker: "FX:USDJPY" },
+                { name: "AUD / USD", ticker: "FX:AUDUSD" },
+                { name: "EUR / GBP", ticker: "FX:EURGBP" },
+                { name: "USD / CAD", ticker: "FX:USDCAD" }
+            ],
+            "commodities": [
+                { name: "Oro", ticker: "TVC:GOLD" },
+                { name: "Petrolio", ticker: "TVC:USOIL" },
+                { name: "Gas Naturale", ticker: "TVC:NG1!" },
+                { name: "Argento", ticker: "TVC:SILVER" },
+                { name: "Rame", ticker: "COMEX:HG1!" },
+                { name: "Platino", ticker: "NYMEX:PL1!" }
+            ]
         };
 
-        let currentMarket = "indices";
-        let currentCount = 4;
+        let currentTheme = "dark";
+        let currentChartCount = 3;
+        let activeProducts = [...marketProducts["indices"]]; 
 
-        function updateChartCount(count) {
-            currentCount = count;
+        document.addEventListener("DOMContentLoaded", function() {
+            if (localStorage.getItem("dashboard-theme")) {
+                currentTheme = localStorage.getItem("dashboard-theme");
+                document.documentElement.setAttribute("data-theme", currentTheme);
+            }
+            updateLocalStorageDropdown();
+            renderCharts();
+        });
+
+        function toggleTheme() {
+            currentTheme = (currentTheme === "dark") ? "light" : "dark";
+            document.documentElement.setAttribute("data-theme", currentTheme);
+            localStorage.setItem("dashboard-theme", currentTheme);
             renderCharts();
         }
 
-        function loadMarket(marketKey) {
-            currentMarket = marketKey;
+        function updateChartCount(count) {
+            currentChartCount = count;
+            renderCharts();
+        }
+
+        function loadPredefinedMarket(marketKey) {
+            if(!marketKey) return;
+            activeProducts = [...marketProducts[marketKey]];
+            renderCharts();
+        }
+
+        function changeSlotTicker(slotIndex, newTicker) {
+            const clean = newTicker.trim().toUpperCase();
+            activeProducts[slotIndex] = { name: clean, ticker: clean };
             renderCharts();
         }
 
         function renderCharts() {
             const container = document.getElementById("charts-container");
             container.innerHTML = "";
-            container.className = `charts-grid grid-${currentCount}`;
+            container.className = `charts-grid grid-${currentChartCount}`;
 
-            const selectedSymbols = markets[currentMarket];
+            const themeMode = currentTheme === "dark" ? "dark" : "light";
 
-            for (let i = 0; i < currentCount; i++) {
-                const symbol = selectedSymbols[i] || selectedSymbols[0];
+            for (let i = 0; i < currentChartCount; i++) {
+                const product = activeProducts[i] || { name: "FTSE MIB", ticker: "INDEX:FTSEMIB" };
                 
                 const card = document.createElement("div");
                 card.className = "chart-card";
 
-                const widgetContainer = document.createElement("div");
-                widgetContainer.className = "tradingview-widget-container";
-                
+                const header = document.createElement("div");
+                header.className = "chart-header";
+
+                const title = document.createElement("span");
+                title.className = "chart-title";
+                title.innerText = `${product.name} (${product.ticker})`;
+
+                const input = document.createElement("input");
+                input.type = "text";
+                input.value = product.ticker;
+                input.placeholder = "Cambia Ticker...";
+                input.style.width = "120px";
+                input.style.fontSize = "0.75rem";
+                input.style.padding = "3px 6px";
+                input.onchange = (e) => changeSlotTicker(i, e.target.value);
+
+                header.appendChild(title);
+                header.appendChild(input);
+
+                // STRUTTURA AD AVANZAMENTO DIRETTO: Bypass totale dei limiti e sblocco indicatori infinito
                 const iframe = document.createElement("iframe");
-                iframe.style.width = "100%";
-                iframe.style.height = "100%";
-                iframe.style.border = "none";
-                
-                // Utilizzo dell'embed di snapshot avanzato che bypassa i blocchi CORS e i cookie dell'account Free
-                iframe.src = `https://s.tradingview.com/widgetembed/?frameElementId=tradingview_chart&symbol=${encodeURIComponent(symbol)}&interval=D&symboledit=1&saveimage=1&toolbarbg=131722&studies=%5B%5D&theme=dark&style=1&timezone=Europe%2FRome&studies_overrides=%7B%7D&overrides=%7B%7D&enabled_features=%5B%5D&disabled_features=%5B%5D&locale=it&utm_source=localhost&utm_medium=widget&utm_campaign=chart&utm_term=${encodeURIComponent(symbol)}`;
-                
-                widgetContainer.appendChild(iframe);
-                card.appendChild(widgetContainer);
+                iframe.className = "iframe-container";
+                iframe.src = `https://s.tradingview.com/widgetembed/?symbol=${encodeURIComponent(product.ticker)}&theme=${themeMode}&style=1&timezone=Europe%2FRome&studies=%5B%5D&frameElementId=tv_widget_${i}&locale=it&whotext=1&buttons=1`;
+                iframe.allowFullscreen = true;
+
+                card.appendChild(header);
+                card.appendChild(iframe);
                 container.appendChild(card);
             }
         }
 
-        // Avvio iniziale automatico
-        document.addEventListener("DOMContentLoaded", renderCharts);
+        /* --- LOGICA DI SALVATAGGIO DEI TEMPLATE --- */
+        function saveCurrentTemplate() {
+            const nameInput = document.getElementById("template-name");
+            const templateName = nameInput.value.trim();
+            if (!templateName) return;
+
+            const templateData = {
+                chartCount: currentChartCount,
+                products: activeProducts.slice(0, currentChartCount)
+            };
+
+            let savedTemplates = JSON.parse(localStorage.getItem("dashboard-custom-templates")) || {};
+            savedTemplates[templateName] = templateData;
+            localStorage.setItem("dashboard-custom-templates", JSON.stringify(savedTemplates));
+            
+            nameInput.value = "";
+            updateLocalStorageDropdown();
+            document.getElementById("template-select").value = templateName;
+            alert(`Template "${templateName}" salvato!`);
+        }
+
+        function loadSavedTemplate(templateName) {
+            if (!templateName) return;
+            const savedTemplates = JSON.parse(localStorage.getItem("dashboard-custom-templates")) || {};
+            const template = savedTemplates[templateName];
+            if (template) {
+                currentChartCount = template.chartCount;
+                activeProducts = [...template.products];
+                document.getElementById("chart-count").value = currentChartCount;
+                renderCharts();
+            }
+        }
+
+        function deleteSelectedTemplate() {
+            const select = document.getElementById("template-select");
+            const name = select.value;
+            if (!name) return;
+            if (confirm(`Eliminare "${name}"?`)) {
+                let savedTemplates = JSON.parse(localStorage.getItem("dashboard-custom-templates")) || {};
+                delete savedTemplates[name];
+                localStorage.setItem("dashboard-custom-templates", JSON.stringify(savedTemplates));
+                updateLocalStorageDropdown();
+                renderCharts();
+            }
+        }
+
+        function updateLocalStorageDropdown() {
+            const select = document.getElementById("template-select");
+            select.innerHTML = '<option value="" disabled selected>I tuoi Template...</option>';
+            const savedTemplates = JSON.parse(localStorage.getItem("dashboard-custom-templates")) || {};
+            Object.keys(savedTemplates).forEach(name => {
+                const option = document.createElement("option");
+                option.value = name; option.innerText = name;
+                select.appendChild(option);
+            });
+        }
     </script>
 </body>
 </html>
