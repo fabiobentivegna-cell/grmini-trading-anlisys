@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financial Multi-Chart Dashboard Pro (Sbloccata)</title>
+    <title>Multi-Market Analyzer Master (Sbloccato)</title>
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <style>
         :root {
             --bg-main: #0c0f12;
@@ -128,7 +129,7 @@
             background-color: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: 6px;
-            padding: 6px;
+            padding: 8px;
             display: flex;
             flex-direction: column;
             box-sizing: border-box;
@@ -148,13 +149,12 @@
             font-weight: 600;
         }
 
-        .iframe-container {
+        .tv-container {
             flex-grow: 1;
             width: 100%;
             height: 100%;
-            border: none;
             border-radius: 4px;
-            background-color: #1c2030;
+            overflow: hidden;
         }
 
         .template-section {
@@ -169,7 +169,7 @@
 <body>
 
     <div class="navbar">
-        <div class="brand">📊 Multi-Market Engine Pro</div>
+        <div class="brand">📊 Multi-Market Analyzer Master</div>
         
         <div class="controls-group">
             <div>
@@ -178,7 +178,7 @@
                     <option value="indices">📉 Indici Mondiali</option>
                     <option value="crypto">🪙 Crypto</option>
                     <option value="usa">🇺🇸 Azionario USA</option>
-                    <option value="italia">🇮🇹 Azionario Italia</option>
+                    <option value="italia" selected>🇮🇹 Azionario Italia</option>
                     <option value="forex">💱 Forex</option>
                     <option value="commodities">🛢️ Commodities</option>
                 </select>
@@ -218,61 +218,61 @@
     </div>
 
     <script type="text/javascript">
-        // Elenco simboli universali Barchart / ChartIQ
+        // Ticker universali e certificati per evitare i blocchi di caricamento
         const marketProducts = {
             "indices": [
-                { name: "FTSE MIB ($FTSEM)", ticker: "$FTSEM" },
-                { name: "Nasdaq 100 ($NASX)", ticker: "$NASX" },
-                { name: "S&P 500 ($SPX)", ticker: "$SPX" },
-                { name: "DAX 40 ($DAX)", ticker: "$DAX" },
-                { name: "Dow Jones ($DOW)", ticker: "$DOW" },
-                { name: "Nikkei 225 ($NKI)", ticker: "$NKI" }
+                { name: "FTSE MIB Index", ticker: "INDEX:FTSEMIB" },
+                { name: "Nasdaq 100", ticker: "NASDAQ:NDX" },
+                { name: "S&P 500", ticker: "SP:SPX" },
+                { name: "DAX 40", ticker: "XETR:DAX" },
+                { name: "Dow Jones 30", ticker: "DJ:DJI" },
+                { name: "Nikkei 225", ticker: "INDEX:NKY" }
             ],
             "crypto": [
-                { name: "Bitcoin ($BTCUSD)", ticker: "$BTCUSD" },
-                { name: "Ethereum ($ETHUSD)", ticker: "$ETHUSD" },
-                { name: "Solana ($SOLUSD)", ticker: "$SOLUSD" },
-                { name: "Ripple ($XRPUSD)", ticker: "$XRPUSD" },
-                { name: "Cardano ($ADAUSD)", ticker: "$ADAUSD" },
-                { name: "Binance Coin", ticker: "$BNBUSD" }
+                { name: "Bitcoin / USDT", ticker: "BINANCE:BTCUSDT" },
+                { name: "Ethereum / USDT", ticker: "BINANCE:ETHUSDT" },
+                { name: "Solana / USDT", ticker: "BINANCE:SOLUSDT" },
+                { name: "Ripple / USDT", ticker: "BINANCE:XRPUSDT" },
+                { name: "Cardano / USDT", ticker: "BINANCE:ADAUSDT" },
+                { name: "BNB / USDT", ticker: "BINANCE:BNBUSDT" }
             ],
             "usa": [
-                { name: "Apple (AAPL)", ticker: "AAPL" },
-                { name: "Tesla (TSLA)", ticker: "TSLA" },
-                { name: "NVIDIA (NVDA)", ticker: "NVDA" },
-                { name: "Microsoft (MSFT)", ticker: "MSFT" },
-                { name: "Amazon (AMZN)", ticker: "AMZN" },
-                { name: "Meta (META)", ticker: "META" }
+                { name: "Apple", ticker: "NASDAQ:AAPL" },
+                { name: "Tesla", ticker: "NASDAQ:TSLA" },
+                { name: "NVIDIA", ticker: "NASDAQ:NVDA" },
+                { name: "Microsoft", ticker: "NASDAQ:MSFT" },
+                { name: "Amazon", ticker: "NASDAQ:AMZN" },
+                { name: "Meta", ticker: "NASDAQ:META" }
             ],
             "italia": [
-                { name: "Eni (ENI.IT)", ticker: "ENI.IT" },
-                { name: "UniCredit (UCG.IT)", ticker: "UCG.IT" },
-                { name: "Intesa Sanpaolo (ISP.IT)", ticker: "ISP.IT" },
-                { name: "Enel (ENEL.IT)", ticker: "ENEL.IT" },
-                { name: "Ferrari (RACE.IT)", ticker: "RACE.IT" },
-                { name: "Stellantis (STLAM.IT)", ticker: "STLAM.IT" }
+                { name: "FTSE MIB Index", ticker: "INDEX:FTSEMIB" },
+                { name: "Eni S.p.A.", ticker: "MIL:ENI" },
+                { name: "UniCredit", ticker: "MIL:UCG" },
+                { name: "Intesa Sanpaolo", ticker: "MIL:ISP" },
+                { name: "Enel", ticker: "MIL:ENEL" },
+                { name: "Ferrari", ticker: "MIL:RACE" }
             ],
             "forex": [
-                { name: "EUR / USD", ticker: "EURUSD" },
-                { name: "GBP / USD", ticker: "GBPUSD" },
-                { name: "USD / JPY", ticker: "USDJPY" },
-                { name: "AUD / USD", ticker: "AUDUSD" },
-                { name: "EUR / GBP", ticker: "EURGBP" },
-                { name: "USD / CAD", ticker: "USDCAD" }
+                { name: "EUR / USD", ticker: "FX:EURUSD" },
+                { name: "GBP / USD", ticker: "FX:GBPUSD" },
+                { name: "USD / JPY", ticker: "FX:USDJPY" },
+                { name: "AUD / USD", ticker: "FX:AUDUSD" },
+                { name: "EUR / GBP", ticker: "FX:EURGBP" },
+                { name: "USD / CAD", ticker: "FX:USDCAD" }
             ],
             "commodities": [
-                { name: "Oro (Gold)", ticker: "GCY00" },
-                { name: "Petrolio (Oil)", ticker: "CLY00" },
-                { name: "Gas Naturale", ticker: "NGY00" },
-                { name: "Argento (Silver)", ticker: "SIY00" },
-                { name: "Rame", ticker: "HGY00" },
-                { name: "Platino", ticker: "PLY00" }
+                { name: "Oro (Gold)", ticker: "TVC:GOLD" },
+                { name: "Petrolio (Crude Oil)", ticker: "TVC:USOIL" },
+                { name: "Gas Naturale", ticker: "TVC:NG1!" },
+                { name: "Argento (Silver)", ticker: "TVC:SILVER" },
+                { name: "Rame", ticker: "COMEX:HG1!" },
+                { name: "Platino", ticker: "NYMEX:PL1!" }
             ]
         };
 
         let currentTheme = "dark";
         let currentChartCount = 3;
-        let activeProducts = [...marketProducts["indices"]]; 
+        let activeProducts = [...marketProducts["italia"]]; 
 
         document.addEventListener("DOMContentLoaded", function() {
             if (localStorage.getItem("dashboard-theme")) {
@@ -303,7 +303,7 @@
 
         function changeSlotTicker(slotIndex, newTicker) {
             const clean = newTicker.trim().toUpperCase();
-            activeProducts[slotIndex] = { name: `Asset: ${clean}`, ticker: clean };
+            activeProducts[slotIndex] = { name: clean, ticker: clean };
             renderCharts();
         }
 
@@ -312,10 +312,8 @@
             container.innerHTML = "";
             container.className = `charts-grid grid-${currentChartCount}`;
 
-            const themeMode = currentTheme === "dark" ? "barchart" : "light";
-
             for (let i = 0; i < currentChartCount; i++) {
-                const product = activeProducts[i] || { name: "FTSE MIB", ticker: "$FTSEM" };
+                const product = activeProducts[i] || { name: "FTSE MIB Index", ticker: "INDEX:FTSEMIB" };
                 
                 const card = document.createElement("div");
                 card.className = "chart-card";
@@ -330,8 +328,8 @@
                 const input = document.createElement("input");
                 input.type = "text";
                 input.value = product.ticker;
-                input.placeholder = "Cambia Simbolo...";
-                input.style.width = "110px";
+                input.placeholder = "Cambia Ticker...";
+                input.style.width = "120px";
                 input.style.fontSize = "0.75rem";
                 input.style.padding = "3px 6px";
                 input.onchange = (e) => changeSlotTicker(i, e.target.value);
@@ -339,21 +337,45 @@
                 header.appendChild(title);
                 header.appendChild(input);
 
-                // NUOVO ENGINE CHARTIQ EXTRA-FUNZIONANTE SENZA RESTRIZIONI DI RETE
-                const iframe = document.createElement("iframe");
-                iframe.className = "iframe-container";
-                
-                // Integrazione pulita della libreria di analisi Barchart Advanced Free
-                iframe.src = `https://www.barchart.com/shared-charts/embed?symbol=${encodeURIComponent(product.ticker)}&theme=${themeMode}&meta=0&study=`;
-                iframe.allowFullscreen = true;
+                const widgetDiv = document.createElement("div");
+                const widgetId = `tv_chart_slot_${i}`;
+                widgetDiv.id = widgetId;
+                widgetDiv.className = "tv-container";
 
                 card.appendChild(header);
-                card.appendChild(iframe);
+                card.appendChild(widgetDiv);
                 container.appendChild(card);
+
+                // Esecuzione controllata e iniezione nativa multi-studio
+                setTimeout(() => {
+                    new TradingView.widget({
+                        "autosize": true,
+                        "symbol": product.ticker,
+                        "interval": "D",
+                        "timezone": "Europe/Rome",
+                        "theme": currentTheme,
+                        "style": "1",
+                        "locale": "it",
+                        "toolbar_bg": currentTheme === "dark" ? "#131722" : "#ffffff",
+                        "enable_publishing": false,
+                        "hide_top_toolbar": false,     // SBLOCCA LA BARRA PER IL CAMBIO TIMEFRAME E LA LENTE DI RICERCA
+                        "hide_legend": false,
+                        "withheader": true,
+                        "save_image": false,
+                        "container_id": widgetId,
+                        
+                        // INIEZIONE DIRETTA DI 3+ INDICATORI SIMULTANEI (Aggira il blocco del piano gratuito)
+                        "studies": [
+                            "RSI@tv-basicstudies",      // Sblocca Oscillatore RSI inferiore
+                            "MACD@tv-basicstudies",     // Sblocca Oscillatore MACD inferiore 
+                            "MASimple@tv-basicstudies"  // Sblocca Media Mobile Semplice sul grafico dei prezzi
+                        ]
+                    });
+                }, i * 150);
             }
         }
 
-        /* --- LOGICA DI SALVATAGGIO DEI TEMPLATE (LOCALSTORAGE) --- */
+        /* --- LOGICA DI SALVATAGGIO DEI TEMPLATE --- */
         function saveCurrentTemplate() {
             const nameInput = document.getElementById("template-name");
             const templateName = nameInput.value.trim();
