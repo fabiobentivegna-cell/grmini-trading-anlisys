@@ -3,17 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financial Dashboard</title>
-    <!-- Script ufficiale di TradingView per caricare i grafici avanzati senza API key -->
+    <title>Financial Dashboard Avanzata</title>
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <style>
+        /* Variabili CSS per la gestione dinamica del Tema (Chiaro/Scuro) */
         :root {
             --bg-main: #0c0f12;
-            --bg-sidebar: #131722;
+            --bg-navbar: #131722;
             --bg-card: #1c2030;
             --text-color: #d1d4dc;
+            --text-muted: #848e9c;
             --accent-color: #2962ff;
             --border-color: #2a2e39;
+            --input-bg: #2a2e39;
+            --input-text: #fff;
+        }
+
+        [data-theme="light"] {
+            --bg-main: #f0f2f5;
+            --bg-navbar: #ffffff;
+            --bg-card: #ffffff;
+            --text-color: #1e222d;
+            --text-muted: #707a8a;
+            --accent-color: #2962ff;
+            --border-color: #e0e3eb;
+            --input-bg: #f0f2f5;
+            --input-text: #1e222d;
         }
 
         body {
@@ -23,213 +38,431 @@
             background-color: var(--bg-main);
             color: var(--text-color);
             display: flex;
+            flex-direction: column;
             height: 100vh;
             overflow: hidden;
+            transition: background-color 0.3s, color 0.3s;
         }
 
-        /* Sidebar di navigazione */
-        .sidebar {
-            width: 260px;
-            background-color: var(--bg-sidebar);
-            border-right: 1px solid var(--border-color);
+        /* Barra di Controllo Superiore (Navbar) */
+        .navbar {
+            background-color: var(--bg-navbar);
+            border-bottom: 1px solid var(--border-color);
+            padding: 10px 20px;
             display: flex;
-            flex-direction: column;
-            padding: 20px 0;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            z-index: 10;
             box-sizing: border-box;
-            flex-shrink: 0;
         }
 
-        .sidebar h2 {
-            font-size: 1.1rem;
-            padding: 0 20px;
-            margin-bottom: 25px;
-            color: #fff;
-            letter-spacing: 1px;
-            text-transform: uppercase;
+        .brand {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--accent-color);
         }
 
-        .menu-btn {
-            background: none;
-            border: none;
-            color: var(--text-color);
-            padding: 15px 20px;
-            text-align: left;
-            font-size: 0.95rem;
+        .controls-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        select, input, button {
+            background-color: var(--input-bg);
+            color: var(--input-text);
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        select:focus, input:focus {
+            border-color: var(--accent-color);
+        }
+
+        button {
             cursor: pointer;
-            transition: all 0.2s ease;
-            border-left: 4px solid transparent;
+            font-weight: 500;
         }
 
-        .menu-btn:hover, .menu-btn.active {
-            background-color: var(--bg-card);
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .btn-accent {
+            background-color: var(--accent-color);
             color: #fff;
-            border-left-color: var(--accent-color);
+            border: none;
         }
 
-        /* Area principale */
+        .theme-toggle-btn {
+            font-size: 1.1rem;
+            padding: 4px 10px;
+        }
+
+        /* Area Principale dei Grafici */
         .main-content {
             flex-grow: 1;
-            padding: 25px;
+            padding: 15px;
             overflow-y: auto;
+            box-sizing: border-box;
             display: flex;
             flex-direction: column;
-            box-sizing: border-box;
         }
 
-        .header-area h1 {
-            margin: 0 0 20px 0;
-            font-size: 1.6rem;
-            color: #fff;
-        }
-
-        /* Griglia flessibile per i grafici */
+        /* Griglia Dinamica per i Grafici */
         .charts-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-            gap: 20px;
+            gap: 15px;
             width: 100%;
+            height: 100%;
+            flex-grow: 1;
         }
 
-        .chart-container {
+        /* Classi CSS per gestire il numero di grafici (da 1 a 6) */
+        .grid-1 { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+        .grid-2 { grid-template-columns: repeat(2, 1fr); grid-template-rows: 1fr; }
+        .grid-3 { grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr; }
+        .grid-4 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); }
+        .grid-5 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); } 
+        .grid-6 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
+
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr !important;
+                grid-template-rows: auto !important;
+            }
+        }
+
+        .chart-card {
             background-color: var(--bg-card);
             border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 15px;
+            border-radius: 6px;
+            padding: 10px;
             display: flex;
             flex-direction: column;
-            height: 480px; /* Altezza ottimale per contenere grafico e oscillatori */
             box-sizing: border-box;
+            min-height: 300px;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
         }
 
         .chart-title {
-            font-size: 1.05rem;
+            font-size: 0.95rem;
             font-weight: 600;
-            margin-bottom: 12px;
-            color: #fff;
         }
 
-        .tv-widget {
+        .tv-widget-container {
             flex-grow: 1;
             width: 100%;
             height: 100%;
             border-radius: 4px;
             overflow: hidden;
         }
+
+        /* Sezione Gestione Template */
+        .template-section {
+            border-left: 1px solid var(--border-color);
+            padding-left: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
     </style>
 </head>
 <body>
 
-    <!-- Sidebar con i mercati richiesti -->
-    <div class="sidebar">
-        <h2>Dashboard Mercati</h2>
-        <button class="menu-btn active" onclick="switchMarket('crypto', this)">🪙 Crypto</button>
-        <button class="menu-btn" onclick="switchMarket('usa', this)">🇺🇸 Azionario USA</button>
-        <button class="menu-btn" onclick="switchMarket('italia', this)">🇮🇹 Azionario Italia</button>
-        <button class="menu-btn" onclick="switchMarket('forex', this)">💱 Forex</button>
-        <button class="menu-btn" onclick="switchMarket('commodities', this)">🛢️ Commodities</button>
+    <div class="navbar">
+        <div class="brand">📈 Multi-Market Dash</div>
+        
+        <div class="controls-group">
+            <div>
+                <label for="market-select">Mercato:</label>
+                <select id="market-select" onchange="loadPredefinedMarket(this.value)">
+                    <option value="crypto">🪙 Crypto</option>
+                    <option value="usa">🇺🇸 Azionario USA</option>
+                    <option value="italia">🇮🇹 Azionario Italia</option>
+                    <option value="forex">💱 Forex</option>
+                    <option value="commodities">🛢️ Commodities</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="chart-count">Grafici (1-6):</label>
+                <select id="chart-count" onchange="updateChartCount(parseInt(this.value))">
+                    <option value="1">1 Grafico</option>
+                    <option value="2">2 Grafici</option>
+                    <option value="3" selected>3 Grafici</option>
+                    <option value="4">4 Grafici</option>
+                    <option value="5">5 Grafici</option>
+                    <option value="6">6 Grafici</option>
+                </select>
+            </div>
+
+            <button class="theme-toggle-btn" onclick="toggleTheme()" title="Cambia Tema">🌓</button>
+        </div>
+
+        <div class="controls-group template-section">
+            <div>
+                <input type="text" id="template-name" placeholder="Nome template...">
+                <button class="btn-accent" onclick="saveCurrentTemplate()">Salva Custom</button>
+            </div>
+            <div>
+                <select id="template-select" onchange="loadSavedTemplate(this.value)">
+                    <option value="" disabled selected>I tuoi Template...</option>
+                </select>
+                <button onclick="deleteSelectedTemplate()" style="color: #ff4d4f;">Elimina</button>
+            </div>
+        </div>
     </div>
 
-    <!-- Area principale dei contenuti -->
     <div class="main-content">
-        <div class="header-area">
-            <h1 id="market-title">Mercato Crypto</h1>
-        </div>
-        <div class="charts-grid" id="charts-grid">
-            <!-- I grafici vengono iniettati qui da JavaScript -->
-        </div>
+        <div class="charts-grid grid-3" id="charts-container">
+            </div>
     </div>
 
     <script type="text/javascript">
-        // Configurazione statica dei mercati direttamente integrata nel client
-        const marketsData = {
+        // Database dei prodotti finanziari predefiniti
+        const marketProducts = {
             "crypto": [
-                {"name": "Bitcoin (BTC/USDT)", "ticker": "BINANCE:BTCUSDT"},
-                {"name": "Ethereum (ETH/USDT)", "ticker": "BINANCE:ETHUSDT"},
-                {"name": "Solana (SOL/USDT)", "ticker": "BINANCE:SOLUSDT"}
+                { name: "Bitcoin", ticker: "BINANCE:BTCUSDT" },
+                { name: "Ethereum", ticker: "BINANCE:ETHUSDT" },
+                { name: "Solana", ticker: "BINANCE:SOLUSDT" },
+                { name: "Ripple", ticker: "BINANCE:XRPUSDT" },
+                { name: "Cardano", ticker: "BINANCE:ADAUSDT" },
+                { name: "BNB", ticker: "BINANCE:BNBUSDT" }
             ],
             "usa": [
-                {"name": "S&P 500 Index", "ticker": "SPIMS:SPX"},
-                {"name": "NASDAQ 100 Index", "ticker": "NASDAQ:NDX"},
-                {"name": "Apple Inc.", "ticker": "NASDAQ:AAPL"}
+                { name: "S&P 500", ticker: "SPIMS:SPX" },
+                { name: "NASDAQ 100", ticker: "NASDAQ:NDX" },
+                { name: "Apple", ticker: "NASDAQ:AAPL" },
+                { name: "Tesla", ticker: "NASDAQ:TSLA" },
+                { name: "NVIDIA", ticker: "NASDAQ:NVDA" },
+                { name: "Microsoft", ticker: "NASDAQ:MSFT" }
             ],
             "italia": [
-                {"name": "FTSE MIB Index", "ticker": "INDEX:FTSEMIB"},
-                {"name": "Eni S.p.A.", "ticker": "MIL:ENI"},
-                {"name": "UniCredit S.p.A.", "ticker": "MIL:UCG"}
+                { name: "FTSE MIB Index", ticker: "INDEX:FTSEMIB" },
+                { name: "Eni S.p.A.", ticker: "MIL:ENI" },
+                { name: "UniCredit", ticker: "MIL:UCG" },
+                { name: "Intesa Sanpaolo", ticker: "MIL:ISP" },
+                { name: "Enel", ticker: "MIL:ENEL" },
+                { name: "Ferrari", ticker: "MIL:RACE" }
             ],
             "forex": [
-                {"name": "Euro / Dollaro USA", "ticker": "FX:EURUSD"},
-                {"name": "Sterlina / Dollaro USA", "ticker": "FX:GBPUSD"},
-                {"name": "Dollaro USA / Yen Giapponese", "ticker": "FX:USDJPY"}
+                { name: "EUR / USD", ticker: "FX:EURUSD" },
+                { name: "GBP / USD", ticker: "FX:GBPUSD" },
+                { name: "USD / JPY", ticker: "FX:USDJPY" },
+                { name: "AUD / USD", ticker: "FX:AUDUSD" },
+                { name: "EUR / GBP", ticker: "FX:EURGBP" },
+                { name: "USD / CAD", ticker: "FX:USDCAD" }
             ],
             "commodities": [
-                {"name": "Oro (Gold)", "ticker": "TVC:GOLD"},
-                {"name": "Petrolio Greggio (Crude Oil)", "ticker": "TVC:USOIL"},
-                {"name": "Gas Naturale (Natural Gas)", "ticker": "TVC:NG1!"}
+                { name: "Oro (Gold)", ticker: "TVC:GOLD" },
+                { name: "Petrolio (Crude Oil)", ticker: "TVC:USOIL" },
+                { name: "Gas Naturale", ticker: "TVC:NG1!" },
+                { name: "Argento (Silver)", ticker: "TVC:SILVER" },
+                { name: "Rame (Copper)", ticker: "COMEX:HG1!" },
+                { name: "Platino", ticker: "NYMEX:PL1!" }
             ]
         };
 
-        // Caricamento iniziale (Default: Crypto)
+        // Stato globale dell'applicazione
+        let currentTheme = "dark";
+        let currentChartCount = 3;
+        let activeProducts = [...marketProducts["crypto"]]; 
+
+        // Inizializzazione al caricamento della pagina
         document.addEventListener("DOMContentLoaded", function() {
-            switchMarket('crypto', document.querySelector('.menu-btn.active'));
+            if (localStorage.getItem("dashboard-theme")) {
+                currentTheme = localStorage.getItem("dashboard-theme");
+                document.documentElement.setAttribute("data-theme", currentTheme);
+            }
+            
+            updateLocalStorageDropdown();
+            renderCharts();
         });
 
-        function switchMarket(marketKey, element) {
-            // Rimuove la classe attiva dai vecchi pulsanti e la assegna al nuovo cliccato
-            document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('active'));
-            element.classList.add('active');
+        // Funzione per cambiare il Tema (Chiaro / Scuro)
+        function toggleTheme() {
+            currentTheme = (currentTheme === "dark") ? "light" : "dark";
+            document.documentElement.setAttribute("data-theme", currentTheme);
+            localStorage.setItem("dashboard-theme", currentTheme);
+            renderCharts();
+        }
 
-            // Cambia dinamicamente il titolo superiore
-            const titles = {
-                crypto: "Mercato Crypto",
-                usa: "Indici & Azioni USA",
-                italia: "Borsa Italiana (FTSE MIB)",
-                forex: "Mercato Valutario (Forex)",
-                commodities: "Materie Prime & Energie"
-            };
-            document.getElementById('market-title').innerText = titles[marketKey];
+        // Modifica del numero di grafici visualizzati (1-6)
+        function updateChartCount(count) {
+            currentChartCount = count;
+            renderCharts();
+        }
 
-            // Svuota la griglia dai vecchi grafici per evitare sovrapposizioni
-            const grid = document.getElementById('charts-grid');
-            grid.innerHTML = '';
+        // Caricamento dei mercati dal menu a tendina predefinito
+        function loadPredefinedMarket(marketKey) {
+            activeProducts = [...marketProducts[marketKey]];
+            renderCharts();
+        }
 
-            // Genera la struttura e inizializza i widget TradingView per ogni asset
-            marketsData[marketKey].forEach((asset, index) => {
-                const container = document.createElement('div');
-                container.className = 'chart-container';
+        // Funzione di cambio ticker dinamico dentro lo slot del singolo grafico
+        function changeSlotTicker(slotIndex, newTicker) {
+            activeProducts[slotIndex] = { name: newTicker.split(':')[1] || newTicker, ticker: newTicker.toUpperCase() };
+            initTradingViewWidget(`tv_widget_${slotIndex}`, newTicker.toUpperCase());
+        }
 
-                const title = document.createElement('div');
-                title.className = 'chart-title';
-                title.innerText = asset.name;
+        // Rendering e calcolo della griglia dei grafici
+        function renderCharts() {
+            const container = document.getElementById("charts-container");
+            container.innerHTML = "";
+            container.className = `charts-grid grid-${currentChartCount}`;
 
-                const widgetDiv = document.createElement('div');
-                const widgetId = `tv_chart_${marketKey}_${index}`;
+            for (let i = 0; i < currentChartCount; i++) {
+                const product = activeProducts[i] || { name: "Seleziona Prodotto", ticker: "BINANCE:BTCUSDT" };
+                
+                const card = document.createElement("div");
+                card.className = "chart-card";
+
+                const header = document.createElement("div");
+                header.className = "chart-header";
+
+                const title = document.createElement("span");
+                title.className = "chart-title";
+                title.innerText = `${product.name}`;
+
+                const input = document.createElement("input");
+                input.type = "text";
+                input.value = product.ticker;
+                input.placeholder = "Es: BINANCE:ETHUSDT";
+                input.style.width = "140px";
+                input.style.fontSize = "0.8rem";
+                input.style.padding = "3px 6px";
+                input.onchange = (e) => changeSlotTicker(i, e.target.value);
+
+                header.appendChild(title);
+                header.appendChild(input);
+
+                const widgetDiv = document.createElement("div");
+                const widgetId = `tv_widget_${i}`;
                 widgetDiv.id = widgetId;
-                widgetDiv.className = 'tv-widget';
+                widgetDiv.className = "tv-widget-container";
 
-                container.appendChild(title);
-                container.appendChild(widgetDiv);
-                grid.appendChild(container);
+                card.appendChild(header);
+                card.appendChild(widgetDiv);
+                container.appendChild(card);
 
-                // Istanzia il grafico avanzato originale di TradingView
-                new TradingView.widget({
-                    "autosize": true,
-                    "symbol": asset.ticker,
-                    "interval": "D",
-                    "timezone": "Europe/Rome",
-                    "theme": "dark",
-                    "style": "1",
-                    "locale": "it",
-                    "toolbar_bg": "#f1f3f6",
-                    "enable_publishing": false,
-                    "hide_side_toolbar": false,
-                    "allow_symbol_change": true,
-                    "container_id": widgetId,
-                    "studies": [
-                        "RSI@tv-basicstudies",
-                        "MASimple@tv-basicstudies"
-                    ]
-                });
+                initTradingViewWidget(widgetId, product.ticker);
+            }
+        }
+
+        function initTradingViewWidget(divId, ticker) {
+            new TradingView.widget({
+                "autosize": true,
+                "symbol": ticker,
+                "interval": "D",
+                "timezone": "Europe/Rome",
+                "theme": currentTheme,
+                "style": "1",
+                "locale": "it",
+                "toolbar_bg": currentTheme === "dark" ? "#131722" : "#f1f3f6",
+                "enable_publishing": false,
+                "hide_side_toolbar": false,
+                "allow_symbol_change": true,
+                "container_id": divId,
+                "studies": [
+                    "RSI@tv-basicstudies",
+                    "MASimple@tv-basicstudies"
+                ]
+            });
+        }
+
+        /* --- LOGICA DI GESTIONE DEI TEMPLATE PERSONALI (LOCAL STORAGE) --- */
+
+        function saveCurrentTemplate() {
+            const nameInput = document.getElementById("template-name");
+            const templateName = nameInput.value.trim();
+
+            if (!templateName) {
+                alert("Per favore, inserisci un nome valido prima di salvare il tuo template.");
+                return;
+            }
+
+            const templateData = {
+                chartCount: currentChartCount,
+                products: activeProducts.slice(0, currentChartCount)
+            };
+
+            let savedTemplates = JSON.parse(localStorage.getItem("dashboard-custom-templates")) || {};
+            savedTemplates[templateName] = templateData;
+            localStorage.setItem("dashboard-custom-templates", JSON.stringify(savedTemplates));
+            
+            nameInput.value = "";
+            updateLocalStorageDropdown();
+            document.getElementById("template-select").value = templateName;
+            alert(`Template "${templateName}" salvato con successo!`);
+        }
+
+        function loadSavedTemplate(templateName) {
+            if (!templateName) return;
+
+            const savedTemplates = JSON.parse(localStorage.getItem("dashboard-custom-templates")) || {};
+            const template = savedTemplates[templateName];
+
+            if (template) {
+                currentChartCount = template.chartCount;
+                activeProducts = [...template.products];
+                
+                document.getElementById("chart-count").value = currentChartCount;
+                document.getElementById("market-select").value = ""; 
+                
+                renderCharts();
+            }
+        }
+
+        function deleteSelectedTemplate() {
+            const select = document.getElementById("template-select");
+            const selectedName = select.value;
+
+            if (!selectedName) {
+                alert("Seleziona prima un template dall'elenco.");
+                return;
+            }
+
+            if (confirm(`Vuoi eliminare definitivamente il template "${selectedName}"?`)) {
+                let savedTemplates = JSON.parse(localStorage.getItem("dashboard-custom-templates")) || {};
+                delete savedTemplates[selectedName];
+                localStorage.setItem("dashboard-custom-templates", JSON.stringify(savedTemplates));
+                
+                updateLocalStorageDropdown();
+                renderCharts();
+            }
+        }
+
+        function updateLocalStorageDropdown() {
+            const select = document.getElementById("template-select");
+            select.innerHTML = '<option value="" disabled selected>I tuoi Template...</option>';
+
+            const savedTemplates = JSON.parse(localStorage.getItem("dashboard-custom-templates")) || {};
+            
+            Object.keys(savedTemplates).forEach(name => {
+                const option = document.createElement("option");
+                option.value = name;
+                option.innerText = name;
+                select.appendChild(option);
             });
         }
     </script>
