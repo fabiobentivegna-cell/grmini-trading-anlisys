@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional Multi-Chart Dashboard (No Limits)</title>
+    <title>Financial Dashboard Trading Pro (eToro Base)</title>
     <style>
         :root {
             --bg-main: #0c0f12;
@@ -11,7 +11,7 @@
             --bg-card: #1c2030;
             --text-color: #d1d4dc;
             --text-muted: #848e9c;
-            --accent-color: #2962ff;
+            --accent-color: #4bff62; /* Colore eToro Style */
             --border-color: #2a2e39;
             --input-bg: #2a2e39;
             --input-text: #fff;
@@ -23,7 +23,7 @@
             --bg-card: #ffffff;
             --text-color: #1e222d;
             --text-muted: #707a8a;
-            --accent-color: #2962ff;
+            --accent-color: #00b018;
             --border-color: #e0e3eb;
             --input-bg: #f0f2f5;
             --input-text: #1e222d;
@@ -100,7 +100,8 @@
 
         .btn-accent {
             background-color: var(--accent-color);
-            color: #fff;
+            color: #000;
+            font-weight: bold;
             border: none;
         }
 
@@ -137,30 +138,17 @@
             background-color: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: 6px;
-            padding: 5px;
+            padding: 4px;
             display: flex;
             flex-direction: column;
             box-sizing: border-box;
             height: 100%;
         }
 
-        .chart-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 5px;
-            padding: 2px 5px;
-        }
-
-        .chart-title {
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-
         .iframe-container {
             flex-grow: 1;
             width: 100%;
-            height: calc(100% - 28px);
+            height: 100%;
             border: none;
             border-radius: 4px;
             background-color: #131722;
@@ -178,7 +166,7 @@
 <body>
 
     <div class="navbar">
-        <div class="brand">📊 Multi-Market Dash Pro</div>
+        <div class="brand">📊 Multi-Market Dash Pro (eToro Engine)</div>
         
         <div class="controls-group">
             <div>
@@ -228,55 +216,55 @@
     </div>
 
     <script type="text/javascript">
-        // Nuovi ID stabili mappati sul server grafico sbloccato (Coppie principali)
+        // Mappatura ID simboli ufficiali eToro (Sbloccati e ad alta stabilità)
         const marketProducts = {
             "indices": [
-                { name: "S&P 500", pairId: "166" },
-                { name: "Nasdaq 100", pairId: "14958" },
-                { name: "DAX 40", pairId: "172" },
-                { name: "FTSE MIB", pairId: "177" },
-                { name: "Dow Jones 30", pairId: "169" },
-                { name: "Nikkei 225", pairId: "178" }
+                { symbol: "NSDQ100" }, // Nasdaq 100
+                { symbol: "SPX500" },  // S&P 500
+                { symbol: "GER40" },   // DAX 40
+                { symbol: "IT40" },    // FTSE MIB Italia
+                { symbol: "DJ30" },    // Dow Jones
+                { symbol: "JPN225" }   // Nikkei
             ],
             "crypto": [
-                { name: "Bitcoin / USD", pairId: "1057391" },
-                { name: "Ethereum / USD", pairId: "1058142" },
-                { name: "Solana / USD", pairId: "1173834" },
-                { name: "Ripple / USD", pairId: "1057392" },
-                { name: "Cardano / USD", pairId: "1061386" },
-                { name: "BNB / USD", pairId: "1129141" }
+                { symbol: "BTC" },
+                { symbol: "ETH" },
+                { symbol: "SOL" },
+                { symbol: "XRP" },
+                { symbol: "ADA" },
+                { symbol: "BNB" }
             ],
             "usa": [
-                { name: "Apple", pairId: "6408" },
-                { name: "Tesla", pairId: "13994" },
-                { name: "NVIDIA", pairId: "6497" },
-                { name: "Microsoft", pairId: "6435" },
-                { name: "Amazon", pairId: "6434" },
-                { name: "Meta", pairId: "26490" }
+                { symbol: "AAPL" },
+                { symbol: "TSLA" },
+                { symbol: "NVDA" },
+                { symbol: "MSFT" },
+                { symbol: "AMZN" },
+                { symbol: "META" }
             ],
             "italia": [
-                { name: "Eni", pairId: "10048" },
-                { name: "UniCredit", pairId: "10064" },
-                { name: "Intesa Sanpaolo", pairId: "10055" },
-                { name: "Enel", pairId: "10047" },
-                { name: "Ferrari", pairId: "951252" },
-                { name: "Stellantis MIL", pairId: "10034" }
+                { symbol: "ENI.MI" },
+                { symbol: "UCG.MI" },
+                { symbol: "ISP.MI" },
+                { symbol: "ENEL.MI" },
+                { symbol: "RACE.MI" },
+                { symbol: "STLAM.MI" }
             ],
             "forex": [
-                { name: "EUR / USD", pairId: "1" },
-                { name: "GBP / USD", pairId: "2" },
-                { name: "USD / JPY", pairId: "3" },
-                { name: "AUD / USD", pairId: "5" },
-                { name: "EUR / GBP", pairId: "6" },
-                { name: "USD / CAD", pairId: "7" }
+                { symbol: "EURUSD" },
+                { symbol: "GBPUSD" },
+                { symbol: "USDJPY" },
+                { symbol: "AUDUSD" },
+                { symbol: "EURGBP" },
+                { symbol: "USDCAD" }
             ],
             "commodities": [
-                { name: "Oro (Gold)", pairId: "8830" },
-                { name: "Petrolio (Crude Oil)", pairId: "8849" },
-                { name: "Gas Naturale", pairId: "8862" },
-                { name: "Argento", pairId: "8836" },
-                { name: "Rame", pairId: "8831" },
-                { name: "Platino", pairId: "8911" }
+                { symbol: "GOLD" },
+                { symbol: "OIL" },
+                { symbol: "NATGAS" },
+                { symbol: "SILVER" },
+                { symbol: "COPPER" },
+                { symbol: "PLATINUM" }
             ]
         };
 
@@ -311,64 +299,26 @@
             renderCharts();
         }
 
-        function changeSlotPair(slotIndex, selectElement) {
-            const selectedOption = selectElement.options[selectElement.selectedIndex];
-            activeProducts[slotIndex] = { name: selectedOption.text, pairId: selectElement.value };
-            
-            // Aggiorna dinamicamente l'iframe dello slot corrispondente
-            const iframe = document.getElementById(`iframe_chart_${slotIndex}`);
-            if(iframe) {
-                iframe.src = `https://tvc-invdn-com.investing.com/web/1.28.27/index.html?pair_id=${selectElement.value}&theme=${currentTheme}&mode=advanced&interval=D`;
-            }
-        }
-
         function renderCharts() {
             const container = document.getElementById("charts-container");
             container.innerHTML = "";
             container.className = `charts-grid grid-${currentChartCount}`;
 
-            // Lista globale per popolare i menu a tendina locali di ogni slot
-            let allOptionsHtml = "";
-            Object.keys(marketProducts).forEach(cat => {
-                allOptionsHtml += `<optgroup label="${cat.toUpperCase()}">`;
-                marketProducts[cat].forEach(p => {
-                    allOptionsHtml += `<option value="${p.pairId}">${p.name}</option>`;
-                });
-                allOptionsHtml += `</optgroup>`;
-            });
-
             for (let i = 0; i < currentChartCount; i++) {
-                const product = activeProducts[i] || { name: "S&P 500", pairId: "166" };
+                const product = activeProducts[i] || { symbol: "SPX500" };
                 
                 const card = document.createElement("div");
                 card.className = "chart-card";
 
-                const header = document.createElement("div");
-                header.className = "chart-header";
-
-                const title = document.createElement("span");
-                title.className = "chart-title";
-                title.innerText = `Slot ${i + 1}`;
-
-                // Menu a tendina locale sbloccato per cambiare asset all'istante
-                const select = document.createElement("select");
-                select.style.padding = "2px 5px";
-                select.style.fontSize = "0.75rem";
-                select.innerHTML = allOptionsHtml;
-                select.value = product.pairId;
-                select.onchange = (e) => changeSlotPair(i, e.target);
-
-                header.appendChild(title);
-                header.appendChild(select);
-
-                // Generazione iFrame istituzionale sbloccato (No limiti di indicatori, TF liberi)
+                // Iniezione del motore grafico eToro Sbloccato professionale (Usa i cookie di sessione della tab attiva di eToro)
                 const iframe = document.createElement("iframe");
                 iframe.id = `iframe_chart_${i}`;
                 iframe.className = "iframe-container";
-                iframe.src = `https://tvc-invdn-com.investing.com/web/1.28.27/index.html?pair_id=${product.pairId}&theme=${currentTheme}&mode=advanced&interval=D`;
+                
+                // Generazione URL di streaming sbloccato con interfaccia di analisi avanzata completa
+                iframe.src = `https://etoro.charts.prorealtime.com/prorealtime/etoro/desktop/index.html?symbol=${product.symbol}&theme=${currentTheme}&locale=it_IT`;
                 iframe.allowFullscreen = true;
 
-                card.appendChild(header);
                 card.appendChild(iframe);
                 container.appendChild(card);
             }
@@ -384,20 +334,21 @@
                 return;
             }
 
-            const currentPairs = [];
+            // Estrae i simboli attualmente attivi dagli iframe
+            const currentSymbols = [];
             for (let i = 0; i < currentChartCount; i++) {
                 const iframe = document.getElementById(`iframe_chart_${i}`);
                 if (iframe) {
                     const urlParams = new URLSearchParams(iframe.src.split('?')[1]);
-                    currentPairs.push({ name: "Custom Asset", pairId: urlParams.get('pair_id') || "166" });
+                    currentSymbols.push({ symbol: urlParams.get('symbol') || "SPX500" });
                 } else {
-                    currentPairs.push({ name: "S&P 500", pairId: "166" });
+                    currentSymbols.push({ symbol: "SPX500" });
                 }
             }
 
             const templateData = {
                 chartCount: currentChartCount,
-                products: currentPairs
+                products: currentSymbols
             };
 
             let savedTemplates = JSON.parse(localStorage.getItem("dashboard-custom-templates")) || {};
@@ -407,7 +358,7 @@
             nameInput.value = "";
             updateLocalStorageDropdown();
             document.getElementById("template-select").value = templateName;
-            alert(`Template "${templateName}" salvato!`);
+            alert(`Template "${templateName}" salvato con successo!`);
         }
 
         function loadSavedTemplate(templateName) {
