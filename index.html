@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financial Dashboard Trading Pro Sbloccata</title>
+    <title>Financial Dashboard Advanced Sbloccata</title>
     <style>
         :root {
             --bg-main: #0c0f12;
@@ -111,7 +111,7 @@
 
         .main-content {
             flex-grow: 1;
-            padding: 12px;
+            padding: 10px;
             overflow: hidden;
             box-sizing: border-box;
             display: flex;
@@ -120,7 +120,7 @@
 
         .charts-grid {
             display: grid;
-            gap: 12px;
+            gap: 10px;
             width: 100%;
             height: 100%;
             flex-grow: 1;
@@ -137,33 +137,17 @@
             background-color: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: 6px;
-            padding: 6px;
+            padding: 5px;
             display: flex;
             flex-direction: column;
             box-sizing: border-box;
             height: 100%;
         }
 
-        .chart-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 6px;
-            padding: 0 4px;
-        }
-
-        .chart-title {
-            font-size: 0.85rem;
-            font-weight: 600;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
         .iframe-container {
             flex-grow: 1;
             width: 100%;
-            height: calc(100% - 28px);
+            height: 100%;
             border: none;
             border-radius: 4px;
             background-color: #131722;
@@ -187,7 +171,7 @@
             <div>
                 <label for="market-select">Mercato:</label>
                 <select id="market-select" onchange="loadPredefinedMarket(this.value)">
-                    <option value="indices">📉 Indici (CFD & Futures)</option>
+                    <option value="indices">📉 Indici</option>
                     <option value="crypto">🪙 Crypto</option>
                     <option value="usa">🇺🇸 Azionario USA</option>
                     <option value="italia">🇮🇹 Azionario Italia</option>
@@ -231,55 +215,55 @@
     </div>
 
     <script type="text/javascript">
-        // Mappatura ultra-compatibile che sfrutta i flussi integrali di TradingView
+        // Ticker ottimizzati ad altissima compatibilità nativa
         const marketProducts = {
             "indices": [
-                { name: "S&P 500 Index (CFD)", ticker: "SPY" },
-                { name: "Nasdaq 100 (CFD)", ticker: "QQQ" },
-                { name: "FTSE MIB (Italy 40 CFD)", ticker: "UKIT40" },
-                { name: "DAX 40 (Germany 40 CFD)", ticker: "DE40" },
-                { name: "Dow Jones 30 (CFD)", ticker: "DIA" },
-                { name: "Nikkei 225", ticker: "NI225" }
+                { ticker: "SPY" },
+                { ticker: "QQQ" },
+                { ticker: "DE40" },
+                { ticker: "UKIT40" },
+                { ticker: "DIA" },
+                { ticker: "NI225" }
             ],
             "crypto": [
-                { name: "Bitcoin / USDT", ticker: "BTCUSDT" },
-                { name: "Ethereum / USDT", ticker: "ETHUSDT" },
-                { name: "Solana / USDT", ticker: "SOLUSDT" },
-                { name: "Ripple / USDT", ticker: "XRPUSDT" },
-                { name: "Cardano / USDT", ticker: "ADAUSDT" },
-                { name: "BNB / USDT", ticker: "BNBUSDT" }
+                { ticker: "BINANCE:BTCUSDT" },
+                { ticker: "BINANCE:ETHUSDT" },
+                { ticker: "BINANCE:SOLUSDT" },
+                { ticker: "BINANCE:XRPUSDT" },
+                { ticker: "BINANCE:ADAUSDT" },
+                { ticker: "BINANCE:BNBUSDT" }
             ],
             "usa": [
-                { name: "Apple", ticker: "AAPL" },
-                { name: "Tesla", ticker: "TSLA" },
-                { name: "NVIDIA", ticker: "NVDA" },
-                { name: "Microsoft", ticker: "MSFT" },
-                { name: "Amazon", ticker: "AMZN" },
-                { name: "Meta", ticker: "META" }
+                { ticker: "AAPL" },
+                { ticker: "TSLA" },
+                { ticker: "NVDA" },
+                { ticker: "MSFT" },
+                { ticker: "AMZN" },
+                { ticker: "META" }
             ],
             "italia": [
-                { name: "Eni S.p.A.", ticker: "MIL:ENI" },
-                { name: "UniCredit", ticker: "MIL:UCG" },
-                { name: "Intesa Sanpaolo", ticker: "MIL:ISP" },
-                { name: "Enel", ticker: "MIL:ENEL" },
-                { name: "Ferrari", ticker: "MIL:RACE" },
-                { name: "Generali", ticker: "MIL:G" }
+                { ticker: "MIL:ENI" },
+                { ticker: "MIL:UCG" },
+                { ticker: "MIL:ISP" },
+                { ticker: "MIL:ENEL" },
+                { ticker: "MIL:RACE" },
+                { ticker: "MIL:G" }
             ],
             "forex": [
-                { name: "EUR / USD", ticker: "EURUSD" },
-                { name: "GBP / USD", ticker: "GBPUSD" },
-                { name: "USD / JPY", ticker: "USDJPY" },
-                { name: "AUD / USD", ticker: "AUDUSD" },
-                { name: "EUR / GBP", ticker: "EURGBP" },
-                { name: "USD / CAD", ticker: "USDCAD" }
+                { ticker: "FX:EURUSD" },
+                { ticker: "FX:GBPUSD" },
+                { ticker: "FX:USDJPY" },
+                { ticker: "FX:AUDUSD" },
+                { ticker: "FX:EURGBP" },
+                { ticker: "FX:USDCAD" }
             ],
             "commodities": [
-                { name: "Oro (Gold)", ticker: "GOLD" },
-                { name: "Petrolio (Crude Oil)", ticker: "USOIL" },
-                { name: "Gas Naturale", ticker: "NATGAS" },
-                { name: "Argento (Silver)", ticker: "SILVER" },
-                { name: "Rame", ticker: "COPPER" },
-                { name: "Platino", ticker: "PLATINUM" }
+                { ticker: "TVC:GOLD" },
+                { ticker: "TVC:USOIL" },
+                { ticker: "TVC:NG1!" },
+                { ticker: "TVC:SILVER" },
+                { ticker: "COMEX:HG1!" },
+                { ticker: "NYMEX:PL1!" }
             ]
         };
 
@@ -314,56 +298,26 @@
             renderCharts();
         }
 
-        function changeSlotTicker(slotIndex, newTicker) {
-            const cleanTicker = newTicker.trim().toUpperCase();
-            activeProducts[slotIndex] = { name: cleanTicker, ticker: cleanTicker };
-            
-            // Aggiorna istantaneamente l'iFrame specifico senza ricaricare tutta la pagina
-            const iframe = document.getElementById(`iframe_chart_${slotIndex}`);
-            if(iframe) {
-                iframe.src = `https://www.tradingview.com/widgetembed/?frameElementId=tv_chart&symbol=${cleanTicker}&interval=D&theme=${currentTheme}&style=1&timezone=Europe%2FRome&studies=%5B%5D`;
-            }
-        }
-
         function renderCharts() {
             const container = document.getElementById("charts-container");
             container.innerHTML = "";
             container.className = `charts-grid grid-${currentChartCount}`;
 
             for (let i = 0; i < currentChartCount; i++) {
-                const product = activeProducts[i] || { name: "S&P 500", ticker: "SPY" };
+                const product = activeProducts[i] || { ticker: "SPY" };
                 
                 const card = document.createElement("div");
                 card.className = "chart-card";
 
-                const header = document.createElement("div");
-                header.className = "chart-header";
-
-                const title = document.createElement("span");
-                title.className = "chart-title";
-                title.innerText = `${product.name}`;
-
-                const input = document.createElement("input");
-                input.type = "text";
-                input.value = product.ticker;
-                input.placeholder = "Cambia Ticker...";
-                input.style.width = "120px";
-                input.style.fontSize = "0.75rem";
-                input.style.padding = "2px 4px";
-                input.onchange = (e) => changeSlotTicker(i, e.target.value);
-
-                header.appendChild(title);
-                header.appendChild(input);
-
-                // Generazione dell'iFrame diretto ad alta efficienza (Bypassa i blocchi dei cookie)
+                // Generazione dell'iFrame ad alta compatibilità che sblocca la ricerca prodotto nativa
                 const iframe = document.createElement("iframe");
                 iframe.id = `iframe_chart_${i}`;
                 iframe.className = "iframe-container";
-                // L'URL punta al server di visualizzazione standard che non applica i blocchi sui timeframe e sugli oscillatori terzi
-                iframe.src = `https://www.tradingview.com/widgetembed/?frameElementId=tv_chart&symbol=${product.ticker}&interval=D&theme=${currentTheme}&style=1&timezone=Europe%2FRome&studies=%5B%5D`;
+                
+                // Questa URL sblocca la toolbar nativa di TradingView per la ricerca dei simboli direttamente dal grafico
+                iframe.src = `https://s.tradingview.com/widgetembed/?frameElementId=tv_chart&symbol=${product.ticker}&interval=D&theme=${currentTheme}&style=1&timezone=Europe%2FRome&withheader=true&allow_symbol_change=true&save_image=false&show_popup_button=true`;
                 iframe.allowFullscreen = true;
 
-                card.appendChild(header);
                 card.appendChild(iframe);
                 container.appendChild(card);
             }
@@ -379,9 +333,21 @@
                 return;
             }
 
+            // Recupera i ticker correnti direttamente dagli iframe attivi prima di salvare
+            const currentTickers = [];
+            for (let i = 0; i < currentChartCount; i++) {
+                const iframe = document.getElementById(`iframe_chart_${i}`);
+                if (iframe) {
+                    const urlParams = new URLSearchParams(iframe.src.split('?')[1]);
+                    currentTickers.push({ ticker: urlParams.get('symbol') || "SPY" });
+                } else {
+                    currentTickers.push({ ticker: "SPY" });
+                }
+            }
+
             const templateData = {
                 chartCount: currentChartCount,
-                products: activeProducts.slice(0, currentChartCount)
+                products: currentTickers
             };
 
             let savedTemplates = JSON.parse(localStorage.getItem("dashboard-custom-templates")) || {};
