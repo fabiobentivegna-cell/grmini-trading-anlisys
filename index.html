@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financial Dashboard Trading Pro (eToro Base)</title>
+    <title>Financial Dashboard Trading Pro Sbloccata</title>
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <style>
         :root {
             --bg-main: #0c0f12;
@@ -11,7 +12,7 @@
             --bg-card: #1c2030;
             --text-color: #d1d4dc;
             --text-muted: #848e9c;
-            --accent-color: #4bff62; /* Colore eToro Style */
+            --accent-color: #2962ff;
             --border-color: #2a2e39;
             --input-bg: #2a2e39;
             --input-text: #fff;
@@ -23,7 +24,7 @@
             --bg-card: #ffffff;
             --text-color: #1e222d;
             --text-muted: #707a8a;
-            --accent-color: #00b018;
+            --accent-color: #2962ff;
             --border-color: #e0e3eb;
             --input-bg: #f0f2f5;
             --input-text: #1e222d;
@@ -100,8 +101,7 @@
 
         .btn-accent {
             background-color: var(--accent-color);
-            color: #000;
-            font-weight: bold;
+            color: #fff;
             border: none;
         }
 
@@ -138,20 +138,17 @@
             background-color: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: 6px;
-            padding: 4px;
+            padding: 2px;
             display: flex;
             flex-direction: column;
             box-sizing: border-box;
             height: 100%;
         }
 
-        .iframe-container {
+        .tv-container {
             flex-grow: 1;
             width: 100%;
             height: 100%;
-            border: none;
-            border-radius: 4px;
-            background-color: #131722;
         }
 
         .template-section {
@@ -166,7 +163,7 @@
 <body>
 
     <div class="navbar">
-        <div class="brand">📊 Multi-Market Dash Pro (eToro Engine)</div>
+        <div class="brand">📊 Multi-Market Dash Pro</div>
         
         <div class="controls-group">
             <div>
@@ -193,7 +190,7 @@
                 </select>
             </div>
 
-            <button class="theme-toggle-btn" onclick="toggleTheme()" title="Cambia Tema">🌓</button>
+            <button class="theme-toggle-btn" onclick="toggleTheme()">🌓</button>
         </div>
 
         <div class="controls-group template-section">
@@ -211,60 +208,36 @@
     </div>
 
     <div class="main-content">
-        <div class="charts-grid grid-3" id="charts-container">
-            </div>
+        <div class="charts-grid grid-3" id="charts-container"></div>
     </div>
 
     <script type="text/javascript">
-        // Mappatura ID simboli ufficiali eToro (Sbloccati e ad alta stabilità)
+        // Ticker ad altissima compatibilità per mercati multichart
         const marketProducts = {
             "indices": [
-                { symbol: "NSDQ100" }, // Nasdaq 100
-                { symbol: "SPX500" },  // S&P 500
-                { symbol: "GER40" },   // DAX 40
-                { symbol: "IT40" },    // FTSE MIB Italia
-                { symbol: "DJ30" },    // Dow Jones
-                { symbol: "JPN225" }   // Nikkei
+                { ticker: "INDEX:FTSEMIB" },
+                { ticker: "NASDAQ:IXIC" },
+                { ticker: "SP:SPX" },
+                { ticker: "XETR:DAX" },
+                { ticker: "DJ:DJI" },
+                { ticker: "INDEX:NKY" }
             ],
             "crypto": [
-                { symbol: "BTC" },
-                { symbol: "ETH" },
-                { symbol: "SOL" },
-                { symbol: "XRP" },
-                { symbol: "ADA" },
-                { symbol: "BNB" }
+                { ticker: "BINANCE:BTCUSDT" },
+                { ticker: "BINANCE:ETHUSDT" },
+                { ticker: "BINANCE:SOLUSDT" }
             ],
             "usa": [
-                { symbol: "AAPL" },
-                { symbol: "TSLA" },
-                { symbol: "NVDA" },
-                { symbol: "MSFT" },
-                { symbol: "AMZN" },
-                { symbol: "META" }
+                { ticker: "AAPL" }, { ticker: "TSLA" }, { ticker: "NVDA" }
             ],
             "italia": [
-                { symbol: "ENI.MI" },
-                { symbol: "UCG.MI" },
-                { symbol: "ISP.MI" },
-                { symbol: "ENEL.MI" },
-                { symbol: "RACE.MI" },
-                { symbol: "STLAM.MI" }
+                { ticker: "MIL:ENI" }, { ticker: "MIL:UCG" }, { ticker: "MIL:ISP" }
             ],
             "forex": [
-                { symbol: "EURUSD" },
-                { symbol: "GBPUSD" },
-                { symbol: "USDJPY" },
-                { symbol: "AUDUSD" },
-                { symbol: "EURGBP" },
-                { symbol: "USDCAD" }
+                { ticker: "FX:EURUSD" }, { ticker: "FX:GBPUSD" }, { ticker: "FX:USDJPY" }
             ],
             "commodities": [
-                { symbol: "GOLD" },
-                { symbol: "OIL" },
-                { symbol: "NATGAS" },
-                { symbol: "SILVER" },
-                { symbol: "COPPER" },
-                { symbol: "PLATINUM" }
+                { ticker: "TVC:GOLD" }, { ticker: "TVC:USOIL" }, { ticker: "TVC:NG1!" }
             ]
         };
 
@@ -305,108 +278,86 @@
             container.className = `charts-grid grid-${currentChartCount}`;
 
             for (let i = 0; i < currentChartCount; i++) {
-                const product = activeProducts[i] || { symbol: "SPX500" };
+                const product = activeProducts[i] || { ticker: "INDEX:FTSEMIB" };
                 
                 const card = document.createElement("div");
                 card.className = "chart-card";
 
-                // Iniezione del motore grafico eToro Sbloccato professionale (Usa i cookie di sessione della tab attiva di eToro)
-                const iframe = document.createElement("iframe");
-                iframe.id = `iframe_chart_${i}`;
-                iframe.className = "iframe-container";
-                
-                // Generazione URL di streaming sbloccato con interfaccia di analisi avanzata completa
-                iframe.src = `https://etoro.charts.prorealtime.com/prorealtime/etoro/desktop/index.html?symbol=${product.symbol}&theme=${currentTheme}&locale=it_IT`;
-                iframe.allowFullscreen = true;
+                const widgetDiv = document.createElement("div");
+                const widgetId = `tv_chart_${i}`;
+                widgetDiv.id = widgetId;
+                widgetDiv.className = "tv-container";
 
-                card.appendChild(iframe);
+                card.appendChild(widgetDiv);
                 container.appendChild(card);
+
+                // Delay millimetrico per non intasare le richieste e sbloccare i Timeframe
+                setTimeout(() => {
+                    new TradingView.widget({
+                        "autosize": true,
+                        "symbol": product.ticker,
+                        "interval": "D",
+                        "timezone": "Europe/Rome",
+                        "theme": currentTheme,
+                        "style": "1",
+                        "locale": "it",
+                        "enable_publishing": false,
+                        "withheader": true,            // Sblocca la barra superiore
+                        "allow_symbol_change": true,   // Sblocca la ricerca prodotti cliccando sul Ticker
+                        "hide_side_toolbar": false,    // Sblocca i disegni a sinistra
+                        "container_id": widgetId
+                    });
+                }, i * 150);
             }
         }
 
-        /* --- GESTIONE TEMPLATE LOCAL STORAGE --- */
+        /* --- TEMPLATE MANAGEMENT --- */
         function saveCurrentTemplate() {
             const nameInput = document.getElementById("template-name");
             const templateName = nameInput.value.trim();
-
-            if (!templateName) {
-                alert("Inserisci un nome per il template.");
-                return;
-            }
-
-            // Estrae i simboli attualmente attivi dagli iframe
-            const currentSymbols = [];
-            for (let i = 0; i < currentChartCount; i++) {
-                const iframe = document.getElementById(`iframe_chart_${i}`);
-                if (iframe) {
-                    const urlParams = new URLSearchParams(iframe.src.split('?')[1]);
-                    currentSymbols.push({ symbol: urlParams.get('symbol') || "SPX500" });
-                } else {
-                    currentSymbols.push({ symbol: "SPX500" });
-                }
-            }
+            if (!templateName) return;
 
             const templateData = {
                 chartCount: currentChartCount,
-                products: currentSymbols
+                products: activeProducts.slice(0, currentChartCount)
             };
 
             let savedTemplates = JSON.parse(localStorage.getItem("dashboard-custom-templates")) || {};
             savedTemplates[templateName] = templateData;
             localStorage.setItem("dashboard-custom-templates", JSON.stringify(savedTemplates));
-            
             nameInput.value = "";
             updateLocalStorageDropdown();
-            document.getElementById("template-select").value = templateName;
-            alert(`Template "${templateName}" salvato con successo!`);
+            alert("Template salvato!");
         }
 
         function loadSavedTemplate(templateName) {
-            if (!templateName) return;
-
             const savedTemplates = JSON.parse(localStorage.getItem("dashboard-custom-templates")) || {};
             const template = savedTemplates[templateName];
-
             if (template) {
                 currentChartCount = template.chartCount;
                 activeProducts = [...template.products];
-                
                 document.getElementById("chart-count").value = currentChartCount;
-                document.getElementById("market-select").value = ""; 
-                
                 renderCharts();
             }
         }
 
         function deleteSelectedTemplate() {
-            const select = document.getElementById("template-select");
-            const selectedName = select.value;
-
-            if (!selectedName) {
-                alert("Seleziona un template da eliminare.");
-                return;
-            }
-
-            if (confirm(`Eliminare il template "${selectedName}"?`)) {
-                let savedTemplates = JSON.parse(localStorage.getItem("dashboard-custom-templates")) || {};
-                delete savedTemplates[selectedName];
-                localStorage.setItem("dashboard-custom-templates", JSON.stringify(savedTemplates));
-                
-                updateLocalStorageDropdown();
-                renderCharts();
-            }
+            const name = document.getElementById("template-select").value;
+            if (!name) return;
+            let savedTemplates = JSON.parse(localStorage.getItem("dashboard-custom-templates")) || {};
+            delete savedTemplates[name];
+            localStorage.setItem("dashboard-custom-templates", JSON.stringify(savedTemplates));
+            updateLocalStorageDropdown();
+            renderCharts();
         }
 
         function updateLocalStorageDropdown() {
             const select = document.getElementById("template-select");
             select.innerHTML = '<option value="" disabled selected>I tuoi Template...</option>';
-
             const savedTemplates = JSON.parse(localStorage.getItem("dashboard-custom-templates")) || {};
-            
             Object.keys(savedTemplates).forEach(name => {
                 const option = document.createElement("option");
-                option.value = name;
-                option.innerText = name;
+                option.value = name; option.innerText = name;
                 select.appendChild(option);
             });
         }
