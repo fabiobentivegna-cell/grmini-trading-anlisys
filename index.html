@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Financial Dashboard Avanzata</title>
+    <!-- Script ufficiale di TradingView per i grafici avanzati -->
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <style>
         /* Variabili CSS per la gestione dinamica del Tema (Chiaro/Scuro) */
@@ -136,7 +137,7 @@
         .grid-2 { grid-template-columns: repeat(2, 1fr); grid-template-rows: 1fr; }
         .grid-3 { grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr; }
         .grid-4 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); }
-        .grid-5 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); } 
+        .grid-5 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
         .grid-6 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
 
         @media (max-width: 768px) {
@@ -189,10 +190,12 @@
 </head>
 <body>
 
+    <!-- Barra Superiore di Controllo -->
     <div class="navbar">
         <div class="brand">📈 Multi-Market Dash</div>
         
         <div class="controls-group">
+            <!-- Menu a tendina per i Mercati Predefiniti -->
             <div>
                 <label for="market-select">Mercato:</label>
                 <select id="market-select" onchange="loadPredefinedMarket(this.value)">
@@ -204,6 +207,7 @@
                 </select>
             </div>
 
+            <!-- Selettore del Numero di Grafici (1-6) -->
             <div>
                 <label for="chart-count">Grafici (1-6):</label>
                 <select id="chart-count" onchange="updateChartCount(parseInt(this.value))">
@@ -216,9 +220,11 @@
                 </select>
             </div>
 
+            <!-- Interruttore del Tema Chiaro/Scuro -->
             <button class="theme-toggle-btn" onclick="toggleTheme()" title="Cambia Tema">🌓</button>
         </div>
 
+        <!-- Sezione Salvataggio e Caricamento Template Personali -->
         <div class="controls-group template-section">
             <div>
                 <input type="text" id="template-name" placeholder="Nome template...">
@@ -233,9 +239,11 @@
         </div>
     </div>
 
+    <!-- Contenitore Principale della Griglia dei Grafici -->
     <div class="main-content">
         <div class="charts-grid grid-3" id="charts-container">
-            </div>
+            <!-- I grafici vengono inseriti qui dinamicamente -->
+        </div>
     </div>
 
     <script type="text/javascript">
@@ -286,10 +294,12 @@
         // Stato globale dell'applicazione
         let currentTheme = "dark";
         let currentChartCount = 3;
+        // Array dei prodotti attualmente visualizzati nei vari slot (fino a 6 elementi)
         let activeProducts = [...marketProducts["crypto"]]; 
 
         // Inizializzazione al caricamento della pagina
         document.addEventListener("DOMContentLoaded", function() {
+            // Carica l'eventuale tema salvato nel browser
             if (localStorage.getItem("dashboard-theme")) {
                 currentTheme = localStorage.getItem("dashboard-theme");
                 document.documentElement.setAttribute("data-theme", currentTheme);
@@ -304,10 +314,11 @@
             currentTheme = (currentTheme === "dark") ? "light" : "dark";
             document.documentElement.setAttribute("data-theme", currentTheme);
             localStorage.setItem("dashboard-theme", currentTheme);
+            // I widget di TradingView richiedono il reload per aggiornare il tema interno
             renderCharts();
         }
 
-        // Modifica del numero di grafici visualizzati (1-6)
+        // Modifica del numero di grafici visualizzati
         function updateChartCount(count) {
             currentChartCount = count;
             renderCharts();
@@ -319,31 +330,37 @@
             renderCharts();
         }
 
-        // Funzione di cambio ticker dinamico dentro lo slot del singolo grafico
+        // Funzione di cambio ticker dinamico per il singolo slot del grafico
         function changeSlotTicker(slotIndex, newTicker) {
-            activeProducts[slotIndex] = { name: newTicker.split(':')[1] || newTicker, ticker: newTicker.toUpperCase() };
-            initTradingViewWidget(`tv_widget_${slotIndex}`, newTicker.toUpperCase());
+            activeProducts[slotIndex] = { name: newTicker.split(':')[1] || newTicker, ticker: newTicker };
+            // Rigenera solo quel grafico specifico per performance ottimale
+            initTradingViewWidget(`tv_widget_${slotIndex}`, newTicker);
         }
 
         // Rendering e calcolo della griglia dei grafici
         function renderCharts() {
             const container = document.getElementById("charts-container");
             container.innerHTML = "";
+            
+            // Aggiorna le classi CSS della griglia in base al numero di grafici scelti
             container.className = `charts-grid grid-${currentChartCount}`;
 
             for (let i = 0; i < currentChartCount; i++) {
                 const product = activeProducts[i] || { name: "Seleziona Prodotto", ticker: "BINANCE:BTCUSDT" };
                 
+                // Crea la card contenitore del grafico
                 const card = document.createElement("div");
                 card.className = "chart-card";
 
+                // Barra di controllo interna alla card del grafico
                 const header = document.createElement("div");
                 header.className = "chart-header";
 
                 const title = document.createElement("span");
                 title.className = "chart-title";
-                title.innerText = `${product.name}`;
+                title.innerText = `Slot ${i + 1}: ${product.name}`;
 
+                // Input per cambiare prodotto al volo nello specifico slot
                 const input = document.createElement("input");
                 input.type = "text";
                 input.value = product.ticker;
@@ -356,6 +373,7 @@
                 header.appendChild(title);
                 header.appendChild(input);
 
+                // Div per il Widget TradingView
                 const widgetDiv = document.createElement("div");
                 const widgetId = `tv_widget_${i}`;
                 widgetDiv.id = widgetId;
@@ -365,10 +383,12 @@
                 card.appendChild(widgetDiv);
                 container.appendChild(card);
 
+                // Inizializza il widget grafico
                 initTradingViewWidget(widgetId, product.ticker);
             }
         }
 
+        // Inizializzazione dell'oggetto TradingView originale
         function initTradingViewWidget(divId, ticker) {
             new TradingView.widget({
                 "autosize": true,
@@ -390,24 +410,29 @@
             });
         }
 
-        /* --- LOGICA DI GESTIONE DEI TEMPLATE PERSONALI (LOCAL STORAGE) --- */
+        /* --- LOGICA DI GESTIONE DEI TEMPLATE (LOCAL STORAGE) --- */
 
+        // Salva il template configurato dall'utente
         function saveCurrentTemplate() {
             const nameInput = document.getElementById("template-name");
             const templateName = nameInput.value.trim();
 
             if (!templateName) {
-                alert("Per favore, inserisci un nome valido prima di salvare il tuo template.");
+                alert("Per favore, inserisci un nome valido per il template prima di salvare.");
                 return;
             }
 
+            // Crea l'oggetto strutturato da salvare
             const templateData = {
                 chartCount: currentChartCount,
                 products: activeProducts.slice(0, currentChartCount)
             };
 
+            // Recupera i template vecchi o ne inizializza uno nuovo
             let savedTemplates = JSON.parse(localStorage.getItem("dashboard-custom-templates")) || {};
             savedTemplates[templateName] = templateData;
+
+            // Salva nel LocalStorage del browser
             localStorage.setItem("dashboard-custom-templates", JSON.stringify(savedTemplates));
             
             nameInput.value = "";
@@ -416,6 +441,7 @@
             alert(`Template "${templateName}" salvato con successo!`);
         }
 
+        // Carica un template precedentemente salvato
         function loadSavedTemplate(templateName) {
             if (!templateName) return;
 
@@ -426,23 +452,25 @@
                 currentChartCount = template.chartCount;
                 activeProducts = [...template.products];
                 
+                // Sincronizza i selettori grafici della barra superiore
                 document.getElementById("chart-count").value = currentChartCount;
-                document.getElementById("market-select").value = ""; 
+                document.getElementById("market-select").value = ""; // Resetta selezione mercato predefinita
                 
                 renderCharts();
             }
         }
 
+        // Elimina il template personalizzato selezionato
         function deleteSelectedTemplate() {
             const select = document.getElementById("template-select");
             const selectedName = select.value;
 
             if (!selectedName) {
-                alert("Seleziona prima un template dall'elenco.");
+                alert("Seleziona prima un template dall'elenco per poterlo eliminare.");
                 return;
             }
 
-            if (confirm(`Vuoi eliminare definitivamente il template "${selectedName}"?`)) {
+            if (confirm(`Sei sicuro di voler eliminare il template "${selectedName}"?`)) {
                 let savedTemplates = JSON.parse(localStorage.getItem("dashboard-custom-templates")) || {};
                 delete savedTemplates[selectedName];
                 localStorage.setItem("dashboard-custom-templates", JSON.stringify(savedTemplates));
@@ -452,6 +480,7 @@
             }
         }
 
+        // Aggiorna le opzioni disponibili nel menu a tendina dei template personalizzati
         function updateLocalStorageDropdown() {
             const select = document.getElementById("template-select");
             select.innerHTML = '<option value="" disabled selected>I tuoi Template...</option>';
