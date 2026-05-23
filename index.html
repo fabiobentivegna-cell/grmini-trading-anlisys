@@ -19,6 +19,7 @@
       --hdr:       rgba(7,10,15,.95);
       --glow:      0 0 20px rgba(88,166,255,.12);
       --shadow:    0 1px 12px rgba(0,0,0,.6);
+      --tv-bg:     #0d1117;
     }
     :root[data-theme="light"] {
       --bg:        #f6f8fa;
@@ -33,6 +34,7 @@
       --hdr:       rgba(246,248,250,.95);
       --glow:      0 0 20px rgba(9,105,218,.08);
       --shadow:    0 1px 12px rgba(0,0,0,.1);
+      --tv-bg:     #ffffff;
     }
 
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -98,7 +100,7 @@
     }
     [data-theme="light"] .toggle::after{transform:translateX(16px)}
 
-    /* ── SUB-NAV (Per Analisi Tecnica) ── */
+    /* ── SUB-NAV ── */
     .sub-nav-container {
       background: var(--surface);
       border-bottom: 1px solid var(--border);
@@ -117,6 +119,25 @@
       color: var(--text);
       border-color: var(--border);
       background: var(--surface2);
+    }
+
+    /* ── CONFIGURATORE LAYOUT GRAFICI ── */
+    .layout-selector-bar {
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      padding: 6px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.75rem;
+    }
+    .layout-selector-bar select {
+      font-family: 'Syne', sans-serif;
+      padding: 3px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
     }
 
     /* ── TICKER ── */
@@ -157,22 +178,26 @@
     .page-panel.active, .sub-panel.active{display:block}
     @keyframes fadeUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 
-    /* grids */
+    /* grids dinamici */
+    .g1{display:grid;grid-template-columns:1fr;gap:12px}
     .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
     .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
     .g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
+    .g5{display:grid;grid-template-columns:repeat(5, 1fr);gap:12px}
+    .g6{display:grid;grid-template-columns:repeat(3, 1fr);gap:12px}
     .g-main{display:grid;grid-template-columns:2fr 1fr;gap:12px}
 
     @media(max-width:1100px){
-      .g4{grid-template-columns:1fr 1fr}
+      .g4, .g5, .g6{grid-template-columns:1fr 1fr}
       .g3{grid-template-columns:1fr 1fr}
       .g-main{grid-template-columns:1fr}
     }
     @media(max-width:680px){
-      .g2,.g3,.g4{grid-template-columns:1fr}
+      .g1,.g2,.g3,.g4,.g5,.g6{grid-template-columns:1fr}
       nav{display:none}
       #msel{display:block!important}
     }
+    
     #msel{
       display:none;font-family:'Syne',sans-serif;font-size:.82rem;
       padding:5px 10px;border-radius:6px;
@@ -201,15 +226,18 @@
     .stat-v{font-family:'DM Mono',monospace;font-size:1.05rem;font-weight:500}
     .stat-c{font-family:'DM Mono',monospace;font-size:.72rem;margin-top:2px}
 
-    /* card */
+    /* card - FIXED: overflow visible per permettere ai menu a tendina dello screener di non tagliarsi */
     .card{
       background:var(--surface);border:1px solid var(--border);
-      border-radius:10px;overflow:hidden;box-shadow:var(--shadow);
+      border-radius:10px;overflow:visible !important;box-shadow:var(--shadow);
       transition:border-color .18s,box-shadow .18s;
+      position: relative;
+      z-index: 5;
     }
     .card:hover{
       border-color:color-mix(in srgb,var(--accent) 35%,var(--border));
       box-shadow:var(--glow),var(--shadow);
+      z-index: 50;
     }
     .ch{
       padding:8px 12px;border-bottom:1px solid var(--border);
@@ -220,9 +248,20 @@
       font-family:'DM Mono',monospace;font-size:.62rem;
       padding:2px 6px;border-radius:4px;border:1px solid var(--border);color:var(--muted);
     }
+    
+    .select-card-hdr {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.65rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      cursor: pointer;
+    }
 
-    /* TradingView widget container */
-    .wbox{width:100%;overflow:hidden;background:var(--surface2);}
+    /* TradingView container wrapper */
+    .wbox{width:100%;overflow:visible;background:var(--surface2);position:relative;}
     .wbox.h600{height:600px}
     .wbox.h500{height:500px}
     .wbox.h400{height:400px}
@@ -231,6 +270,17 @@
     .wbox.h250{height:250px}
     .wbox.h200{height:200px}
     .wbox.h160{height:160px}
+
+    /* Forza l'inversione dell'ordine degli elementi grafici del calendario economico per mettere i più recenti in alto */
+    .invert-calendar iframe {
+      display: flex !important;
+      flex-direction: column-reverse !important;
+    }
+
+    /* Assicura che i menu a tendina interni di TradingView abbiano priorità assoluta di rendering visivo */
+    iframe {
+      z-index: 1000 !important;
+    }
 
     footer{
       text-align:center;padding:20px;
@@ -268,7 +318,7 @@
   <div class="ticker-track" id="tt"></div>
 </div>
 
-<!-- Sotto-navigazione visibile solo quando è attiva la pagina Analisi Tecnica -->
+<!-- Sotto-navigazione visibile solo in Analisi Tecnica -->
 <div id="sub-nav-analisi" class="sub-nav-container" style="display:none;">
   <button class="active" data-tab="overview">Overview</button>
   <button data-tab="usa">🇺🇸 USA</button>
@@ -276,6 +326,19 @@
   <button data-tab="forex">Forex</button>
   <button data-tab="commodities">Commodities</button>
   <button data-tab="crypto">Crypto</button>
+</div>
+
+<!-- Barra configurazione dinamica numero grafici per Analisi Tecnica -->
+<div id="layout-bar-analisi" class="layout-selector-bar" style="display:none;">
+  <span>Visualizzazione Grafici Contemporanei:</span>
+  <select id="chart-layout-qty">
+    <option value="1">1 Grafico Singolo</option>
+    <option value="2">2 Grafici (Griglia)</option>
+    <option value="3" selected>3 Grafici (Default)</option>
+    <option value="4">4 Grafici (Griglia)</option>
+    <option value="5">5 Grafici</option>
+    <option value="6">6 Grafici Completi</option>
+  </select>
 </div>
 
 <main>
@@ -295,14 +358,30 @@
       <div class="stat"><div class="stat-l">VIX</div><div class="stat-v dn">17.4</div><div class="stat-c dn">▼ −2.1%</div></div>
     </div>
 
-    <div class="card mb">
-      <div class="ch"><span class="ct">📡 Market Ticker — Live</span><span class="cb">REAL-TIME</span></div>
-      <div class="wbox h160">
-        <div class="tradingview-widget-container" style="height:100%">
-          <div class="tradingview-widget-container__widget"></div>
-          <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
-          {"symbols":[{"proName":"CAPITALCOM:US500","title":"S&P 500"},{"proName":"CAPITALCOM:US100","title":"Nasdaq 100"},{"description":"FTSE MIB","proName":"INDEX:FTSEMIB"},{"proName":"FX_IDC:EURUSD","title":"EUR/USD"},{"proName":"BITSTAMP:BTCUSD","title":"Bitcoin"},{"description":"Gold","proName":"TVC:GOLD"},{"description":"WTI","proName":"TVC:USOIL"},{"description":"ETH","proName":"BITSTAMP:ETHUSD"}],"showSymbolLogo":true,"isTransparent":true,"displayMode":"adaptive","locale":"it","colorTheme":"THEME_PLACEHOLDER"}
-          </script>
+    <!-- Ticker Tape + Realtime News Layout Split -->
+    <div class="g-main mb">
+      <div class="card">
+        <div class="ch"><span class="ct">📡 Market Ticker — Live</span><span class="cb">REAL-TIME</span></div>
+        <div class="wbox h160">
+          <div class="tradingview-widget-container" style="height:100%">
+            <div class="tradingview-widget-container__widget"></div>
+            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+            {"symbols":[{"proName":"CAPITALCOM:US500","title":"S&P 500"},{"proName":"CAPITALCOM:US100","title":"Nasdaq 100"},{"description":"FTSE MIB","proName":"INDEX:FTSEMIB"},{"proName":"FX_IDC:EURUSD","title":"EUR/USD"},{"proName":"BITSTAMP:BTCUSD","title":"Bitcoin"},{"description":"Gold","proName":"TVC:GOLD"},{"description":"WTI","proName":"TVC:USOIL"}],"showSymbolLogo":true,"isTransparent":true,"displayMode":"adaptive","locale":"it","colorTheme":"THEME_PLACEHOLDER"}
+            </script>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <!-- Notizie in tempo reale filtrate esplicitamente in lingua italiana -->
+        <div class="ch"><span class="ct">📰 Ultime Notizie Streaming (IT)</span><span class="cb">LIVE FEED</span></div>
+        <div class="wbox h160">
+          <div class="tradingview-widget-container">
+            <div class="tradingview-widget-container__widget"></div>
+            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-timeline.js" async>
+            {"feedMode":"market","market":"crypto,stock,forex,indices","colorTheme":"THEME_PLACEHOLDER","isTransparent":true,"displayMode":"regular","width":"100%","height":"100%","locale":"it"}
+            </script>
+          </div>
         </div>
       </div>
     </div>
@@ -314,32 +393,37 @@
           <div class="tradingview-widget-container" style="height:100%">
             <div class="tradingview-widget-container__widget"></div>
             <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
-            {"colorTheme":"THEME_PLACEHOLDER","dateRange":"12M","showChart":true,"locale":"it","largeChartUrl":"","isTransparent":true,"showSymbolLogo":true,"showFloatingTooltip":true,"width":"100%","height":"100%","tabs":[{"title":"Indici","symbols":[{"s":"CAPITALCOM:US500","d":"S&P 500"},{"s":"CAPITALCOM:US100","d":"Nasdaq 100"},{"s":"INDEX:FTSEMIB","d":"FTSE MIB"},{"s":"CAPITALCOM:DE40","d":"DAX"},{"s":"CAPITALCOM:UK100","d":"FTSE 100"},{"s":"CAPITALCOM:JP225","d":"Nikkei"},{"s":"CAPITALCOM:HK50","d":"Hang Seng"}],"originalTitle":"Indici"},{"title":"Crypto","symbols":[{"s":"BITSTAMP:BTCUSD","d":"Bitcoin"},{"s":"BITSTAMP:ETHUSD","d":"Ethereum"},{"s":"BINANCE:BNBUSDT","d":"BNB"},{"s":"BINANCE:SOLUSDT","d":"Solana"}],"originalTitle":"Crypto"}]}
+            {"colorTheme":"THEME_PLACEHOLDER","dateRange":"12M","showChart":true,"locale":"it","largeChartUrl":"","isTransparent":true,"showSymbolLogo":true,"showFloatingTooltip":true,"width":"100%","height":"100%","tabs":[{"title":"Indici","symbols":[{"s":"CAPITALCOM:US500","d":"S&P 500"},{"s":"CAPITALCOM:US100","d":"Nasdaq 100"},{"s":"INDEX:FTSEMIB","d":"FTSE MIB"},{"s":"CAPITALCOM:DE40","d":"DAX"},{"s":"CAPITALCOM:UK100","d":"FTSE 100"}],"originalTitle":"Indici"}]}
             </script>
           </div>
         </div>
       </div>
+      
       <div style="display:flex;flex-direction:column;gap:12px">
         <div class="card">
-          <div class="ch"><span class="ct">📅 Calendario Economico</span></div>
-          <div class="wbox h200">
+          <!-- Calendario invertito via CSS Flexbox speculare per bypassare i blocchi widget -->
+          <div class="ch"><span class="ct">📅 Calendario Economico (Più Recenti in Alto)</span><span class="cb">LIVE</span></div>
+          <div class="wbox h300 invert-calendar">
             <div class="tradingview-widget-container" style="height:100%">
               <div class="tradingview-widget-container__widget"></div>
               <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-events.js" async>
-              {"colorTheme":"THEME_PLACEHOLDER","isTransparent":true,"width":"100%","height":"100%","locale":"it","importanceFilter":"-1,0,1","countryFilter":"us,eu,it,gb,jp,cn"}
+              {"colorTheme":"THEME_PLACEHOLDER","isTransparent":true,"width":"100%","height":"100%","locale":"it","importanceFilter":"-1,0,1","countryFilter":"us,eu,it,gb,jp,cn","sortField":"date","sortOrder":"desc"}
               </script>
             </div>
           </div>
         </div>
+        
         <div class="card">
-          <div class="ch"><span class="ct">🔥 Più Scambiati</span></div>
-          <div class="wbox h200">
-            <div class="tradingview-widget-container" style="height:100%">
-              <div class="tradingview-widget-container__widget"></div>
-              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-hotlists.js" async>
-              {"colorTheme":"THEME_PLACEHOLDER","dateRange":"1D","exchange":"US","showChart":false,"locale":"it","largeChartUrl":"","isTransparent":true,"showSymbolLogo":true,"showFloatingTooltip":true,"width":"100%","height":"100%","plotLineColorGrowing":"rgba(41,98,255,1)","plotLineColorFalling":"rgba(41,98,255,1)"}
-              </script>
-            </div>
+          <div class="ch">
+            <span class="ct">🔥 Più Scambiati (Scorrimento Attivo)</span>
+            <select class="select-card-hdr" id="hotlists-market-select">
+              <option value="US">Stati Uniti (USA)</option>
+              <option value="IT">Italia (Milano)</option>
+            </select>
+          </div>
+          <!-- Aumentata altezza a 300px per consentire lo scrolling interno nativo dell'iframe -->
+          <div class="wbox h300" id="hotlist-dynamic-container" style="overflow-y: auto !important; -webkit-overflow-scrolling: touch;">
+            <!-- Renderizzato via JS in base alla nazione scelta -->
           </div>
         </div>
       </div>
@@ -367,187 +451,81 @@
 
     <!-- TAB: OVERVIEW -->
     <div class="sub-panel active" id="panel-overview">
-      <p class="sec-label">Analisi Tecnica — Indici Principali</p>
-      <div class="g3">
-        <div class="card">
-          <div class="ch"><span class="ct">📈 S&amp;P 500</span><span class="cb">SPX</span></div>
-          <div class="wbox h350" data-sym="CAPITALCOM:US500" data-type="advanced"></div>
-        </div>
-        <div class="card">
-          <div class="ch"><span class="ct">₿ Bitcoin</span><span class="cb">BTC</span></div>
-          <div class="wbox h350" data-sym="BITSTAMP:BTCUSD" data-type="advanced"></div>
-        </div>
-        <div class="card">
-          <div class="ch"><span class="ct">🥇 Gold</span><span class="cb">XAU</span></div>
-          <div class="wbox h350" data-sym="TVC:GOLD" data-type="advanced"></div>
-        </div>
+      <p class="sec-label">Analisi Tecnica — Principali</p>
+      <div class="chart-grid-container g3" data-base-grid="g3">
+        <div class="card" data-card-idx="1"><div class="ch"><span class="ct">📈 S&amp;P 500</span></div><div class="wbox h400" data-sym="CAPITALCOM:US500" data-type="advanced"></div></div>
+        <div class="card" data-card-idx="2"><div class="ch"><span class="ct">₿ Bitcoin</span></div><div class="wbox h400" data-sym="BITSTAMP:BTCUSD" data-type="advanced"></div></div>
+        <div class="card" data-card-idx="3"><div class="ch"><span class="ct">🥇 Gold</span></div><div class="wbox h400" data-sym="TVC:GOLD" data-type="advanced"></div></div>
+        <div class="card" data-card-idx="4" style="display:none;"><div class="ch"><span class="ct">🇪🇺 FTSE MIB</span></div><div class="wbox h400" data-sym="INDEX:FTSEMIB" data-type="advanced"></div></div>
+        <div class="card" data-card-idx="5" style="display:none;"><div class="ch"><span class="ct">💵 EUR/USD</span></div><div class="wbox h400" data-sym="FX_IDC:EURUSD" data-type="advanced"></div></div>
+        <div class="card" data-card-idx="6" style="display:none;"><div class="ch"><span class="ct">🛢️ WTI Crude Oil</span></div><div class="wbox h400" data-sym="TVC:USOIL" data-type="advanced"></div></div>
       </div>
     </div>
 
     <!-- TAB: USA -->
     <div class="sub-panel" id="panel-usa">
-      <p class="sec-label">Mercati USA — Azioni &amp; Indici</p>
-      <div class="g2 mb">
-        <div class="card">
-          <div class="ch"><span class="ct">📊 S&amp;P 500</span><span class="cb">SPX</span></div>
-          <div class="wbox h400" data-sym="CAPITALCOM:US500" data-type="advanced"></div>
-        </div>
-        <div class="card">
-          <div class="ch"><span class="ct">📊 NASDAQ 100</span><span class="cb">NDX</span></div>
-          <div class="wbox h400" data-sym="CAPITALCOM:US100" data-type="advanced"></div>
-        </div>
-      </div>
-      <div class="g2">
-        <div class="card">
-          <div class="ch"><span class="ct">📊 Dow Jones</span><span class="cb">DJIA</span></div>
-          <div class="wbox h300" data-sym="CAPITALCOM:US30" data-type="advanced"></div>
-        </div>
-        <div class="card">
-          <div class="ch"><span class="ct">📊 Russell 2000</span><span class="cb">RUT</span></div>
-          <div class="wbox h300" data-sym="CAPITALCOM:US2000" data-type="advanced"></div>
-        </div>
+      <p class="sec-label">Mercati USA — Indici</p>
+      <div class="chart-grid-container g3" data-base-grid="g3">
+        <div class="card" data-card-idx="1"><div class="ch"><span class="ct">📊 S&amp;P 500</span></div><div class="wbox h400" data-sym="CAPITALCOM:US500" data-type="advanced"></div></div>
+        <div class="card" data-card-idx="2"><div class="ch"><span class="ct">📊 NASDAQ 100</span></div><div class="wbox h400" data-sym="CAPITALCOM:US100" data-type="advanced"></div></div>
+        <!-- Sostituito con indice istituzionale TVC ad alta precisione compatibile con Advanced Chart -->
+        <div class="card" data-card-idx="3"><div class="ch"><span class="ct">📊 Russell 2000 Index</span></div><div class="wbox h400" data-sym="TVC:RUT" data-type="advanced"></div></div>
+        <div class="card" data-card-idx="4" style="display:none;"><div class="ch"><span class="ct">📊 Dow Jones</span></div><div class="wbox h400" data-sym="CAPITALCOM:US30" data-type="advanced"></div></div>
+        <div class="card" data-card-idx="5" style="display:none;"><div class="ch"><span class="ct">🍏 Apple Inc.</span></div><div class="wbox h400" data-sym="NASDAQ:AAPL" data-type="advanced"></div></div>
+        <div class="card" data-card-idx="6" style="display:none;"><div class="ch"><span class="ct">🚗 Tesla Motors</span></div><div class="wbox h400" data-sym="NASDAQ:TSLA" data-type="advanced"></div></div>
       </div>
     </div>
 
     <!-- TAB: ITALIA -->
     <div class="sub-panel" id="panel-italia">
       <p class="sec-label">Borsa Italiana — Milano</p>
-      <div class="g2 mb">
-        <div class="card">
-          <div class="ch"><span class="ct">📊 FTSE MIB</span><span class="cb">FTSEMIB</span></div>
-          <div class="wbox h400" data-sym="INDEX:FTSEMIB" data-type="advanced"></div>
-        </div>
-        <div class="card">
-          <div class="ch"><span class="ct">📊 BTP 10 Anni</span><span class="cb">IT10Y</span></div>
-          <div class="wbox h400" data-sym="TVC:IT10Y" data-type="advanced"></div>
-        </div>
-      </div>
-      <div class="g4 mb">
-        <div class="card">
-          <div class="ch"><span class="ct">ENI</span><span class="cb">ENI.MI</span></div>
-          <div class="wbox h200" data-sym="MIL:ENI"></div>
-        </div>
-        <div class="card">
-          <div class="ch"><span class="ct">Enel</span><span class="cb">ENEL.MI</span></div>
-          <div class="wbox h200" data-sym="MIL:ENEL"></div>
-        </div>
-        <div class="card">
-          <div class="ch"><span class="ct">Stellantis</span><span class="cb">STLAM</span></div>
-          <div class="wbox h200" data-sym="MIL:STLAM"></div>
-        </div>
-        <div class="card">
-          <div class="ch"><span class="ct">Intesa SP</span><span class="cb">ISP.MI</span></div>
-          <div class="wbox h200" data-sym="MIL:ISP"></div>
-        </div>
-      </div>
-      <div class="g2">
-        <div class="card">
-          <div class="ch"><span class="ct">Unicredit</span><span class="cb">UCG.MI</span></div>
-          <div class="wbox h200" data-sym="MIL:UCG"></div>
-        </div>
-        <div class="card">
-          <div class="ch"><span class="ct">Ferrari</span><span class="cb">RACE.MI</span></div>
-          <div class="wbox h200" data-sym="MIL:RACE"></div>
-        </div>
+      <div class="chart-grid-container g3" data-base-grid="g3">
+        <div class="card" data-card-idx="1"><div class="ch"><span class="ct">📊 FTSE MIB</span></div><div class="wbox h400" data-sym="INDEX:FTSEMIB" data-type="advanced"></div></div>
+        <div class="card" data-card-idx="2"><div class="ch"><span class="ct">📊 BTP 10Y Future</span></div><div class="wbox h400" data-sym="EUREX:FBTP1!" data-type="advanced"></div></div>
+        <div class="card" data-card-idx="3"><div class="ch"><span class="ct">⛽ ENI SpA</span></div><div class="wbox h400" data-sym="MIL:ENI" data-type="advanced"></div></div>
+        <div class="card" data-card-idx="4" style="display:none;"><div class="ch"><span class="ct">⚡ Enel SpA</span></div><div class="wbox h400" data-sym="MIL:ENEL" data-type="advanced"></div></div>
+        <div class="card" data-card-idx="5" style="display:none;"><div class="ch"><span class="ct">🏎️ Ferrari NV</span></div><div class="wbox h400" data-sym="MIL:RACE" data-type="advanced"></div></div>
+        <div class="card" data-card-idx="6" style="display:none;"><div class="ch"><span class="ct">🏦 Unicredit SpA</span></div><div class="wbox h400" data-sym="MIL:UCG" data-type="advanced"></div></div>
       </div>
     </div>
 
     <!-- TAB: FOREX -->
     <div class="sub-panel" id="panel-forex">
       <p class="sec-label">Valute — Forex</p>
-      <div class="g2 mb">
-        <div class="card">
-          <div class="ch"><span class="ct">📊 EUR/USD</span><span class="cb">MAJOR</span></div>
-          <div class="wbox h400" data-sym="FX_IDC:EURUSD" data-type="advanced"></div>
-        </div>
-        <div class="card">
-          <div class="ch"><span class="ct">📊 GBP/USD</span><span class="cb">MAJOR</span></div>
-          <div class="wbox h400" data-sym="FX_IDC:GBPUSD" data-type="advanced"></div>
-        </div>
-      </div>
-      <div class="g4">
-        <div class="card">
-          <div class="ch"><span class="ct">USD/JPY</span></div>
-          <div class="wbox h200" data-sym="FX_IDC:USDJPY"></div>
-        </div>
-        <div class="card">
-          <div class="ch"><span class="ct">USD/CHF</span></div>
-          <div class="wbox h200" data-sym="FX_IDC:USDCHF"></div>
-        </div>
-        <div class="card">
-          <div class="ch"><span class="ct">AUD/USD</span></div>
-          <div class="wbox h200" data-sym="FX_IDC:AUDUSD"></div>
-        </div>
-        <div class="card">
-          <div class="ch"><span class="ct">EUR/GBP</span></div>
-          <div class="wbox h200" data-sym="FX_IDC:EURGBP"></div>
-        </div>
+      <div class="chart-grid-container g3" data-base-grid="g3">
+        <div class="card" data-card-idx="1"><div class="ch"><span class="ct">📊 EUR/USD</span></div><div class="wbox h400" data-sym="FX_IDC:EURUSD" data-type="advanced"></div></div>
+        <div class="card" data-card-idx="2"><div class="ch"><span class="ct">📊 GBP/USD</span></div><div class="wbox h400" data-sym="FX_IDC:GBPUSD" data-type="advanced"></div></div>
+        <div class="card" data-card-idx="3"><div class="ch"><span class="ct">📊 USD/JPY</span></div><div class="wbox h400" data-sym="FX_IDC:USDJPY" data-type="advanced"></div></div>
+        <div class="card" data-card-idx="4" style="display:none;"><div class="ch"><span class="ct">📊 EUR/GBP</span></div><div class="wbox h400" data-sym="FX_IDC:EURGBP" data-type="advanced"></div></div>
+        <div class="card" data-card-idx="5" style="display:none;"><div class="ch"><span class="ct">📊 AUD/USD</span></div><div class="wbox h400" data-sym="FX_IDC:AUDUSD" data-type="advanced"></div></div>
+        <div class="card" data-card-idx="6" style="display:none;"><div class="ch"><span class="ct">📊 USD/CHF</span></div><div class="wbox h400" data-sym="FX_IDC:USDCHF" data-type="advanced"></div></div>
       </div>
     </div>
 
     <!-- TAB: COMMODITIES -->
     <div class="sub-panel" id="panel-commodities">
       <p class="sec-label">Materie Prime — Commodities</p>
-      <div class="g2 mb">
-        <div class="card">
-          <div class="ch"><span class="ct">🥇 Gold — Oro</span><span class="cb">XAU/USD</span></div>
-          <div class="wbox h400" data-sym="TVC:GOLD" data-type="advanced"></div>
-        </div>
-        <div class="card">
-          <div class="ch"><span class="ct">🛢️ Crude Oil WTI</span><span class="cb">CL1!</span></div>
-          <div class="wbox h400" data-sym="TVC:USOIL" data-type="advanced"></div>
-        </div>
-      </div>
-      <div class="g4">
-        <div class="card">
-          <div class="ch"><span class="ct">🥈 Silver</span><span class="cb">XAG</span></div>
-          <div class="wbox h200" data-sym="TVC:SILVER"></div>
-        </div>
-        <div class="card">
-          <div class="ch"><span class="ct">⛽ Brent</span><span class="cb">BRN</span></div>
-          <div class="wbox h200" data-sym="TVC:UKOIL"></div>
-        </div>
-        <div class="card">
-          <div class="ch"><span class="ct">🌽 Mais</span><span class="cb">CORN</span></div>
-          <div class="wbox h200" data-sym="CBOT:ZC1!"></div>
-        </div>
-        <div class="card">
-          <div class="ch"><span class="ct">🌾 Grano</span><span class="cb">WHEAT</span></div>
-          <div class="wbox h200" data-sym="CBOT:ZW1!"></div>
-        </div>
+      <div class="chart-grid-container g3" data-base-grid="g3">
+        <div class="card" data-card-idx="1"><div class="ch"><span class="ct">🥇 Gold — Oro</span></div><div class="wbox h400" data-sym="TVC:GOLD" data-type="advanced"></div></div>
+        <div class="card" data-card-idx="2"><div class="ch"><span class="ct">🛢️ Crude Oil WTI</span></div><div class="wbox h400" data-sym="TVC:USOIL" data-type="advanced"></div></div>
+        <!-- Sostituiti con i contratti CFD ad altissima stabilità e compatibilità index -->
+        <div class="card" data-card-idx="3"><div class="ch"><span class="ct">🌽 Mais (Corn Index)</span></div><div class="wbox h400" data-sym="TVC:CORN" data-type="advanced"></div></div>
+        <div class="card" data-card-idx="4" style="display:none;"><div class="ch"><span class="ct">🌾 Grano (Wheat Index)</span></div><div class="wbox h400" data-sym="TVC:WHEAT" data-type="advanced"></div></div>
+        <div class="card" data-card-idx="5" style="display:none;"><div class="ch"><span class="ct">🥈 Silver — Argento</span></div><div class="wbox h400" data-sym="TVC:SILVER" data-type="advanced"></div></div>
+        <div class="card" data-card-idx="6" style="display:none;"><div class="ch"><span class="ct">⚡ Gas Naturale</span></div><div class="wbox h400" data-sym="TVC:NATGAS" data-type="advanced"></div></div>
       </div>
     </div>
 
     <!-- TAB: CRYPTO -->
     <div class="sub-panel" id="panel-crypto">
       <p class="sec-label">Criptovalute — Crypto Markets</p>
-      <div class="g2 mb">
-        <div class="card">
-          <div class="ch"><span class="ct">₿ Bitcoin</span><span class="cb">BTC/USD</span></div>
-          <div class="wbox h400" data-sym="BITSTAMP:BTCUSD" data-type="advanced"></div>
-        </div>
-        <div class="card">
-          <div class="ch"><span class="ct">⟠ Ethereum</span><span class="cb">ETH/USD</span></div>
-          <div class="wbox h400" data-sym="BITSTAMP:ETHUSD" data-type="advanced"></div>
-        </div>
-      </div>
-      <div class="g4">
-        <div class="card">
-          <div class="ch"><span class="ct">BNB</span><span class="cb">BNB</span></div>
-          <div class="wbox h200" data-sym="BINANCE:BNBUSDT"></div>
-        </div>
-        <div class="card">
-          <div class="ch"><span class="ct">SOL</span><span class="cb">SOL</span></div>
-          <div class="wbox h200" data-sym="BINANCE:SOLUSDT"></div>
-        </div>
-        <div class="card">
-          <div class="ch"><span class="ct">XRP</span><span class="cb">XRP</span></div>
-          <div class="wbox h200" data-sym="BITSTAMP:XRPUSD"></div>
-        </div>
-        <div class="card">
-          <div class="ch"><span class="ct">DOGE</span><span class="cb">DOGE</span></div>
-          <div class="wbox h200" data-sym="BINANCE:DOGEUSDT"></div>
-        </div>
+      <div class="chart-grid-container g3" data-base-grid="g3">
+        <div class="card" data-card-idx="1"><div class="ch"><span class="ct">₿ Bitcoin</span></div><div class="wbox h400" data-sym="BITSTAMP:BTCUSD" data-type="advanced"></div></div>
+        <div class="card" data-card-idx="2"><div class="ch"><span class="ct">⟠ Ethereum</span></div><div class="wbox h400" data-sym="BITSTAMP:ETHUSD" data-type="advanced"></div></div>
+        <div class="card" data-card-idx="3"><div class="ch"><span class="ct">🟢 Solana</span></div><div class="wbox h400" data-sym="BINANCE:SOLUSDT" data-type="advanced"></div></div>
+        <div class="card" data-card-idx="4" style="display:none;"><div class="ch"><span class="ct">🟡 BNB</span></div><div class="wbox h400" data-sym="BINANCE:BNBUSDT" data-type="advanced"></div></div>
+        <div class="card" data-card-idx="5" style="display:none;"><div class="ch"><span class="ct">🔵 XRP</span></div><div class="wbox h400" data-sym="BITSTAMP:XRPUSD" data-type="advanced"></div></div>
+        <div class="card" data-card-idx="6" style="display:none;"><div class="ch"><span class="ct">🐕 Dogecoin</span></div><div class="wbox h400" data-sym="BINANCE:DOGEUSDT" data-type="advanced"></div></div>
       </div>
     </div>
 
@@ -555,29 +533,30 @@
 
 
   <!-- ════════════════════ PAGE: SCREENER ════════════════════ -->
+  <!-- FIXED: Cambiato isTransparent a FALSE e aggiunto colore solido di background per renderlo leggibile al 100% -->
   <div class="page-panel" id="page-screener">
     <p class="sec-label">Filtri e Screener di Mercato Generali</p>
     
     <div class="g2 mb">
-      <div class="card">
+      <div class="card" style="background: var(--tv-bg); overflow: visible !important;">
         <div class="ch"><span class="ct">📊 Screener Azionario USA</span></div>
-        <div class="wbox h500">
-          <div class="tradingview-widget-container" style="height:100%">
-            <div class="tradingview-widget-container__widget"></div>
+        <div class="wbox h500" style="overflow: visible !important;">
+          <div class="tradingview-widget-container" style="height:100%; overflow: visible !important;">
+            <div class="tradingview-widget-container__widget" style="overflow: visible !important;"></div>
             <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-screener.js" async>
-            {"width":"100%","height":"100%","defaultColumn":"overview","defaultScreen":"most_capitalized","market":"america","showToolbar":true,"colorTheme":"THEME_PLACEHOLDER","locale":"it","isTransparent":true}
+            {"width":"100%","height":"100%","defaultColumn":"overview","defaultScreen":"most_capitalized","market":"america","showToolbar":true,"colorTheme":"THEME_PLACEHOLDER","locale":"it","isTransparent":false}
             </script>
           </div>
         </div>
       </div>
 
-      <div class="card">
+      <div class="card" style="background: var(--tv-bg); overflow: visible !important;">
         <div class="ch"><span class="ct">📊 Screener Azionario Italia</span></div>
-        <div class="wbox h500">
-          <div class="tradingview-widget-container" style="height:100%">
-            <div class="tradingview-widget-container__widget"></div>
+        <div class="wbox h500" style="overflow: visible !important;">
+          <div class="tradingview-widget-container" style="height:100%; overflow: visible !important;">
+            <div class="tradingview-widget-container__widget" style="overflow: visible !important;"></div>
             <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-screener.js" async>
-            {"width":"100%","height":"100%","defaultColumn":"overview","defaultScreen":"most_capitalized","market":"italy","showToolbar":true,"colorTheme":"THEME_PLACEHOLDER","locale":"it","isTransparent":true}
+            {"width":"100%","height":"100%","defaultColumn":"overview","defaultScreen":"most_capitalized","market":"italy","showToolbar":true,"colorTheme":"THEME_PLACEHOLDER","locale":"it","isTransparent":false}
             </script>
           </div>
         </div>
@@ -585,50 +564,25 @@
     </div>
 
     <div class="g2 mb">
-      <div class="card">
+      <div class="card" style="background: var(--tv-bg); overflow: visible !important;">
         <div class="ch"><span class="ct">🏆 Crypto Market Screener</span></div>
-        <div class="wbox h400">
-          <div class="tradingview-widget-container" style="height:100%">
-            <div class="tradingview-widget-container__widget"></div>
+        <div class="wbox h400" style="overflow: visible !important;">
+          <div class="tradingview-widget-container" style="height:100%; overflow: visible !important;">
+            <div class="tradingview-widget-container__widget" style="overflow: visible !important;"></div>
             <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-screener.js" async>
-            {"width":"100%","height":"100%","defaultColumn":"overview","defaultScreen":"crypto_currencies","market":"crypto","showToolbar":true,"colorTheme":"THEME_PLACEHOLDER","locale":"it","isTransparent":true}
+            {"width":"100%","height":"100%","defaultColumn":"overview","defaultScreen":"crypto_currencies","market":"crypto","showToolbar":true,"colorTheme":"THEME_PLACEHOLDER","locale":"it","isTransparent":false}
             </script>
           </div>
         </div>
       </div>
 
-      <div class="card">
+      <div class="card" style="background: var(--tv-bg); overflow: visible !important;">
         <div class="ch"><span class="ct">🌡️ Crypto Heatmap</span></div>
-        <div class="wbox h400">
-          <div class="tradingview-widget-container" style="height:100%">
-            <div class="tradingview-widget-container__widget"></div>
+        <div class="wbox h400" style="overflow: visible !important;">
+          <div class="tradingview-widget-container" style="height:100%; overflow: visible !important;">
+            <div class="tradingview-widget-container__widget" style="overflow: visible !important;"></div>
             <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-crypto-coins-heatmap.js" async>
-            {"dataSource":"Crypto","blockSize":"market_cap_calc","blockColor":"change","locale":"it","colorTheme":"THEME_PLACEHOLDER","isTransparent":true,"width":"100%","height":"100%"}
-            </script>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="g2">
-      <div class="card">
-        <div class="ch"><span class="ct">🌐 Cross Rates Tabella</span></div>
-        <div class="wbox h350">
-          <div class="tradingview-widget-container" style="height:100%">
-            <div class="tradingview-widget-container__widget"></div>
-            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-forex-cross-rates.js" async>
-            {"width":"100%","height":"100%","currencies":["EUR","USD","JPY","GBP","CHF","AUD","CAD","NZD"],"isTransparent":true,"colorTheme":"THEME_PLACEHOLDER","locale":"it"}
-            </script>
-          </div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="ch"><span class="ct">🎯 Top Gainers / Losers USA</span></div>
-        <div class="wbox h350">
-          <div class="tradingview-widget-container" style="height:100%">
-            <div class="tradingview-widget-container__widget"></div>
-            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-hotlists.js" async>
-            {"colorTheme":"THEME_PLACEHOLDER","dateRange":"1D","exchange":"US","showChart":false,"locale":"it","isTransparent":true,"showSymbolLogo":true,"width":"100%","height":"100%"}
+            {"dataSource":"Crypto","blockSize":"market_cap_calc","blockColor":"change","locale":"it","colorTheme":"THEME_PLACEHOLDER","isTransparent":false,"width":"100%","height":"100%"}
             </script>
           </div>
         </div>
@@ -643,7 +597,6 @@
 </footer>
 
 <script>
-// ── THEME ──
 const root = document.documentElement;
 const tog  = document.getElementById('tog');
 
@@ -657,15 +610,13 @@ function reloadAllWidgets(t) {
   const activePage = document.querySelector('.page-panel.active').id;
   if (activePage === 'page-home') {
     document.querySelectorAll('#page-home .wbox[data-sym]').forEach(box => buildMiniChartsFor(box, t));
+    renderHotlistWidget(document.getElementById('hotlists-market-select').value, t);
   } else if (activePage === 'page-analisi') {
-    const activeSub = document.querySelector('.sub-panel.active');
-    if (activeSub) {
-      activeSub.querySelectorAll('.wbox[data-sym]').forEach(box => buildMiniChartsFor(box, t));
-    }
+    updateDynamicChartGrid();
   }
 }
 
-// Forza il caricamento iniziale sul tema chiaro (Light Style)
+// Default tema Chiaro
 const saved = localStorage.getItem('mp-theme') || 'light';
 applyTheme(saved);
 
@@ -673,52 +624,126 @@ tog.addEventListener('click', () => {
   applyTheme(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
 });
 
-// ── NAVIGATION MANAGEMENT (3 PAGES) ──
+// ── NAVIGATION INTERFACES ──
 const navBtns = document.querySelectorAll('#nav button');
 const msel    = document.getElementById('msel');
 const pagePanels = document.querySelectorAll('.page-panel');
 const subNavAnalisi = document.getElementById('sub-nav-analisi');
+const layoutBarAnalisi = document.getElementById('layout-bar-analisi');
 
 function switchPage(pageId) {
   pagePanels.forEach(p => p.classList.toggle('active', p.id === 'page-' + pageId));
   navBtns.forEach(b => b.classList.toggle('active', b.dataset.page === pageId));
   msel.value = pageId;
 
-  // Mostra la sotto-navigazione delle categorie solo dentro "Analisi Tecnica"
   if (pageId === 'analisi') {
     subNavAnalisi.style.display = 'flex';
+    layoutBarAnalisi.style.display = 'flex';
     switchSubTab(document.querySelector('#sub-nav-analisi button.active').dataset.tab);
   } else {
     subNavAnalisi.style.display = 'none';
+    layoutBarAnalisi.style.display = 'none';
   }
 
-  // Forza rendering grafici della pagina corrente
   const theme = root.getAttribute('data-theme');
-  document.querySelectorAll(`#page-${pageId} .wbox[data-sym]:empty`).forEach(box => {
-    buildMiniChartsFor(box, theme);
-  });
+  if (pageId === 'home') {
+    document.querySelectorAll('#page-home .wbox[data-sym]:empty').forEach(box => buildMiniChartsFor(box, theme));
+    renderHotlistWidget(document.getElementById('hotlists-market-select').value, theme);
+  }
 }
 
 navBtns.forEach(b => b.addEventListener('click', () => switchPage(b.dataset.page)));
 msel.addEventListener('change', e => switchPage(e.target.value));
 
-// ── SUB TABS (Dentro Analisi Tecnica) ──
+// ── SUB TABS (Analisi Tecnica) ──
 const subNavBtns = document.querySelectorAll('#sub-nav-analisi button');
 const subPanels = document.querySelectorAll('.sub-panel');
 
 function switchSubTab(tabId) {
   subNavBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === tabId));
   subPanels.forEach(p => p.classList.toggle('active', p.id === 'panel-' + tabId));
-
-  const theme = root.getAttribute('data-theme');
-  document.querySelectorAll(`#panel-${tabId} .wbox[data-sym]:empty`).forEach(box => {
-    buildMiniChartsFor(box, theme);
-  });
+  updateDynamicChartGrid();
 }
 subNavBtns.forEach(b => b.addEventListener('click', () => switchSubTab(b.dataset.tab)));
 
 
-// ── MINI CHART BUILDER ──
+// ── CONFIGURATORE DINAMICO QUANTITÀ GRAFICI (1-6) ──
+const qtySelector = document.getElementById('chart-layout-qty');
+qtySelector.addEventListener('change', updateDynamicChartGrid);
+
+function updateDynamicChartGrid() {
+  const qty = parseInt(qtySelector.value, 10);
+  const activeSubPanel = document.querySelector('.sub-panel.active');
+  if (!activeSubPanel) return;
+
+  const gridContainer = activeSubPanel.querySelector('.chart-grid-container');
+  const cards = gridContainer.querySelectorAll('.card');
+  const theme = root.getAttribute('data-theme');
+
+  gridContainer.className = 'chart-grid-container'; 
+  if (qty === 1) gridContainer.classList.add('g1');
+  else if (qty === 2) gridContainer.classList.add('g2');
+  else if (qty === 3) gridContainer.classList.add('g3');
+  else if (qty === 4) gridContainer.classList.add('g4');
+  else if (qty === 5) gridContainer.classList.add('g5');
+  else if (qty === 6) gridContainer.classList.add('g6');
+
+  cards.forEach(card => {
+    const idx = parseInt(card.dataset.cardIdx, 10);
+    if (idx <= qty) {
+      card.style.display = 'block';
+      const box = card.querySelector('.wbox');
+      if (box && box.innerHTML === '') {
+        buildMiniChartsFor(box, theme);
+      }
+    } else {
+      card.style.display = 'none';
+    }
+  });
+}
+
+
+// ── DYNAMIC HOTLIST SWITCHER (USA / ITALIA) ──
+const marketSelect = document.getElementById('hotlists-market-select');
+marketSelect.addEventListener('change', (e) => {
+  renderHotlistWidget(e.target.value, root.getAttribute('data-theme'));
+});
+
+function renderHotlistWidget(market, theme) {
+  const container = document.getElementById('hotlist-dynamic-container');
+  container.innerHTML = '';
+
+  const wrap = document.createElement('div');
+  wrap.className = 'tradingview-widget-container';
+  wrap.style.height = '100%';
+  const inner = document.createElement('div');
+  inner.className = 'tradingview-widget-container__widget';
+  wrap.appendChild(inner);
+
+  const scr = document.createElement('script');
+  scr.type = 'text/javascript';
+  scr.async = true;
+  scr.src = 'https://s3.tradingview.com/external-embedding/embed-widget-hotlists.js';
+  
+  scr.textContent = JSON.stringify({
+    colorTheme: theme,
+    dateRange: "1D",
+    exchange: market === "IT" ? "MIL" : "US",
+    showChart: false,
+    locale: "it",
+    largeChartUrl: "",
+    isTransparent: true,
+    showSymbolLogo: true,
+    width: "100%",
+    height: "100%"
+  });
+
+  wrap.appendChild(scr);
+  container.appendChild(wrap);
+}
+
+
+// ── CHART EMBED BUILDER ──
 function buildMiniChartsFor(box, theme) {
   const sym  = box.dataset.sym;
   const type = box.dataset.type || 'mini';
@@ -763,15 +788,13 @@ function tick() {
 }
 tick(); setInterval(tick, 1000);
 
-// ── TICKER ──
+// ── STREAMING TICKER TOP DATA ──
 const tdata = [
   {n:'S&P 500',p:'5 842.14',c:'+0.42%',u:true},{n:'NASDAQ',p:'18 973',c:'+0.61%',u:true},
   {n:'DOW',p:'42 315',c:'+0.18%',u:true},{n:'FTSE MIB',p:'38 120',c:'-0.18%',u:false},
   {n:'EUR/USD',p:'1.0834',c:'+0.12%',u:true},{n:'GBP/USD',p:'1.2710',c:'-0.05%',u:false},
   {n:'BTC',p:'109 420',c:'+1.83%',u:true},{n:'ETH',p:'2 614',c:'+1.22%',u:true},
-  {n:'Gold',p:'3 296',c:'+0.55%',u:true},{n:'WTI',p:'61.42',c:'-0.92%',u:false},
-  {n:'Silver',p:'32.74',c:'+0.44%',u:true},{n:'Brent',p:'65.18',c:'-0.77%',u:false},
-  {n:'SOL',p:'171.3',c:'+2.14%',u:true},{n:'VIX',p:'17.43',c:'-2.10%',u:false},
+  {n:'Gold',p:'3 296',c:'+0.55%',u:true},{n:'WTI',p:'61.42',c:'-0.92%',u:false}
 ];
 const tt = document.getElementById('tt');
 [0,1].forEach(() => tdata.forEach(d => {
@@ -781,21 +804,21 @@ const tt = document.getElementById('tt');
   tt.appendChild(el);
 }));
 
-// ── INIT ──
+// ── INITIALIZATION ──
 window.addEventListener('DOMContentLoaded', () => {
   const t = root.getAttribute('data-theme');
 
-  // Converte i segnaposto dei widget inline statici
   document.querySelectorAll('script:not([src])').forEach(s => {
     if (s.textContent.includes('THEME_PLACEHOLDER')) {
       s.textContent = s.textContent.replaceAll('THEME_PLACEHOLDER', t);
     }
   });
 
-  // Carica i grafici della pagina attiva (Home Page)
   document.querySelectorAll('#page-home .wbox[data-sym]').forEach(box => {
     buildMiniChartsFor(box, t);
   });
+  
+  renderHotlistWidget("US", t);
 });
 </script>
 </body>
