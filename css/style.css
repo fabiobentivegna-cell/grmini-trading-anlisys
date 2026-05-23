@@ -1,0 +1,10 @@
+
+body{font-family:Arial,sans-serif;background:#f4f6f9;margin:0;color:#222}
+.topbar{display:flex;justify-content:space-between;padding:12px 20px;background:#fff;border-bottom:1px solid #ddd}
+.topbar a{margin-left:16px;text-decoration:none;color:#333}
+.toolbar{padding:12px 20px;background:#fff}
+.layout{display:grid;grid-template-columns:3fr 1fr;gap:16px;padding:16px}
+.main-panel,.side-panel,table{background:#fff;border-radius:10px;padding:16px}
+#tvchart{height:700px}
+table{width:95%;margin:20px;border-collapse:collapse}
+th,td{border-bottom:1px solid #ddd;padding:10px;text-align:left}
