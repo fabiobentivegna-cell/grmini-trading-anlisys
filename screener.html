@@ -31,7 +31,7 @@
       --text:      #1f2328;
       --muted:     #656d76;
       --hdr:       rgba(246,248,250,.95);
-      --glow:      0 0 20px rgba(9,105,218,.08);
+      --glow:      0 0 20px rgba(0,105,218,.08);
       --shadow:    0 1px 12px rgba(0,0,0,.1);
     }
 
@@ -97,25 +97,16 @@
     }
     [data-theme="light"] .toggle::after{transform:translateX(16px)}
 
-    .ticker{
-      width:100%;overflow:hidden;
-      background:var(--surface);
-      border-bottom:1px solid var(--border);
-      padding:5px 0;
+    @media(max-width:680px){
+      nav{display:none}
+      #msel{display:block!important}
     }
-    .ticker-track{
-      display:inline-flex;animation:scroll 50s linear infinite;
-      white-space:nowrap;
+    #msel{
+      display:none;font-family:'Syne',sans-serif;font-size:.82rem;
+      padding:5px 10px;border-radius:6px;
+      border:1px solid var(--border);background:var(--surface);
+      color:var(--text);cursor:pointer;
     }
-    .ticker:hover .ticker-track{animation-play-state:paused}
-    @keyframes scroll{to{transform:translateX(-50%)}}
-    .t{
-      display:inline-flex;align-items:center;gap:7px;
-      padding:0 22px;border-right:1px solid var(--border);
-      font-family:'DM Mono',monospace;font-size:.71rem;
-    }
-    .t-n{color:var(--muted);font-size:.66rem}
-    .up{color:var(--green)}.dn{color:var(--red)}
 
     main{padding:16px 16px 48px;max-width:1600px;margin:0 auto;}
 
@@ -132,167 +123,65 @@
     .page-panel{animation:fadeUp .25s ease}
     @keyframes fadeUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 
-    .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-
-    @media(max-width:1100px){
-      .g2{grid-template-columns:1fr}
-    }
-    @media(max-width:680px){
-      nav{display:none}
-      #msel{display:block!important}
-    }
-    #msel{
-      display:none;font-family:'Syne',sans-serif;font-size:.82rem;
-      padding:5px 10px;border-radius:6px;
-      border:1px solid var(--border);background:var(--surface);
-      color:var(--text);cursor:pointer;
-    }
-
-    .mb{margin-bottom:12px}
-
     .card{
       background:var(--surface);border:1px solid var(--border);
       border-radius:10px;overflow:hidden;box-shadow:var(--shadow);
-      transition:border-color .18s,box-shadow .18s;
-    }
-    .card:hover{
-      border-color:color-mix(in srgb,var(--accent) 35%,var(--border));
-      box-shadow:var(--glow),var(--shadow);
     }
     .ch{
       padding:8px 12px;border-bottom:1px solid var(--border);
       display:flex;align-items:center;justify-content:space-between;
     }
     .ct{font-size:.75rem;font-weight:700;letter-spacing:.03em;display:flex;align-items:center;gap:5px}
+    .cb{
+      font-family:'DM Mono',monospace;font-size:.62rem;
+      padding:2px 6px;border-radius:4px;border:1px solid var(--border);color:var(--muted);
+    }
 
     .wbox{width:100%;overflow:hidden;background:var(--surface2);}
-    .wbox.h500{height:500px}
-    .wbox.h400{height:400px}
-    .wbox.h350{height:350px}
+    .wbox.h650{height:650px}
 
     footer{
-      text-align:center;padding:20px;
-      font-size:.7rem;color:var(--muted);
-      border-top:1px solid var(--border);
-      font-family:'DM Mono',monospace;
+      text-align:center;padding:20px;font-size:.7rem;color:var(--muted);
+      border-top:1px solid var(--border);font-family:'DM Mono',monospace;
     }
-    footer a{color:var(--accent);text-decoration:none}
   </style>
 </head>
 <body>
 
 <header>
   <div class="logo"><div class="dot"></div>MarketPulse</div>
-
   <nav id="nav">
     <a href="index.html">Home Page</a>
     <a href="analisitecnica.html">Analisi Tecnica</a>
     <a href="screener.html" class="active">Screener</a>
   </nav>
-
   <select id="msel" onchange="location = this.value;">
     <option value="index.html">Home Page</option>
     <option value="analisitecnica.html">Analisi Tecnica</option>
     <option value="screener.html" selected>Screener</option>
   </select>
-
   <div class="hdr-right">
     <span id="clock"></span>
-    <button class="toggle" id="tog" title="Tema"></button>
+    <button class="toggle" id="tog"></button>
   </div>
 </header>
 
-<div class="ticker">
-  <div class="ticker-track" id="tt"></div>
-</div>
-
 <main>
-  <div class="page-panel" id="page-screener">
-    <p class="sec-label">Filtri e Screener di Mercato Generali</p>
-    
-    <div class="g2 mb">
-      <div class="card">
-        <div class="ch"><span class="ct">📊 Screener Azionario USA</span></div>
-        <div class="wbox h500">
-          <div class="tradingview-widget-container" style="height:100%">
-            <div class="tradingview-widget-container__widget"></div>
-            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-screener.js" async>
-            {"width":"100%","height":"100%","defaultColumn":"overview","defaultScreen":"most_capitalized","market":"america","showToolbar":true,"colorTheme":"THEME_PLACEHOLDER","locale":"it","isTransparent":true}
-            </script>
-          </div>
-        </div>
-      </div>
+  <div class="page-panel">
+    <p class="sec-label">Filtri di mercato avanzati e dati societari</p>
 
-      <div class="card">
-        <div class="ch"><span class="ct">📊 Screener Azionario Italia</span></div>
-        <div class="wbox h500">
-          <div class="tradingview-widget-container" style="height:100%">
-            <div class="tradingview-widget-container__widget"></div>
-            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-screener.js" async>
-            {"width":"100%","height":"100%","defaultColumn":"overview","defaultScreen":"most_capitalized","market":"italy","showToolbar":true,"colorTheme":"THEME_PLACEHOLDER","locale":"it","isTransparent":true}
-            </script>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="g2 mb">
-      <div class="card">
-        <div class="ch"><span class="ct">🏆 Crypto Market Screener</span></div>
-        <div class="wbox h400">
-          <div class="tradingview-widget-container" style="height:100%">
-            <div class="tradingview-widget-container__widget"></div>
-            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-screener.js" async>
-            {"width":"100%","height":"100%","defaultColumn":"overview","defaultScreen":"crypto_currencies","market":"crypto","showToolbar":true,"colorTheme":"THEME_PLACEHOLDER","locale":"it","isTransparent":true}
-            </script>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="ch"><span class="ct">🌡️ Crypto Heatmap</span></div>
-        <div class="wbox h400">
-          <div class="tradingview-widget-container" style="height:100%">
-            <div class="tradingview-widget-container__widget"></div>
-            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-crypto-coins-heatmap.js" async>
-            {"dataSource":"Crypto","blockSize":"market_cap_calc","blockColor":"change","locale":"it","colorTheme":"THEME_PLACEHOLDER","isTransparent":true,"width":"100%","height":"100%"}
-            </script>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="g2">
-      <div class="card">
-        <div class="ch"><span class="ct">🌐 Cross Rates Tabella</span></div>
-        <div class="wbox h350">
-          <div class="tradingview-widget-container" style="height:100%">
-            <div class="tradingview-widget-container__widget"></div>
-            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-forex-cross-rates.js" async>
-            {"width":"100%","height":"100%","currencies":["EUR","USD","JPY","GBP","CHF","AUD","CAD","NZD"],"isTransparent":true,"colorTheme":"THEME_PLACEHOLDER","locale":"it"}
-            </script>
-          </div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="ch"><span class="ct">🎯 Top Gainers / Losers USA</span></div>
-        <div class="wbox h350">
-          <div class="tradingview-widget-container" style="height:100%">
-            <div class="tradingview-widget-container__widget"></div>
-            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-hotlists.js" async>
-            {"colorTheme":"THEME_PLACEHOLDER","dateRange":"1D","exchange":"US","showChart":false,"locale":"it","isTransparent":true,"showSymbolLogo":true,"width":"100%","height":"100%"}
-            </script>
-          </div>
-        </div>
-      </div>
+    <div class="card">
+      <div class="ch"><span class="ct">🔍 Screener Azionario ed Asset Internazionali</span><span class="cb">MARKET SCREENER</span></div>
+      <div class="wbox h650" id="screener-widget-container"></div>
     </div>
   </div>
 </main>
 
 <footer>
-  MarketPulse &nbsp;·&nbsp; Grafici <a href="https://www.tradingview.com" target="_blank">TradingView</a> &nbsp;·&nbsp; Solo a scopo informativo — non è consulenza finanziaria
+  MarketPulse &nbsp;·&nbsp; Grafici <a href="https://www.tradingview.com" target="_blank">TradingView</a>
 </footer>
 
+<script src="config.js"></script>
 <script>
 const root = document.documentElement;
 const tog  = document.getElementById('tog');
@@ -300,6 +189,7 @@ const tog  = document.getElementById('tog');
 function applyTheme(t) {
   root.setAttribute('data-theme', t);
   localStorage.setItem('mp-theme', t);
+  buildScreener(t);
 }
 
 const saved = localStorage.getItem('mp-theme') || 'light';
@@ -307,43 +197,40 @@ applyTheme(saved);
 
 tog.addEventListener('click', () => {
   applyTheme(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
-  // Gli script di TradingView embedded fissi (statici come gli screener) necessitano del reload della pagina per aggiornare il tema nativo
   location.reload();
 });
 
+function buildScreener(theme) {
+  const container = document.getElementById('screener-widget-container');
+  if(!container) return;
+  container.innerHTML = '';
+
+  const wrap = document.createElement('div');
+  wrap.className = 'tradingview-widget-container';
+  wrap.style.height = '100%';
+  const inner = document.createElement('div');
+  inner.className = 'tradingview-widget-container__widget';
+  wrap.appendChild(inner);
+
+  const scr = document.createElement('script');
+  scr.type = 'text/javascript';
+  scr.async = true;
+  scr.src = 'https://s3.tradingview.com/external-embedding/embed-widget-screener.js';
+  scr.textContent = JSON.stringify({
+    width: "100%", height: "100%", defaultColumn: "overview",
+    defaultScreen: "general", market: "america", showToolbar: true,
+    colorTheme: theme, locale: "it", isTransparent: true
+  });
+
+  wrap.appendChild(scr);
+  container.appendChild(wrap);
+}
+
 function tick() {
   const n = new Date();
-  document.getElementById('clock').textContent =
-    n.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) +
-    ' · ' + n.toLocaleDateString('it-IT',{day:'2-digit',month:'short'});
+  document.getElementById('clock').textContent = n.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
 }
 tick(); setInterval(tick, 1000);
-
-const tdata = [
-  {n:'S&P 500',p:'5 842.14',c:'+0.42%',u:true},{n:'NASDAQ',p:'18 973',c:'+0.61%',u:true},
-  {n:'DOW',p:'42 315',c:'+0.18%',u:true},{n:'FTSE MIB',p:'38 120',c:'-0.18%',u:false},
-  {n:'EUR/USD',p:'1.0834',c:'+0.12%',u:true},{n:'GBP/USD',p:'1.2710',c:'-0.05%',u:false},
-  {n:'BTC',p:'109 420',c:'+1.83%',u:true},{n:'ETH',p:'2 614',c:'+1.22%',u:true},
-  {n:'Gold',p:'3 296',c:'+0.55%',u:true},{n:'WTI',p:'61.42',c:'-0.92%',u:false},
-  {n:'Silver',p:'32.74',c:'+0.44%',u:true},{n:'Brent',p:'65.18',c:'-0.77%',u:false},
-  {n:'SOL',p:'171.3',c:'+2.14%',u:true},{n:'VIX',p:'17.43',c:'-2.10%',u:false},
-];
-const tt = document.getElementById('tt');
-[0,1].forEach(() => tdata.forEach(d => {
-  const el = document.createElement('span');
-  el.className = 't';
-  el.innerHTML = `<span class="t-n">${d.n}</span><span>${d.p}</span><span class="${d.u?'up':'dn'}">${d.c}</span>`;
-  tt.appendChild(el);
-}));
-
-window.addEventListener('DOMContentLoaded', () => {
-  const t = root.getAttribute('data-theme');
-  document.querySelectorAll('script:not([src])').forEach(s => {
-    if (s.textContent.includes('THEME_PLACEHOLDER')) {
-      s.textContent = s.textContent.replaceAll('THEME_PLACEHOLDER', t);
-    }
-  });
-});
 </script>
 </body>
 </html>

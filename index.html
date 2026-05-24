@@ -45,6 +45,7 @@
       transition:background .25s,color .25s;
     }
 
+    /* ── HEADER ── */
     header{
       position:sticky;top:0;z-index:200;
       background:var(--hdr);
@@ -68,7 +69,7 @@
 
     nav{display:flex;gap:4px;flex:1;justify-content:center;flex-wrap:wrap;}
     nav a{
-      font-family:'Syne',sans-serif;font-size:.75rem;font-weight:700;
+      font-family:'Syne',sans-serif;font-size Club:.75rem;font-weight:700;
       letter-spacing:.05em;text-transform:uppercase;
       padding:6px 16px;border-radius:6px;
       border:1px solid transparent;
@@ -97,6 +98,7 @@
     }
     [data-theme="light"] .toggle::after{transform:translateX(16px)}
 
+    /* ── TICKER ── */
     .ticker{
       width:100%;overflow:hidden;
       background:var(--surface);
@@ -117,6 +119,7 @@
     .t-n{color:var(--muted);font-size:.66rem}
     .up{color:var(--green)}.dn{color:var(--red)}
 
+    /* ── LAYOUT ── */
     main{padding:16px 16px 48px;max-width:1600px;margin:0 auto;}
 
     .sec-label{
@@ -132,15 +135,19 @@
     .page-panel{animation:fadeUp .25s ease}
     @keyframes fadeUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 
+    /* grids */
+    .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
     .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+    .g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
     .g-main{display:grid;grid-template-columns:2fr 1fr;gap:12px}
 
     @media(max-width:1100px){
+      .g4{grid-template-columns:1fr 1fr}
       .g3{grid-template-columns:1fr 1fr}
       .g-main{grid-template-columns:1fr}
     }
     @media(max-width:680px){
-      .g3{grid-template-columns:1fr}
+      .g2,.g3,.g4{grid-template-columns:1fr}
       nav{display:none}
       #msel{display:block!important}
     }
@@ -153,6 +160,7 @@
 
     .mb{margin-bottom:12px}
 
+    /* stat cards */
     .stats{
       display:grid;
       grid-template-columns:repeat(auto-fit,minmax(130px,1fr));
@@ -161,14 +169,25 @@
     .stat{
       background:var(--surface);border:1px solid var(--border);
       border-radius:10px;padding:12px 14px;
+      transition:border-color .18s,box-shadow .18s;
+    }
+    .stat:hover{
+      border-color:color-mix(in srgb,var(--accent) 40%,var(--border));
+      box-shadow:var(--glow);
     }
     .stat-l{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
     .stat-v{font-family:'DM Mono',monospace;font-size:1.05rem;font-weight:500}
     .stat-c{font-family:'DM Mono',monospace;font-size:.72rem;margin-top:2px}
 
+    /* card */
     .card{
       background:var(--surface);border:1px solid var(--border);
       border-radius:10px;overflow:hidden;box-shadow:var(--shadow);
+      transition:border-color .18s,box-shadow .18s;
+    }
+    .card:hover{
+      border-color:color-mix(in srgb,var(--accent) 35%,var(--border));
+      box-shadow:var(--glow),var(--shadow);
     }
     .ch{
       padding:8px 12px;border-bottom:1px solid var(--border);
@@ -180,34 +199,46 @@
       padding:2px 6px;border-radius:4px;border:1px solid var(--border);color:var(--muted);
     }
 
+    /* TradingView container */
     .wbox{width:100%;overflow:hidden;background:var(--surface2);}
+    .wbox.h600{height:600px}
     .wbox.h500{height:500px}
+    .wbox.h400{height:400px}
+    .wbox.h350{height:350px}
+    .wbox.h300{height:300px}
     .wbox.h250{height:250px}
     .wbox.h200{height:200px}
+    .wbox.h160{height:160px}
 
     footer{
-      text-align:center;padding:20px;font-size:.7rem;color:var(--muted);
-      border-top:1px solid var(--border);font-family:'DM Mono',monospace;
+      text-align:center;padding:20px;
+      font-size:.7rem;color:var(--muted);
+      border-top:1px solid var(--border);
+      font-family:'DM Mono',monospace;
     }
+    footer a{color:var(--accent);text-decoration:none}
   </style>
 </head>
 <body>
 
 <header>
   <div class="logo"><div class="dot"></div>MarketPulse</div>
+
   <nav id="nav">
     <a href="index.html" class="active">Home Page</a>
     <a href="analisitecnica.html">Analisi Tecnica</a>
     <a href="screener.html">Screener</a>
   </nav>
+
   <select id="msel" onchange="location = this.value;">
     <option value="index.html" selected>Home Page</option>
     <option value="analisitecnica.html">Analisi Tecnica</option>
     <option value="screener.html">Screener</option>
   </select>
+
   <div class="hdr-right">
     <span id="clock"></span>
-    <button class="toggle" id="tog"></button>
+    <button class="toggle" id="tog" title="Tema"></button>
   </div>
 </header>
 
@@ -216,53 +247,66 @@
 </div>
 
 <main>
-  <div class="page-panel">
-    <p class="sec-label">Panoramica mercati globali (Dati real-time via API Finnhub)</p>
+  <div class="page-panel" id="page-home">
+    <p class="sec-label">Panoramica mercati globali</p>
 
     <div class="stats">
-      <div class="stat"><div class="stat-l">S&amp;P 500</div><div class="stat-v" id="api-spx">Loading...</div><div class="stat-c" id="change-spx">--</div></div>
-      <div class="stat"><div class="stat-l">NASDAQ 100</div><div class="stat-v" id="api-ndx">Loading...</div><div class="stat-c" id="change-ndx">--</div></div>
-      <div class="stat"><div class="stat-l">Apple Inc.</div><div class="stat-v" id="api-aapl">Loading...</div><div class="stat-c" id="change-aapl">--</div></div>
-      <div class="stat"><div class="stat-l">EUR/USD</div><div class="stat-v" id="api-eurusd">Loading...</div><div class="stat-c" id="change-eurusd">--</div></div>
-      <div class="stat"><div class="stat-l">Bitcoin</div><div class="stat-v" id="api-btc">Loading...</div><div class="stat-c" id="change-btc">--</div></div>
-      <div class="stat"><div class="stat-l">Gold (Oro)</div><div class="stat-v" id="api-gold">Loading...</div><div class="stat-c" id="change-gold">--</div></div>
+      <div class="stat"><div class="stat-l">S&amp;P 500</div><div class="stat-v up">5 842</div><div class="stat-c up">▲ +0.42%</div></div>
+      <div class="stat"><div class="stat-l">NASDAQ</div><div class="stat-v up">18 973</div><div class="stat-c up">▲ +0.61%</div></div>
+      <div class="stat"><div class="stat-l">FTSE MIB</div><div class="stat-v dn">38 120</div><div class="stat-c dn">▼ −0.18%</div></div>
+      <div class="stat"><div class="stat-l">EUR/USD</div><div class="stat-v">1.0834</div><div class="stat-c up">▲ +0.12%</div></div>
+      <div class="stat"><div class="stat-l">BTC/USD</div><div class="stat-v up">109 420</div><div class="stat-c up">▲ +1.83%</div></div>
+      <div class="stat"><div class="stat-l">Gold</div><div class="stat-v up">3 296</div><div class="stat-c up">▲ +0.55%</div></div>
+      <div class="stat"><div class="stat-l">WTI Oil</div><div class="stat-v dn">61.4</div><div class="stat-c dn">▼ −0.92%</div></div>
+      <div class="stat"><div class="stat-l">VIX</div><div class="stat-v dn">17.4</div><div class="stat-c dn">▼ −2.1%</div></div>
     </div>
 
     <div class="card mb">
-      <div class="ch"><span class="ct">📡 Ultime Notizie Finanziarie — Live</span><span class="cb">NEWS FEED</span></div>
-      <div class="wbox h250">
-        <div class="tradingview-widget-container" style="height:100%">
-          <div class="tradingview-widget-container__widget"></div>
-          <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-timeline.js" async>
-          {"feedMode":"all_symbols","isTransparent":true,"displayMode":"regular","width":"100%","height":"100%","colorTheme":"THEME_PLACEHOLDER","locale":"it"}
-          </script>
-        </div>
-      </div>
+      <div class="ch"><span class="ct">📡 Market Ticker — Live</span><span class="cb">REAL-TIME</span></div>
+      <div class="wbox h160" id="ticker-tape-container"></div>
     </div>
 
     <div class="g-main mb">
+      <!-- WIDGET INTEGRALE DELLA MAPPA DEGLI INDICI MONDIALI -->
       <div class="card">
-        <div class="ch"><span class="ct">🌍 Analisi Grafica Avanzata</span><span class="cb">CANDLES LIVE</span></div>
-        <div class="wbox h500" id="main-advanced-chart"></div>
+        <div class="ch"><span class="ct">🌍 Indici Mondiali — Mappa</span><span class="cb">LIVE</span></div>
+        <div class="wbox h400" id="market-overview-container"></div>
       </div>
       
       <div style="display:flex;flex-direction:column;gap:12px">
         <div class="card">
           <div class="ch"><span class="ct">📅 Calendario Economico</span></div>
-          <div class="wbox h200">
-            <div class="tradingview-widget-container" style="height:100%">
-              <div class="tradingview-widget-container__widget"></div>
-              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-events.js" async>
-              {"colorTheme":"THEME_PLACEHOLDER","isTransparent":true,"width":"100%","height":"100%","locale":"it","importanceFilter":"-1,0,1","countryFilter":"us,eu,it,gb,jp,cn"}
-              </script>
-            </div>
-          </div>
+          <div class="wbox h200" id="events-container"></div>
         </div>
+        <div class="card">
+          <div class="ch"><span class="ct">🔥 Più Scambiati</span></div>
+          <div class="wbox h200" id="hotlists-container"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="g3">
+      <div class="card">
+        <div class="ch"><span class="ct">📈 S&amp;P 500</span><span class="cb">SPX</span></div>
+        <div class="wbox h250" data-sym="CAPITALCOM:US500"></div>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">₿ Bitcoin</span><span class="cb">BTC</span></div>
+        <div class="wbox h250" data-sym="BITSTAMP:BTCUSD"></div>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">🥇 Gold</span><span class="cb">XAU</span></div>
+        <div class="wbox h250" data-sym="TVC:GOLD"></div>
       </div>
     </div>
   </div>
 </main>
 
+<footer>
+  MarketPulse &nbsp;·&nbsp; Grafici <a href="https://www.tradingview.com" target="_blank">TradingView</a> &nbsp;·&nbsp; Solo a scopo informativo — non è consulenza finanziaria
+</footer>
+
+<!-- CARICAMENTO DEL FILE DI CONFIGURAZIONE API -->
 <script src="config.js"></script>
 <script>
 const root = document.documentElement;
@@ -271,7 +315,8 @@ const tog  = document.getElementById('tog');
 function applyTheme(t) {
   root.setAttribute('data-theme', t);
   localStorage.setItem('mp-theme', t);
-  buildAdvancedChart(t);
+  buildDynamicWidgets(t);
+  document.querySelectorAll('.wbox[data-sym]').forEach(box => buildMiniChartsFor(box, t));
 }
 
 const saved = localStorage.getItem('mp-theme') || 'light';
@@ -279,91 +324,121 @@ applyTheme(saved);
 
 tog.addEventListener('click', () => {
   applyTheme(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
-  location.reload();
+  location.reload(); // Forza ricarica dei widget inline TradingView per allineare il colore
 });
 
-function buildAdvancedChart(theme) {
-  const container = document.getElementById('main-advanced-chart');
-  if(!container) return;
-  container.innerHTML = '';
+// Generazione pulita e dinamica dei widget complessi
+function buildDynamicWidgets(theme) {
+  // 1. Ticker Tape Widget
+  const tickerContainer = document.getElementById('ticker-tape-container');
+  if(tickerContainer) {
+    tickerContainer.innerHTML = '';
+    const wrap = createWidgetWrapper();
+    const scr = document.createElement('script');
+    scr.type = 'text/javascript'; scr.async = true;
+    scr.src = 'https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js';
+    scr.textContent = JSON.stringify({
+      "symbols":[{"proName":"CAPITALCOM:US500","title":"S&P 500"},{"proName":"CAPITALCOM:US100","title":"Nasdaq 100"},{"description":"FTSE MIB","proName":"INDEX:FTSEMIB"},{"proName":"FX_IDC:EURUSD","title":"EUR/USD"},{"proName":"BITSTAMP:BTCUSD","title":"Bitcoin"},{"description":"Gold","proName":"TVC:GOLD"},{"description":"WTI","proName":"TVC:USOIL"},{"description":"ETH","proName":"BITSTAMP:ETHUSD"}],
+      "showSymbolLogo":true,"isTransparent":true,"displayMode":"adaptive","locale":"it","colorTheme":theme
+    });
+    wrap.appendChild(scr); tickerContainer.appendChild(wrap);
+  }
+
+  // 2. Market Overview Widget (Mappa Indici Mondiali)
+  const overviewContainer = document.getElementById('market-overview-container');
+  if(overviewContainer) {
+    overviewContainer.innerHTML = '';
+    const wrap = createWidgetWrapper();
+    const scr = document.createElement('script');
+    scr.type = 'text/javascript'; scr.async = true;
+    scr.src = 'https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js';
+    scr.textContent = JSON.stringify({
+      "colorTheme":theme,"dateRange":"12M","showChart":true,"locale":"it","largeChartUrl":"","isTransparent":true,"showSymbolLogo":true,"showFloatingTooltip":true,"width":"100%","height":"100%",
+      "tabs":[
+        {"title":"Indici","symbols":[{"s":"CAPITALCOM:US500","d":"S&P 500"},{"s":"CAPITALCOM:US100","d":"Nasdaq 100"},{"s":"INDEX:FTSEMIB","d":"FTSE MIB"},{"s":"CAPITALCOM:DE40","d":"DAX"},{"s":"CAPITALCOM:UK100","d":"FTSE 100"},{"s":"CAPITALCOM:JP225","d":"Nikkei"},{"s":"CAPITALCOM:HK50","d":"Hang Seng"}],"originalTitle":"Indici"},
+        {"title":"Crypto","symbols":[{"s":"BITSTAMP:BTCUSD","d":"Bitcoin"},{"s":"BITSTAMP:ETHUSD","d":"Ethereum"},{"s":"BINANCE:BNBUSDT","d":"BNB"},{"s":"BINANCE:SOLUSDT","d":"Solana"}],"originalTitle":"Crypto"}
+      ]
+    });
+    wrap.appendChild(scr); overviewContainer.appendChild(wrap);
+  }
+
+  // 3. Calendario Economico
+  const eventsContainer = document.getElementById('events-container');
+  if(eventsContainer) {
+    eventsContainer.innerHTML = '';
+    const wrap = createWidgetWrapper();
+    const scr = document.createElement('script');
+    scr.type = 'text/javascript'; scr.async = true;
+    scr.src = 'https://s3.tradingview.com/external-embedding/embed-widget-events.js';
+    scr.textContent = JSON.stringify({
+      "colorTheme":theme,"isTransparent":true,"width":"100%","height":"100%","locale":"it","importanceFilter":"-1,0,1","countryFilter":"us,eu,it,gb,jp,cn"
+    });
+    wrap.appendChild(scr); eventsContainer.appendChild(wrap);
+  }
+
+  // 4. Hotlists
+  const hotlistsContainer = document.getElementById('hotlists-container');
+  if(hotlistsContainer) {
+    hotlistsContainer.innerHTML = '';
+    const wrap = createWidgetWrapper();
+    const scr = document.createElement('script');
+    scr.type = 'text/javascript'; scr.async = true;
+    scr.src = 'https://s3.tradingview.com/external-embedding/embed-widget-hotlists.js';
+    scr.textContent = JSON.stringify({
+      "colorTheme":theme,"dateRange":"1D","exchange":"US","showChart":false,"locale":"it","largeChartUrl":"","isTransparent":true,"showSymbolLogo":true,"showFloatingTooltip":true,"width":"100%","height":"100%","plotLineColorGrowing":"rgba(41,98,255,1)","plotLineColorFalling":"rgba(41,98,255,1)"
+    });
+    wrap.appendChild(scr); hotlistsContainer.appendChild(wrap);
+  }
+}
+
+function createWidgetWrapper() {
   const wrap = document.createElement('div');
   wrap.className = 'tradingview-widget-container';
   wrap.style.height = '100%';
   const inner = document.createElement('div');
   inner.className = 'tradingview-widget-container__widget';
   wrap.appendChild(inner);
+  return wrap;
+}
 
+function buildMiniChartsFor(box, theme) {
+  const sym = box.dataset.sym;
+  box.innerHTML = ''; 
+  const wrap = createWidgetWrapper();
   const scr = document.createElement('script');
-  scr.type = 'text/javascript';
-  scr.async = true;
-  scr.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+  scr.type = 'text/javascript'; scr.async = true;
+  scr.src = 'https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js';
   scr.textContent = JSON.stringify({
-    autosize: true, symbol: "CAPITALCOM:US500", interval: "D", timezone: "Europe/Rome",
-    theme: theme, style: "1", locale: "it", allow_symbol_change: true, support_host: "https://www.tradingview.com"
+    symbol:sym,width:'100%',height:'100%',locale:'it',
+    dateRange:'12M',colorTheme:theme,isTransparent:true,autosize:true,largeChartUrl:''
   });
-  wrap.appendChild(scr);
-  container.appendChild(wrap);
-}
-
-// ── LOGICA CHIAMATE API DINAMICHE VIA FINNHUB ──
-async function fetchMarketData() {
-  if (typeof API_CONFIG === 'undefined' || !API_CONFIG.FINNHUB_KEY) {
-      console.log("Chiave API config.js mancante o non configurata.");
-      return;
-  }
-  
-  const token = API_CONFIG.FINNHUB_KEY;
-  // Mappa gli elementi della dashboard con i Simboli compatibili Finnhub
-  const assets = [
-    { id: 'spx', symbol: '^GSPC' },
-    { id: 'ndx', symbol: '^NDX' },
-    { id: 'aapl', symbol: 'AAPL' },
-    { id: 'eurusd', symbol: 'FIXER:EURUSD' },
-    { id: 'btc', symbol: 'BINANCE:BTCUSDT' },
-    { id: 'gold', symbol: 'OANDA:XAU_USD' }
-  ];
-
-  for (const asset of assets) {
-    try {
-      const response = await fetch(`https://finnhub.io/api/v1/quote?symbol=${asset.symbol}&token=${token}`);
-      const data = await response.json();
-      
-      if(data.c) {
-        const currentPrice = data.c;
-        const changePercent = data.dp ? data.dp.toFixed(2) : "0.00";
-        
-        const priceEl = document.getElementById(`api-${asset.id}`);
-        const changeEl = document.getElementById(`change-${asset.id}`);
-        
-        priceEl.textContent = currentPrice.toLocaleString('it-IT', { minimumFractionDigits: 2 });
-        changeEl.textContent = `${changePercent > 0 ? '▲ +' : '▼ '}${changePercent}%`;
-        
-        if (changePercent >= 0) {
-          changeEl.className = "stat-c up";
-          priceEl.className = "stat-v up";
-        } else {
-          changeEl.className = "stat-c dn";
-          priceEl.className = "stat-v dn";
-        }
-      }
-    } catch (error) {
-      console.error(`Errore caricamento dati per ${asset.symbol}:`, error);
-    }
-  }
-}
-
-// Esegui la chiamata API all'avvio
-if (typeof API_CONFIG !== 'undefined') {
-  fetchMarketData();
-  // Aggiorna ogni 60 secondi per non superare i limiti del piano free
-  setInterval(fetchMarketData, 60000);
+  wrap.appendChild(scr); box.appendChild(wrap);
 }
 
 function tick() {
   const n = new Date();
-  document.getElementById('clock').textContent = n.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('clock').textContent =
+    n.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) +
+    ' · ' + n.toLocaleDateString('it-IT',{day:'2-digit',month:'short'});
 }
 tick(); setInterval(tick, 1000);
+
+// Generazione traccia Ticker CSS Custom
+const tdata = [
+  {n:'S&P 500',p:'5 842.14',c:'+0.42%',u:true},{n:'NASDAQ',p:'18 973',c:'+0.61%',u:true},
+  {n:'DOW',p:'42 315',c:'+0.18%',u:true},{n:'FTSE MIB',p:'38 120',c:'-0.18%',u:false},
+  {n:'EUR/USD',p:'1.0834',c:'+0.12%',u:true},{n:'GBP/USD',p:'1.2710',c:'-0.05%',u:false},
+  {n:'BTC',p:'109 420',c:'+1.83%',u:true},{n:'ETH',p:'2 614',c:'+1.22%',u:true},
+  {n:'Gold',p:'3 296',c:'+0.55%',u:true},{n:'WTI',p:'61.42',c:'-0.92%',u:false},
+  {n:'Silver',p:'32.74',c:'+0.44%',u:true},{n:'Brent',p:'65.18',c:'-0.77%',u:false},
+  {n:'SOL',p:'171.3',c:'+2.14%',u:true},{n:'VIX',p:'17.43',c:'-2.10%',u:false},
+];
+const tt = document.getElementById('tt');
+[0,1].forEach(() => tdata.forEach(d => {
+  const el = document.createElement('span'); el.className = 't';
+  el.innerHTML = `<span class="t-n">${d.n}</span><span>${d.p}</span><span class="${d.u?'up':'dn'}">${d.c}</span>`;
+  tt.appendChild(el);
+}));
 </script>
 </body>
 </html>
