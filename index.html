@@ -198,6 +198,23 @@
       font-family:'DM Mono',monospace;font-size:.62rem;
       padding:2px 6px;border-radius:4px;border:1px solid var(--border);color:var(--muted);
     }
+    
+    /* Stile per la select nel widget news */
+    .ch-select {
+      font-family: 'DM Mono', monospace;
+      font-size: .65rem;
+      padding: 3px 6px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .ch-select:hover, .ch-select:focus {
+      border-color: var(--accent);
+    }
 
     /* TradingView container */
     .wbox{width:100%;overflow:hidden;background:var(--surface2);}
@@ -261,14 +278,22 @@
       <div class="stat"><div class="stat-l">VIX</div><div class="stat-v dn">17.4</div><div class="stat-c dn">▼ −2.1%</div></div>
     </div>
 
-    <!-- SOSTITUITO: MARKET TICKER CON WIDGET NEWS IN ITALIANO -->
+    <!-- WIDGET NEWS CON MENU A TENDINA -->
     <div class="card mb">
-      <div class="ch"><span class="ct">📰 Notizie di Mercato — Live</span><span class="cb">NEWS FEED</span></div>
+      <div class="ch">
+        <span class="ct">📰 Notizie di Mercato — Live</span>
+        <select id="news-source-selector" class="ch-select">
+          <option value="all">Tutti i mercati</option>
+          <option value="index">Indici</option>
+          <option value="stock">Azioni</option>
+          <option value="crypto">Criptovalute</option>
+          <option value="forex">Forex / Valute</option>
+        </select>
+      </div>
       <div class="wbox h300" id="news-timeline-container"></div>
     </div>
 
     <div class="g-main mb">
-      <!-- MANTENUTO INTEGRALE: MAPPA DEGLI INDICI MONDIALI -->
       <div class="card">
         <div class="ch"><span class="ct">🌍 Indici Mondiali — Mappa</span><span class="cb">LIVE</span></div>
         <div class="wbox h400" id="market-overview-container"></div>
@@ -304,18 +329,23 @@
 </main>
 
 <footer>
-  MarketPulse &nbsp;·&nbsp; Grafici <a href="https://www.tradingview.com" target="_blank">TradingView</a> &nbsp;·&nbsp; Solo a scopo informativo — non è consulenza finanziaria
+  MarketPulse &nbsp;·&nbsp; Grafici <a href="https://www.tradingview.com" target="_blank">TradingView</a> &nbsp;·&nbsp; Solo a scopo informativo
 </footer>
 
 <script src="config.js"></script>
 <script>
 const root = document.documentElement;
 const tog  = document.getElementById('tog');
+const newsSelector = document.getElementById('news-source-selector');
 
 function applyTheme(t) {
   root.setAttribute('data-theme', t);
   localStorage.setItem('mp-theme', t);
+  
+  const currentNewsMarket = newsSelector ? newsSelector.value : 'all';
+  
   buildDynamicWidgets(t);
+  buildNewsWidget(t, currentNewsMarket);
   document.querySelectorAll('.wbox[data-sym]').forEach(box => buildMiniChartsFor(box, t));
 }
 
@@ -327,28 +357,49 @@ tog.addEventListener('click', () => {
   location.reload(); 
 });
 
-function buildDynamicWidgets(theme) {
-  // 1. Nuovo Widget: News Timeline (Notizie Italiane)
+// Event Listener per aggiornare il feed notizie in base alla selezione
+if (newsSelector) {
+  newsSelector.addEventListener('change', (e) => {
+    const currentTheme = root.getAttribute('data-theme');
+    buildNewsWidget(currentTheme, e.target.value);
+  });
+}
+
+// Funzione isolata per rigenerare solo il widget News (evita ricaricamenti inutili del resto)
+function buildNewsWidget(theme, marketType) {
   const newsContainer = document.getElementById('news-timeline-container');
-  if(newsContainer) {
-    newsContainer.innerHTML = '';
-    const wrap = createWidgetWrapper();
-    const scr = document.createElement('script');
-    scr.type = 'text/javascript'; scr.async = true;
-    scr.src = 'https://s3.tradingview.com/external-embedding/embed-widget-timeline.js';
-    scr.textContent = JSON.stringify({
-      "feedMode": "all_symbols",
-      "colorTheme": theme,
-      "isTransparent": true,
-      "displayMode": "regular",
-      "width": "100%",
-      "height": "100%",
-      "locale": "it"
-    });
-    wrap.appendChild(scr); newsContainer.appendChild(wrap);
+  if(!newsContainer) return;
+  
+  newsContainer.innerHTML = '';
+  const wrap = createWidgetWrapper();
+  const scr = document.createElement('script');
+  scr.type = 'text/javascript'; 
+  scr.async = true;
+  scr.src = 'https://s3.tradingview.com/external-embedding/embed-widget-timeline.js';
+  
+  let config = {
+    "colorTheme": theme,
+    "isTransparent": true,
+    "displayMode": "regular",
+    "width": "100%",
+    "height": "100%",
+    "locale": "it"
+  };
+
+  if (marketType === 'all') {
+    config.feedMode = "all_symbols";
+  } else {
+    config.feedMode = "market";
+    config.market = marketType;
   }
 
-  // 2. Mantenuto: Market Overview Widget (Mappa Indici Mondiali)
+  scr.textContent = JSON.stringify(config);
+  wrap.appendChild(scr); 
+  newsContainer.appendChild(wrap);
+}
+
+function buildDynamicWidgets(theme) {
+  // 1. Mantenuto: Market Overview Widget (Mappa Indici Mondiali)
   const overviewContainer = document.getElementById('market-overview-container');
   if(overviewContainer) {
     overviewContainer.innerHTML = '';
@@ -366,7 +417,7 @@ function buildDynamicWidgets(theme) {
     wrap.appendChild(scr); overviewContainer.appendChild(wrap);
   }
 
-  // 3. Calendario Economico
+  // 2. Calendario Economico
   const eventsContainer = document.getElementById('events-container');
   if(eventsContainer) {
     eventsContainer.innerHTML = '';
@@ -380,7 +431,7 @@ function buildDynamicWidgets(theme) {
     wrap.appendChild(scr); eventsContainer.appendChild(wrap);
   }
 
-  // 4. Hotlists
+  // 3. Hotlists
   const hotlistsContainer = document.getElementById('hotlists-container');
   if(hotlistsContainer) {
     hotlistsContainer.innerHTML = '';
