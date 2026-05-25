@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="it" data-theme="light">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MarketPulse — Fondamentali</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root[data-theme="dark"] {
+      --bg:        #070a0f;
+      --surface:   #0d1117;
+      --surface2:  #161b22;
+      --border:    #21262d;
+      --accent:    #58a6ff;
+      --green:     #3fb950;
+      --red:       #f85149;
+      --text:      #e6edf3;
+      --muted:     #8b949e;
+      --hdr:       rgba(7,10,15,.95);
+      --glow:      0 0 20px rgba(88,166,255,.12);
+      --shadow:    0 1px 12px rgba(0,0,0,.6);
+    }
+    :root[data-theme="light"] {
+      --bg:        #f6f8fa;
+      --surface:   #ffffff;
+      --surface2:  #f6f8fa;
+      --border:    #d0d7de;
+      --accent:    #0969da;
+      --green:     #1a7f37;
+      --red:       #cf222e;
+      --text:      #1f2328;
+      --muted:     #656d76;
+      --hdr:       rgba(246,248,250,.95);
+      --glow:      0 0 20px rgba(9,105,218,.08);
+      --shadow:    0 1px 12px rgba(0,0,0,.1);
+    }
+
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+    body{
+      font-family:'Syne',sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      min-height:100vh;
+      transition:background .25s,color .25s;
+    }
+
+    /* ── HEADER ── */
+    header{
+      position:sticky;top:0;z-index:200;
+      background:var(--hdr);
+      backdrop-filter:blur(20px);
+      border-bottom:1px solid var(--border);
+      height:54px;
+      display:flex;align-items:center;
+      padding:0 20px;gap:12px;
+    }
+    .logo{
+      font-size:1.1rem;font-weight:800;letter-spacing:-.4px;
+      display:flex;align-items:center;gap:8px;white-space:nowrap;
+    }
+    .dot{
+      width:9px;height:9px;border-radius:50%;
+      background:var(--accent);
+      box-shadow:0 0 8px var(--accent);
+      animation:blink 2.4s infinite;
+    }
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+
+    nav{display:flex;gap:4px;flex:1;justify-content:center;flex-wrap:wrap;}
+    nav a{
+      font-family:'Syne',sans-serif;font-size: .75rem;font-weight:700;
+      letter-spacing:.05em;text-transform:uppercase;
+      padding:6px 16px;border-radius:6px;
+      border:1px solid transparent;
+      background:transparent;color:var(--muted);cursor:pointer;
+      transition:all .18s;white-space:nowrap;text-decoration:none;
+    }
+    nav a:hover{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 30%,transparent)}
+    nav a.active{
+      color:var(--accent);
+      border-color:var(--accent);
+      background:color-mix(in srgb,var(--accent) 10%,transparent);
+    }
+
+    .hdr-right{display:flex;align-items:center;gap:10px;margin-left:auto;}
+    #clock{font-family:'DM Mono',monospace;font-size:.72rem;color:var(--muted);white-space:nowrap;}
+
+    .toggle{
+      width:36px;height:20px;border-radius:10px;
+      background:var(--surface2);border:1px solid var(--border);
+      cursor:pointer;position:relative;flex-shrink:0;transition:background .25s;
+    }
+    .toggle::after{
+      content:'';position:absolute;top:2px;left:2px;
+      width:14px;height:14px;border-radius:50%;
+      background:var(--accent);transition:transform .25s;
+    }
+    [data-theme="light"] .toggle::after{transform:translateX(16px)}
+
+    /* ── TICKER ── */
+    .ticker{
+      width:100%;overflow:hidden;
+      background:var(--surface);
+      border-bottom:1px solid var(--border);
+      padding:5px 0;
+    }
+    .ticker-track{
+      display:inline-flex;animation:scroll 50s linear infinite;
+      white-space:nowrap;
+    }
+    .ticker:hover .ticker-track{animation-play-state:paused}
+    @keyframes scroll{to{transform:translateX(-50%)}}
+    .t{
+      display:inline-flex;align-items:center;gap:7px;
+      padding:0 22px;border-right:1px solid var(--border);
+      font-family:'DM Mono',monospace;font-size:.71rem;
+    }
+    .t-n{color:var(--muted);font-size:.66rem}
+    .up{color:var(--green)}.dn{color:var(--red)}
+
+    /* ── LAYOUT ── */
+    main{padding:16px 16px 48px;max-width:1600px;margin:0 auto;}
+
+    .sec-label{
+      font-size:.65rem;font-weight:700;letter-spacing:.12em;
+      text-transform:uppercase;color:var(--muted);
+      margin-bottom:10px;padding-left:2px;
+      display:flex;align-items:center;gap:6px;
+    }
+    .sec-label::before{
+      content:'';width:3px;height:12px;border-radius:2px;background:var(--accent);
+    }
+
+    .page-panel{animation:fadeUp .25s ease}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+
+    /* grids */
+    .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    
+    @media(max-width:1100px){
+      .g2{grid-template-columns:1fr}
+    }
+    @media(max-width:680px){
+      nav{display:none}
+      #msel{display:block!important}
+    }
+    #msel{
+      display:none;font-family:'Syne',sans-serif;font-size:.82rem;
+      padding:5px 10px;border-radius:6px;
+      border:1px solid var(--border);background:var(--surface);
+      color:var(--text);cursor:pointer;
+    }
+
+    .mb{margin-bottom:12px}
+
+    /* card */
+    .card{
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:10px;overflow:hidden;box-shadow:var(--shadow);
+      transition:border-color .18s,box-shadow .18s;
+    }
+    .card:hover{
+      border-color:color-mix(in srgb,var(--accent) 35%,var(--border));
+      box-shadow:var(--glow),var(--shadow);
+    }
+    .ch{
+      padding:8px 12px;border-bottom:1px solid var(--border);
+      display:flex;align-items:center;justify-content:space-between;
+    }
+    .ct{font-size:.75rem;font-weight:700;letter-spacing:.03em;display:flex;align-items:center;gap:5px}
+    .cb{
+      font-family:'DM Mono',monospace;font-size:.62rem;
+      padding:2px 6px;border-radius:4px;border:1px solid var(--border);color:var(--muted);
+    }
+    
+    .ch-input {
+      font-family: 'DM Mono', monospace;
+      font-size: .65rem;
+      padding: 3px 6px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      outline: none;
+      width: 100px;
+    }
+
+    /* TradingView container */
+    .wbox{width:100%;overflow:hidden;background:var(--surface2);}
+    .wbox.h800{height:800px}
+    .wbox.h600{height:600px}
+    .wbox.h400{height:400px}
+
+    footer{
+      text-align:center;padding:20px;
+      font-size:.7rem;color:var(--muted);
+      border-top:1px solid var(--border);
+      font-family:'DM Mono',monospace;
+    }
+    footer a{color:var(--accent);text-decoration:none}
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><div class="dot"></div>MarketPulse</div>
+
+  <nav id="nav">
+    <a href="index.html">Home Page</a>
+    <a href="analisitecnica.html">Analisi Tecnica</a>
+    <a href="screener.html">Screener</a>
+    <a href="fondamentali.html" class="active">Fondamentali</a>
+  </nav>
+
+  <select id="msel" onchange="location = this.value;">
+    <option value="index.html">Home Page</option>
+    <option value="analisitecnica.html">Analisi Tecnica</option>
+    <option value="screener.html">Screener</option>
+    <option value="fondamentali.html" selected>Fondamentali</option>
+  </select>
+
+  <div class="hdr-right">
+    <span id="clock"></span>
+    <button class="toggle" id="tog" title="Tema"></button>
+  </div>
+</header>
+
+<div class="ticker">
+  <div class="ticker-track" id="tt"></div>
+</div>
+
+<main>
+  <div class="page-panel" id="page-fondamentali">
+    <div style="display:flex; justify-content:space-between; align-items:center;" class="mb">
+        <p class="sec-label" style="margin-bottom:0;">Analisi Fondamentale Aziendale</p>
+        <input type="text" id="symbol-input" class="ch-input" value="NASDAQ:AAPL" placeholder="Es. NASDAQ:AAPL">
+    </div>
+
+    <div class="card mb">
+      <div class="ch">
+        <span class="ct">📊 Dati Finanziari & Rendiconti</span>
+        <span class="cb" id="card-badge">AAPL</span>
+      </div>
+      <div class="wbox h800" id="financials-container"></div>
+    </div>
+
+    <div class="g2 mb">
+      <div class="card">
+        <div class="ch"><span class="ct">🏢 Profilo Aziendale</span></div>
+        <div class="wbox h400" id="profile-container"></div>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">🎯 Informazioni Fondamentali Base</span></div>
+        <div class="wbox h400" id="symbol-info-container"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  MarketPulse &nbsp;·&nbsp; Grafici <a href="https://www.tradingview.com" target="_blank">TradingView</a> &nbsp;·&nbsp; Solo a scopo informativo
+</footer>
+
+<script>
+const root = document.documentElement;
+const tog  = document.getElementById('tog');
+const symbolInput = document.getElementById('symbol-input');
+const cardBadge = document.getElementById('card-badge');
+
+function applyTheme(t, symbol = "NASDAQ:AAPL") {
+  root.setAttribute('data-theme', t);
+  localStorage.setItem('mp-theme', t);
+  
+  buildFundamentalWidgets(t, symbol);
+}
+
+const saved = localStorage.getItem('mp-theme') || 'light';
+applyTheme(saved, symbolInput.value);
+
+tog.addEventListener('click', () => {
+  applyTheme(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark', symbolInput.value);
+});
+
+symbolInput.addEventListener('change', (e) => {
+    let sym = e.target.value.trim().toUpperCase();
+    if(!sym.includes(':')) sym = 'NASDAQ:' + sym; // Fallback
+    e.target.value = sym;
+    cardBadge.textContent = sym.split(':')[1] || sym;
+    applyTheme(root.getAttribute('data-theme'), sym);
+});
+
+function createWidgetWrapper() {
+  const wrap = document.createElement('div');
+  wrap.className = 'tradingview-widget-container';
+  wrap.style.height = '100%';
+  const inner = document.createElement('div');
+  inner.className = 'tradingview-widget-container__widget';
+  wrap.appendChild(inner);
+  return wrap;
+}
+
+function buildFundamentalWidgets(theme, symbol) {
+  // 1. Dati Finanziari Complessi
+  const finContainer = document.getElementById('financials-container');
+  if(finContainer) {
+    finContainer.innerHTML = '';
+    const wrap = createWidgetWrapper();
+    const scr = document.createElement('script');
+    scr.type = 'text/javascript'; scr.async = true;
+    scr.src = 'https://s3.tradingview.com/external-embedding/embed-widget-financials.js';
+    scr.textContent = JSON.stringify({
+      "colorTheme": theme, "isTransparent": true, "largeChartUrl": "", "displayMode": "regular", 
+      "width": "100%", "height": "100%", "symbol": symbol, "locale": "it"
+    });
+    wrap.appendChild(scr); finContainer.appendChild(wrap);
+  }
+
+  // 2. Profilo Aziendale
+  const profContainer = document.getElementById('profile-container');
+  if(profContainer) {
+    profContainer.innerHTML = '';
+    const wrap = createWidgetWrapper();
+    const scr = document.createElement('script');
+    scr.type = 'text/javascript'; scr.async = true;
+    scr.src = 'https://s3.tradingview.com/external-embedding/embed-widget-symbol-profile.js';
+    scr.textContent = JSON.stringify({
+      "colorTheme": theme, "isTransparent": true, 
+      "width": "100%", "height": "100%", "symbol": symbol, "locale": "it"
+    });
+    wrap.appendChild(scr); profContainer.appendChild(wrap);
+  }
+  
+  // 3. Symbol Info (dati chiave)
+  const infoContainer = document.getElementById('symbol-info-container');
+  if(infoContainer) {
+    infoContainer.innerHTML = '';
+    const wrap = createWidgetWrapper();
+    const scr = document.createElement('script');
+    scr.type = 'text/javascript'; scr.async = true;
+    scr.src = 'https://s3.tradingview.com/external-embedding/embed-widget-symbol-info.js';
+    scr.textContent = JSON.stringify({
+      "colorTheme": theme, "isTransparent": true, 
+      "width": "100%", "symbol": symbol, "locale": "it"
+    });
+    wrap.appendChild(scr); infoContainer.appendChild(wrap);
+  }
+}
+
+function tick() {
+  const n = new Date();
+  document.getElementById('clock').textContent =
+    n.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) +
+    ' · ' + n.toLocaleDateString('it-IT',{day:'2-digit',month:'short'});
+}
+tick(); setInterval(tick, 1000);
+
+const tdata = [
+  {n:'S&P 500',p:'5 842.14',c:'+0.42%',u:true},{n:'NASDAQ',p:'18 973',c:'+0.61%',u:true},
+  {n:'DOW',p:'42 315',c:'+0.18%',u:true},{n:'FTSE MIB',p:'38 120',c:'-0.18%',u:false},
+  {n:'EUR/USD',p:'1.0834',c:'+0.12%',u:true},{n:'BTC',p:'109 420',c:'+1.83%',u:true},
+  {n:'Gold',p:'3 296',c:'+0.55%',u:true},{n:'WTI',p:'61.42',c:'-0.92%',u:false}
+];
+const tt = document.getElementById('tt');
+[0,1,2].forEach(() => tdata.forEach(d => {
+  const el = document.createElement('span'); el.className = 't';
+  el.innerHTML = `<span class="t-n">${d.n}</span><span>${d.p}</span><span class="${d.u?'up':'dn'}">${d.c}</span>`;
+  tt.appendChild(el);
+}));
+</script>
+</body>
+</html>
