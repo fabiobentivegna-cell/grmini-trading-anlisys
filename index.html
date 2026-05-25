@@ -284,11 +284,17 @@
       <div class="ch">
         <span class="ct">📰 Notizie di Mercato — Live</span>
         <select id="news-source-selector" class="ch-select">
-          <option value="all">Tutti i mercati</option>
-          <option value="index">Indici</option>
-          <option value="stock">Azioni</option>
-          <option value="crypto">Criptovalute</option>
-          <option value="forex">Forex / Valute</option>
+          <optgroup label="TradingView (Widget Base)">
+            <option value="tv-all" selected>Tutti i mercati (TV)</option>
+            <option value="tv-index">Indici (TV)</option>
+            <option value="tv-crypto">Crypto (TV)</option>
+          </optgroup>
+          <optgroup label="Fonti Web (Italiano)">
+            <option value="https://www.teleborsa.it/">Teleborsa</option>
+            <option value="https://www.soldionline.it/notizie/economia-politica">SoldiOnline</option>
+            <option value="https://www.ansa.it/sito/notizie/economia/">ANSA Economia</option>
+            <option value="https://quifinanza.it/finanza/">QuiFinanza</option>
+          </optgroup>
         </select>
       </div>
       <div class="wbox h300" id="news-timeline-container"></div>
@@ -343,7 +349,7 @@ function applyTheme(t) {
   root.setAttribute('data-theme', t);
   localStorage.setItem('mp-theme', t);
   
-  const currentNewsMarket = newsSelector ? newsSelector.value : 'all';
+  const currentNewsMarket = newsSelector ? newsSelector.value : 'tv-all';
   
   buildDynamicWidgets(t);
   buildNewsWidget(t, currentNewsMarket);
@@ -366,41 +372,57 @@ if (newsSelector) {
   });
 }
 
-// Funzione isolata per rigenerare solo il widget News (evita ricaricamenti inutili del resto)
-function buildNewsWidget(theme, marketType) {
+// Funzione per generare il widget News nativo o caricare l'iframe web
+function buildNewsWidget(theme, sourceValue) {
   const newsContainer = document.getElementById('news-timeline-container');
   if(!newsContainer) return;
   
   newsContainer.innerHTML = '';
-  const wrap = createWidgetWrapper();
-  const scr = document.createElement('script');
-  scr.type = 'text/javascript'; 
-  scr.async = true;
-  scr.src = 'https://s3.tradingview.com/external-embedding/embed-widget-timeline.js';
   
-  let config = {
-    "colorTheme": theme,
-    "isTransparent": true,
-    "displayMode": "regular",
-    "width": "100%",
-    "height": "100%",
-    "locale": "it"
-  };
+  // Se inizia con "tv-", carichiamo l'embed script TradingView
+  if (sourceValue.startsWith('tv-')) {
+    const wrap = createWidgetWrapper();
+    const scr = document.createElement('script');
+    scr.type = 'text/javascript'; 
+    scr.async = true;
+    scr.src = 'https://s3.tradingview.com/external-embedding/embed-widget-timeline.js';
+    
+    let market = sourceValue.replace('tv-', '');
+    let config = {
+      "colorTheme": theme,
+      "isTransparent": true,
+      "displayMode": "regular",
+      "width": "100%",
+      "height": "100%",
+      "locale": "it"
+    };
 
-  if (marketType === 'all') {
-    config.feedMode = "all_symbols";
+    if (market === 'all') {
+      config.feedMode = "all_symbols";
+    } else {
+      config.feedMode = "market";
+      config.market = market;
+    }
+
+    scr.textContent = JSON.stringify(config);
+    wrap.appendChild(scr); 
+    newsContainer.appendChild(wrap);
+    
   } else {
-    config.feedMode = "market";
-    config.market = marketType;
+    // Altrimenti creiamo dinamicamente un iframe puntato alla risorsa italiana selezionata
+    const iframe = document.createElement('iframe');
+    iframe.src = sourceValue;
+    iframe.style.width = '100%';
+    iframe.style.height = '100%';
+    iframe.style.border = 'none';
+    iframe.style.background = (theme === 'dark') ? '#0d1117' : '#ffffff';
+    
+    newsContainer.appendChild(iframe);
   }
-
-  scr.textContent = JSON.stringify(config);
-  wrap.appendChild(scr); 
-  newsContainer.appendChild(wrap);
 }
 
 function buildDynamicWidgets(theme) {
-  // 1. Mantenuto: Market Overview Widget (Mappa Indici Mondiali)
+  // Mappa Indici Mondiali
   const overviewContainer = document.getElementById('market-overview-container');
   if(overviewContainer) {
     overviewContainer.innerHTML = '';
@@ -418,7 +440,7 @@ function buildDynamicWidgets(theme) {
     wrap.appendChild(scr); overviewContainer.appendChild(wrap);
   }
 
-  // 2. Calendario Economico
+  // Calendario Economico
   const eventsContainer = document.getElementById('events-container');
   if(eventsContainer) {
     eventsContainer.innerHTML = '';
@@ -432,7 +454,7 @@ function buildDynamicWidgets(theme) {
     wrap.appendChild(scr); eventsContainer.appendChild(wrap);
   }
 
-  // 3. Hotlists
+  // Hotlists
   const hotlistsContainer = document.getElementById('hotlists-container');
   if(hotlistsContainer) {
     hotlistsContainer.innerHTML = '';
