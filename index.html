@@ -284,20 +284,24 @@
       <div class="ch">
         <span class="ct">📰 Notizie di Mercato — Live</span>
         <select id="news-source-selector" class="ch-select">
-          <optgroup label="TradingView (Widget Base)">
-            <option value="tv-all" selected>Tutti i mercati (TV)</option>
+          <optgroup label="Fonti Italiane (Consigliato)">
+            <option value="https://www.teleborsa.it/Quotazioni/Notizie" selected>Teleborsa News</option>
+            <option value="https://www.soldionline.it/notizie/economia-politica">SoldiOnline</option>
+            <option value="https://www.ansa.it/sito/notizie/economia/">ANSA Economia</option>
+          </optgroup>
+          <optgroup label="TradingView Widget (Inglese)">
+            <option value="tv-all">Tutti i mercati (TV)</option>
             <option value="tv-index">Indici (TV)</option>
             <option value="tv-crypto">Crypto (TV)</option>
           </optgroup>
-          <optgroup label="Fonti Web (Italiano)">
-            <option value="https://www.teleborsa.it/">Teleborsa</option>
-            <option value="https://www.soldionline.it/notizie/economia-politica">SoldiOnline</option>
-            <option value="https://www.ansa.it/sito/notizie/economia/">ANSA Economia</option>
-            <option value="https://quifinanza.it/finanza/">QuiFinanza</option>
-          </optgroup>
         </select>
       </div>
-      <div class="wbox h300" id="news-timeline-container"></div>
+      
+      <div class="wbox h350" style="position: relative;">
+        <div id="news-timeline-container" style="width: 100%; height: 100%; display: none;"></div>
+        
+        <iframe id="news-iframe-container" style="width: 100%; height: 100%; border: none; display: block;" src="https://www.teleborsa.it/Quotazioni/Notizie"></iframe>
+      </div>
     </div>
 
     <div class="g-main mb">
@@ -349,7 +353,7 @@ function applyTheme(t) {
   root.setAttribute('data-theme', t);
   localStorage.setItem('mp-theme', t);
   
-  const currentNewsMarket = newsSelector ? newsSelector.value : 'tv-all';
+  const currentNewsMarket = newsSelector ? newsSelector.value : 'https://www.teleborsa.it/Quotazioni/Notizie';
   
   buildDynamicWidgets(t);
   buildNewsWidget(t, currentNewsMarket);
@@ -364,7 +368,7 @@ tog.addEventListener('click', () => {
   location.reload(); 
 });
 
-// Event Listener per aggiornare il feed notizie in base alla selezione
+// Listener corretto sul cambio sorgente
 if (newsSelector) {
   newsSelector.addEventListener('change', (e) => {
     const currentTheme = root.getAttribute('data-theme');
@@ -372,15 +376,21 @@ if (newsSelector) {
   });
 }
 
-// Funzione per generare il widget News nativo o caricare l'iframe web
+// Nuova logica di commutazione e pulizia per evitare conflitti di script script
 function buildNewsWidget(theme, sourceValue) {
-  const newsContainer = document.getElementById('news-timeline-container');
-  if(!newsContainer) return;
+  const tvContainer = document.getElementById('news-timeline-container');
+  const iframeContainer = document.getElementById('news-iframe-container');
   
-  newsContainer.innerHTML = '';
+  if(!tvContainer || !iframeContainer) return;
   
-  // Se inizia con "tv-", carichiamo l'embed script TradingView
   if (sourceValue.startsWith('tv-')) {
+    // 1. Caso Widget TradingView: Nascondi l'iframe e pulisci/rigenera il div del widget
+    iframeContainer.style.display = 'none';
+    iframeContainer.src = 'about:blank'; // resetta l'iframe per liberare memoria
+    
+    tvContainer.innerHTML = '';
+    tvContainer.style.display = 'block';
+    
     const wrap = createWidgetWrapper();
     const scr = document.createElement('script');
     scr.type = 'text/javascript'; 
@@ -406,18 +416,20 @@ function buildNewsWidget(theme, sourceValue) {
 
     scr.textContent = JSON.stringify(config);
     wrap.appendChild(scr); 
-    newsContainer.appendChild(wrap);
+    tvContainer.appendChild(wrap);
     
   } else {
-    // Altrimenti creiamo dinamicamente un iframe puntato alla risorsa italiana selezionata
-    const iframe = document.createElement('iframe');
-    iframe.src = sourceValue;
-    iframe.style.width = '100%';
-    iframe.style.height = '100%';
-    iframe.style.border = 'none';
-    iframe.style.background = (theme === 'dark') ? '#0d1117' : '#ffffff';
+    // 2. Caso Sito Web Esterno (Iframe): Nascondi e svuota il widget TV, mostra ed aggiorna l'iframe
+    tvContainer.style.display = 'none';
+    tvContainer.innerHTML = ''; 
     
-    newsContainer.appendChild(iframe);
+    iframeContainer.style.display = 'block';
+    iframeContainer.style.background = (theme === 'dark') ? '#0d1117' : '#ffffff';
+    
+    // Cambia la sorgente dell'iframe solo se è effettivamente diversa
+    if(iframeContainer.src !== sourceValue) {
+      iframeContainer.src = sourceValue;
+    }
   }
 }
 
