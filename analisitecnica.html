@@ -343,7 +343,7 @@
    ═══════════════════════════════════════════ */
 const TICKER_DB = [
     // ── ITALIA ──
-    { name:"FTSE MIB", ticker:"SPREADEX:ITALY40", interval:"D", cat:"🇮🇹 Italia" },
+    { name:"FTSE MIB (CFD)", ticker:"CAPITALCOM:IT40", interval:"5", cat:"🇮🇹 Italia" },
     { name:"Eni", ticker:"CAPITALCOM:ENI", interval:"D", cat:"🇮🇹 Italia" },
     { name:"UniCredit", ticker:"CAPITALCOM:UCG", interval:"D", cat:"🇮🇹 Italia" },
     { name:"Intesa Sanpaolo", ticker:"CAPITALCOM:ISP", interval:"D", cat:"🇮🇹 Italia" },
@@ -405,7 +405,7 @@ let currentTheme = "dark";
 let currentChartCount = 6;
 let activeMarket = "italia";
 let activeProducts = [...marketProducts["italia"]];
-let selectedSlotIndex = 0; // Tiene traccia del grafico selezionato/attivo a video
+let selectedSlotIndex = 0; 
 
 function getActiveStudies() {
     const studies = [];
@@ -477,7 +477,7 @@ function toggleTheme() {
 function onMarketSelectChange(key) {
     activeMarket = key;
     activeProducts = [...marketProducts[key]];
-    selectedSlotIndex = 0; // Resetta sul primo grafico al cambio di paniere
+    selectedSlotIndex = 0; 
     renderCharts();
 }
 
@@ -536,7 +536,6 @@ function highlight(text, q) {
 }
 
 function pickGlobalTicker(ticker, name) {
-    // Aggiorna l'asset solo per lo slot correntemente evidenziato ed attivo
     activeProducts[selectedSlotIndex] = { name, ticker };
     document.getElementById("global-search-dropdown").classList.remove("open");
     document.getElementById("global-search-input").value = "";
@@ -545,7 +544,6 @@ function pickGlobalTicker(ticker, name) {
 
 function changeActiveSlot(idx) {
     selectedSlotIndex = idx;
-    // Aggiorna visivamente la classe attiva sui bordi senza fare il refresh totale del widget TV
     document.querySelectorAll(".chart-card").forEach((card, i) => {
         if(i === idx) {
             card.classList.add("active-slot");
@@ -563,7 +561,7 @@ function renderCharts() {
     const studies = getActiveStudies();
 
     for (let i = 0; i < currentChartCount; i++) {
-        const product = activeProducts[i] || { name:"FTSE MIB", ticker:"SPREADEX:ITALY40", interval:"D" };
+        const product = activeProducts[i] || { name:"FTSE MIB (CFD)", ticker:"CAPITALCOM:IT40", interval:"5" };
 
         const card = document.createElement("div");
         card.className = "chart-card";
@@ -571,7 +569,6 @@ function renderCharts() {
             card.classList.add("active-slot");
         }
         
-        // Cliccando sulla card, essa diventa il bersaglio attivo della barra di ricerca superiore
         card.onclick = () => changeActiveSlot(i);
 
         const header = document.createElement("div");
