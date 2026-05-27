@@ -1,293 +1,556 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="it" data-theme="light">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trading Analysis Dashboard</title>
-    <style>
-        :root {
-            --bg-main: #131722;
-            --bg-card: #1e222d;
-            --text-main: #d1d4dc;
-            --text-muted: #8a93a6;
-            --accent-blue: #2962ff;
-            --accent-green: #00a25b;
-            --accent-red: #f23645;
-            --border-color: #2b313f;
-        }
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MarketPulse — Dashboard Finanziario</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root[data-theme="dark"] {
+      --bg:        #070a0f;
+      --surface:   #0d1117;
+      --surface2:  #161b22;
+      --border:    #21262d;
+      --accent:    #58a6ff;
+      --green:     #3fb950;
+      --red:       #f85149;
+      --text:      #e6edf3;
+      --muted:     #8b949e;
+      --hdr:       rgba(7,10,15,.95);
+      --glow:      0 0 20px rgba(88,166,255,.12);
+      --shadow:    0 1px 12px rgba(0,0,0,.6);
+    }
+    :root[data-theme="light"] {
+      --bg:        #f6f8fa;
+      --surface:   #ffffff;
+      --surface2:  #f6f8fa;
+      --border:    #d0d7de;
+      --accent:    #0969da;
+      --green:     #1a7f37;
+      --red:       #cf222e;
+      --text:      #1f2328;
+      --muted:     #656d76;
+      --hdr:       rgba(246,248,250,.95);
+      --glow:      0 0 20px rgba(9,105,218,.08);
+      --shadow:    0 1px 12px rgba(0,0,0,.1);
+    }
 
-        body {
-            background-color: var(--bg-main);
-            color: var(--text-main);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            box-sizing: border-box;
-        }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid var(--border-color);
-        }
+    body{
+      font-family:'Syne',sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      min-height:100vh;
+      transition:background .25s,color .25s;
+    }
 
-        header h1 {
-            margin: 0;
-            font-size: 24px;
-            color: #ffffff;
-        }
+    /* ── HEADER ── */
+    header{
+      position:sticky;top:0;z-index:200;
+      background:var(--hdr);
+      backdrop-filter:blur(20px);
+      border-bottom:1px solid var(--border);
+      height:54px;
+      display:flex;align-items:center;
+      padding:0 20px;gap:12px;
+    }
+    .logo{
+      font-size:1.1rem;font-weight:800;letter-spacing:-.4px;
+      display:flex;align-items:center;gap:8px;white-space:nowrap;
+    }
+    .dot{
+      width:9px;height:9px;border-radius:50%;
+      background:var(--accent);
+      box-shadow:0 0 8px var(--accent);
+      animation:blink 2.4s infinite;
+    }
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
 
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 20px;
-        }
+    nav{display:flex;gap:4px;flex:1;justify-content:center;flex-wrap:wrap;}
+    nav a{
+      font-family:'Syne',sans-serif;font-size Club:.75rem;font-weight:700;
+      letter-spacing:.05em;text-transform:uppercase;
+      padding:6px 16px;border-radius:6px;
+      border:1px solid transparent;
+      background:transparent;color:var(--muted);cursor:pointer;
+      transition:all .18s;white-space:nowrap;text-decoration:none;
+    }
+    nav a:hover{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 30%,transparent)}
+    nav a.active{
+      color:var(--accent);
+      border-color:var(--accent);
+      background:color-mix(in srgb,var(--accent) 10%,transparent);
+    }
 
-        .card {
-            background-color: var(--bg-card);
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-        }
+    .hdr-right{display:flex;align-items:center;gap:10px;margin-left:auto;}
+    #clock{font-family:'DM Mono',monospace;font-size:.72rem;color:var(--muted);white-space:nowrap;}
 
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid var(--border-color);
-        }
+    .toggle{
+      width:36px;height:20px;border-radius:10px;
+      background:var(--surface2);border:1px solid var(--border);
+      cursor:pointer;position:relative;flex-shrink:0;transition:background .25s;
+    }
+    .toggle::after{
+      content:'';position:absolute;top:2px;left:2px;
+      width:14px;height:14px;border-radius:50%;
+      background:var(--accent);transition:transform .25s;
+    }
+    [data-theme="light"] .toggle::after{transform:translateX(16px)}
 
-        .card-header h2 {
-            margin: 0;
-            font-size: 18px;
-            color: #ffffff;
-        }
+    /* ── TICKER ── */
+    .ticker{
+      width:100%;overflow:hidden;
+      background:var(--surface);
+      border-bottom:1px solid var(--border);
+      padding:5px 0;
+    }
+    .ticker-track{
+      display:inline-flex;animation:scroll 50s linear infinite;
+      white-space:nowrap;
+    }
+    .ticker:hover .ticker-track{animation-play-state:paused}
+    @keyframes scroll{to{transform:translateX(-50%)}}
+    .t{
+      display:inline-flex;align-items:center;gap:7px;
+      padding:0 22px;border-right:1px solid var(--border);
+      font-family:'DM Mono',monospace;font-size:.71rem;
+    }
+    .t-n{color:var(--muted);font-size:.66rem}
+    .up{color:var(--green)}.dn{color:var(--red)}
 
-        .badge {
-            font-size: 12px;
-            color: var(--accent-blue);
-            background: rgba(41, 98, 255, 0.15);
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-weight: 600;
-        }
+    /* ── LAYOUT ── */
+    main{padding:16px 16px 48px;max-width:1600px;margin:0 auto;}
 
-        /* Stili per la sezione News */
-        .news-list {
-            max-height: 600px;
-            overflow-y: auto;
-            padding-right: 10px;
-        }
+    .sec-label{
+      font-size:.65rem;font-weight:700;letter-spacing:.12em;
+      text-transform:uppercase;color:var(--muted);
+      margin-bottom:10px;padding-left:2px;
+      display:flex;align-items:center;gap:6px;
+    }
+    .sec-label::before{
+      content:'';width:3px;height:12px;border-radius:2px;background:var(--accent);
+    }
 
-        .news-list::-webkit-scrollbar {
-            width: 6px;
-        }
+    .page-panel{animation:fadeUp .25s ease}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 
-        .news-list::-webkit-scrollbar-track {
-            background: var(--bg-main);
-            border-radius: 10px;
-        }
+    /* grids */
+    .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+    .g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
+    .g-main{display:grid;grid-template-columns:2fr 1fr;gap:12px}
 
-        .news-list::-webkit-scrollbar-thumb {
-            background-color: var(--border-color);
-            border-radius: 10px;
-        }
+    @media(max-width:1100px){
+      .g4{grid-template-columns:1fr 1fr}
+      .g3{grid-template-columns:1fr 1fr}
+      .g-main{grid-template-columns:1fr}
+    }
+    @media(max-width:680px){
+      .g2,.g3,.g4{grid-template-columns:1fr}
+      nav{display:none}
+      #msel{display:block!important}
+    }
+    #msel{
+      display:none;font-family:'Syne',sans-serif;font-size:.82rem;
+      padding:5px 10px;border-radius:6px;
+      border:1px solid var(--border);background:var(--surface);
+      color:var(--text);cursor:pointer;
+    }
 
-        .news-item {
-            margin-bottom: 18px;
-            padding-bottom: 18px;
-            border-bottom: 1px solid var(--border-color);
-        }
+    .mb{margin-bottom:12px}
 
-        .news-item:last-child {
-            margin-bottom: 0;
-            padding-bottom: 0;
-            border-bottom: none;
-        }
+    /* stat cards */
+    .stats{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(130px,1fr));
+      gap:8px;margin-bottom:14px;
+    }
+    .stat{
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:10px;padding:12px 14px;
+      transition:border-color .18s,box-shadow .18s;
+    }
+    .stat:hover{
+      border-color:color-mix(in srgb,var(--accent) 40%,var(--border));
+      box-shadow:var(--glow);
+    }
+    .stat-l{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+    .stat-v{font-family:'DM Mono',monospace;font-size:1.05rem;font-weight:500}
+    .stat-c{font-family:'DM Mono',monospace;font-size:.72rem;margin-top:2px}
 
-        .news-source {
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 6px;
-        }
+    /* card */
+    .card{
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:10px;overflow:hidden;box-shadow:var(--shadow);
+      transition:border-color .18s,box-shadow .18s;
+    }
+    .card:hover{
+      border-color:color-mix(in srgb,var(--accent) 35%,var(--border));
+      box-shadow:var(--glow),var(--shadow);
+    }
+    .ch{
+      padding:8px 12px;border-bottom:1px solid var(--border);
+      display:flex;align-items:center;justify-content:space-between;
+    }
+    .ct{font-size:.75rem;font-weight:700;letter-spacing:.03em;display:flex;align-items:center;gap:5px}
+    .cb{
+      font-family:'DM Mono',monospace;font-size:.62rem;
+      padding:2px 6px;border-radius:4px;border:1px solid var(--border);color:var(--muted);
+    }
+    
+    /* Stile per la select nel widget news */
+    .ch-select {
+      font-family: 'DM Mono', monospace;
+      font-size: .65rem;
+      padding: 3px 6px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .ch-select:hover, .ch-select:focus {
+      border-color: var(--accent);
+    }
 
-        .source-investing { color: #e91e63; }
-        .source-borsa { color: var(--accent-blue); }
-        .source-soldi { color: var(--accent-green); }
+    /* TradingView container */
+    .wbox{width:100%;overflow:hidden;background:var(--surface2);}
+    .wbox.h600{height:600px}
+    .wbox.h500{height:500px}
+    .wbox.h400{height:400px}
+    .wbox.h350{height:350px}
+    .wbox.h300{height:300px}
+    .wbox.h250{height:250px}
+    .wbox.h200{height:200px}
+    .wbox.h160{height:160px}
 
-        .news-item h4 {
-            margin: 0 0 8px 0;
-            font-size: 15px;
-            line-height: 1.4;
-        }
-
-        .news-item h4 a {
-            color: #ffffff;
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-
-        .news-item h4 a:hover {
-            color: var(--accent-blue);
-        }
-
-        .news-item p {
-            margin: 0;
-            font-size: 13px;
-            color: var(--text-muted);
-            line-height: 1.5;
-        }
-
-        /* Widget Placeholder */
-        .widget-container {
-            width: 100%;
-            height: 600px;
-            background: var(--bg-main);
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-muted);
-            border: 1px solid var(--border-color);
-        }
-
-        @media (max-width: 992px) {
-            .dashboard-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    footer{
+      text-align:center;padding:20px;
+      font-size:.7rem;color:var(--muted);
+      border-top:1px solid var(--border);
+      font-family:'DM Mono',monospace;
+    }
+    footer a{color:var(--accent);text-decoration:none}
+  </style>
 </head>
 <body>
 
-    <header>
-        <h1>📈 Trading Analysis Dashboard</h1>
-        <span class="badge" style="color: var(--text-main); background: var(--bg-card); border: 1px solid var(--border-color);">Aggiornato: Maggio 2026</span>
-    </header>
+<header>
+  <div class="logo"><div class="dot"></div>MarketPulse</div>
 
-    <div class="dashboard-grid">
-        
-        <!-- COLONNA SINISTRA: Grafici / Analisi -->
-        <div class="card">
-            <div class="card-header">
-                <h2>Analisi Mercato - S&P 500</h2>
-            </div>
-            <!-- Sostituisci questo div con il tuo script TradingView o il tuo grafico -->
-            <div class="widget-container">
-                <!-- TradingView Widget BEGIN -->
-                <div class="tradingview-widget-container" style="height:100%;width:100%">
-                  <div id="tradingview_chart" style="height:100%;width:100%"></div>
-                  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-                  <script type="text/javascript">
-                  new TradingView.widget(
-                  {
-                  "autosize": true,
-                  "symbol": "CME_MINI:ES1!",
-                  "interval": "D",
-                  "timezone": "Europe/Rome",
-                  "theme": "dark",
-                  "style": "1",
-                  "locale": "it",
-                  "enable_publishing": false,
-                  "backgroundColor": "#131722",
-                  "gridColor": "#1f2937",
-                  "hide_top_toolbar": false,
-                  "hide_legend": false,
-                  "save_image": false,
-                  "container_id": "tradingview_chart"
-                }
-                  );
-                  </script>
-                </div>
-                <!-- TradingView Widget END -->
-            </div>
-        </div>
+  <nav id="nav">
+    <a href="index.html" class="active">Home Page</a>
+    <a href="analisitecnica.html">Analisi Tecnica</a>
+    <a href="screener.html">Screener</a>
+  </nav>
 
-        <!-- COLONNA DESTRA: News USA -->
-        <div class="card">
-            <div class="card-header">
-                <h2>🇺🇸 News USA — Live</h2>
-                <span class="badge">Mercati Americani</span>
-            </div>
-            
-            <div class="news-list">
+  <select id="msel" onchange="location = this.value;">
+    <option value="index.html" selected>Home Page</option>
+    <option value="analisitecnica.html">Analisi Tecnica</option>
+    <option value="screener.html">Screener</option>
+  </select>
 
-                <!-- Notizia 1 -->
-                <article class="news-item">
-                    <div class="news-source source-investing">
-                        INVESTING.COM • Wall Street
-                    </div>
-                    <h4>
-                        <a href="https://it.investing.com/news" target="_blank">S&P 500 e Nasdaq in rialzo, il settore tech guida la carica</a>
-                    </h4>
-                    <p>
-                        Chiusura positiva per i listini tecnologici a Wall Street. Gli investitori tornano ad acquistare titoli legati ai semiconduttori e all'intelligenza artificiale, spingendo il Nasdaq ai massimi mensili.
-                    </p>
-                </article>
+  <div class="hdr-right">
+    <span id="clock"></span>
+    <button class="toggle" id="tog" title="Tema"></button>
+  </div>
+</header>
 
-                <!-- Notizia 2 -->
-                <article class="news-item">
-                    <div class="news-source source-borsa">
-                        BORSA ITALIANA • Macroeconomia USA
-                    </div>
-                    <h4>
-                        <a href="https://www.borsaitaliana.it/borsa/notizie/archivi/tutte.html?lang=it" target="_blank">Dati sull'inflazione in linea con le attese, la Fed riflette</a>
-                    </h4>
-                    <p>
-                        L'indice dei prezzi al consumo (CPI) statunitense mostra segni di stabilizzazione. Gli analisti ora si concentrano sulle prossime dichiarazioni di Powell per intuire le tempistiche dei tagli ai tassi d'interesse.
-                    </p>
-                </article>
+<div class="ticker">
+  <div class="ticker-track" id="tt"></div>
+</div>
 
-                <!-- Notizia 3 -->
-                <article class="news-item">
-                    <div class="news-source source-soldi">
-                        SOLDI ONLINE • Corporate
-                    </div>
-                    <h4>
-                        <a href="https://www.soldionline.it/notizie/" target="_blank">Trimestrali da record: Nvidia batte ancora le stime di Wall Street</a>
-                    </h4>
-                    <p>
-                        Il colosso dei chip ha riportato ricavi superiori alle aspettative degli analisti per il trimestre in corso, trainati dalla forte domanda globale per i data center. Il titolo registra un +6% nell'after-hours.
-                    </p>
-                </article>
+<main>
+  <div class="page-panel" id="page-home">
+    <p class="sec-label">Panoramica mercati globali</p>
 
-                <!-- Notizia 4 -->
-                <article class="news-item">
-                    <div class="news-source source-investing">
-                        INVESTING.COM • Mercato del Lavoro
-                    </div>
-                    <h4>
-                        <a href="https://it.investing.com/news" target="_blank">Sussidi di disoccupazione USA inferiori al previsto</a>
-                    </h4>
-                    <p>
-                        Le nuove richieste di sussidi di disoccupazione negli Stati Uniti sono scese inaspettatamente la scorsa settimana, suggerendo che il mercato del lavoro americano rimane sorprendentemente solido.
-                    </p>
-                </article>
-
-                <!-- Notizia 5 -->
-                <article class="news-item">
-                    <div class="news-source source-borsa">
-                        BORSA ITALIANA • Valute & Materie Prime
-                    </div>
-                    <h4>
-                        <a href="https://www.borsaitaliana.it/borsa/notizie/archivi/tutte.html?lang=it" target="_blank">Dollaro in rafforzamento, l'Oro frena la sua corsa</a>
-                    </h4>
-                    <p>
-                        L'indice del dollaro (DXY) recupera terreno contro le principali valute, mettendo sotto pressione le quotazioni dell'oro che scendono sotto la soglia psicologica di resistenza.
-                    </p>
-                </article>
-
-            </div>
-        </div>
-
+    <div class="stats">
+      <div class="stat"><div class="stat-l">S&amp;P 500</div><div class="stat-v up">5 842</div><div class="stat-c up">▲ +0.42%</div></div>
+      <div class="stat"><div class="stat-l">NASDAQ</div><div class="stat-v up">18 973</div><div class="stat-c up">▲ +0.61%</div></div>
+      <div class="stat"><div class="stat-l">FTSE MIB</div><div class="stat-v dn">38 120</div><div class="stat-c dn">▼ −0.18%</div></div>
+      <div class="stat"><div class="stat-l">EUR/USD</div><div class="stat-v">1.0834</div><div class="stat-c up">▲ +0.12%</div></div>
+      <div class="stat"><div class="stat-l">BTC/USD</div><div class="stat-v up">109 420</div><div class="stat-c up">▲ +1.83%</div></div>
+      <div class="stat"><div class="stat-l">Gold</div><div class="stat-v up">3 296</div><div class="stat-c up">▲ +0.55%</div></div>
+      <div class="stat"><div class="stat-l">WTI Oil</div><div class="stat-v dn">61.4</div><div class="stat-c dn">▼ −0.92%</div></div>
+      <div class="stat"><div class="stat-l">VIX</div><div class="stat-v dn">17.4</div><div class="stat-c dn">▼ −2.1%</div></div>
     </div>
 
+    <!-- WIDGET NEWS AGGIORNATO CON FONTI PERSONALIZZATE -->
+    <div class="card mb">
+      <div class="ch">
+        <span class="ct">📰 Notizie di Mercato — Live</span>
+        <select id="news-source-selector" class="ch-select">
+          <option value="all">Tutte le fonti</option>
+          <option value="borsa">Borsa Italiana</option>
+          <option value="investing">Investing.com</option>
+          <option value="soldi">SoldiOnline</option>
+        </select>
+      </div>
+      <div class="wbox h300" id="news-timeline-container"></div>
+    </div>
+
+    <div class="g-main mb">
+      <div class="card">
+        <div class="ch"><span class="ct">🌍 Indici Mondiali — Mappa</span><span class="cb">LIVE</span></div>
+        <div class="wbox h400" id="market-overview-container"></div>
+      </div>
+      
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="card">
+          <div class="ch"><span class="ct">📅 Calendario Economico</span></div>
+          <div class="wbox h200" id="events-container"></div>
+        </div>
+        <div class="card">
+          <div class="ch"><span class="ct">🔥 Più Scambiati</span></div>
+          <div class="wbox h200" id="hotlists-container"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="g3">
+      <div class="card">
+        <div class="ch"><span class="ct">📈 S&amp;P 500</span><span class="cb">SPX</span></div>
+        <div class="wbox h250" data-sym="CAPITALCOM:US500"></div>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">₿ Bitcoin</span><span class="cb">BTC</span></div>
+        <div class="wbox h250" data-sym="BITSTAMP:BTCUSD"></div>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">🥇 Gold</span><span class="cb">XAU</span></div>
+        <div class="wbox h250" data-sym="TVC:GOLD"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  MarketPulse &nbsp;·&nbsp; Grafici <a href="https://www.tradingview.com" target="_blank">TradingView</a> &nbsp;·&nbsp; Solo a scopo informativo
+</footer>
+
+<script src="config.js"></script>
+<script>
+const root = document.documentElement;
+const tog  = document.getElementById('tog');
+const newsSelector = document.getElementById('news-source-selector');
+
+function applyTheme(t) {
+  root.setAttribute('data-theme', t);
+  localStorage.setItem('mp-theme', t);
+  
+  const currentNewsMarket = newsSelector ? newsSelector.value : 'all';
+  
+  buildDynamicWidgets(t);
+  buildNewsWidget(t, currentNewsMarket);
+  document.querySelectorAll('.wbox[data-sym]').forEach(box => buildMiniChartsFor(box, t));
+}
+
+const saved = localStorage.getItem('mp-theme') || 'light';
+applyTheme(saved);
+
+tog.addEventListener('click', () => {
+  applyTheme(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+  location.reload(); 
+});
+
+// Event Listener per aggiornare il feed notizie in base alla selezione della fonte
+if (newsSelector) {
+  newsSelector.addEventListener('change', (e) => {
+    const currentTheme = root.getAttribute('data-theme');
+    buildNewsWidget(currentTheme, e.target.value);
+  });
+}
+
+// Funzione modificata per gestire il feed personalizzato di Borsa Italiana, Investing.com e SoldiOnline
+function buildNewsWidget(theme, sourceFilter) {
+  const newsContainer = document.getElementById('news-timeline-container');
+  if(!newsContainer) return;
+  
+  // Database interno delle ultime notizie basato sui link richiesti
+  const newsData = [
+    {
+      source: 'soldi',
+      sourceName: 'SoldiOnline • Piazza Affari',
+      title: 'Il FTSEMib mantiene la sua forza e si consolida oltre i 50.000 punti',
+      url: 'https://www.soldionline.it/notizie/',
+      desc: 'Sotto i riflettori Stellantis, che mette a segno un balzo del +5,5% delle immatricolazioni di vetture nell\'Unione Europea, sovraperformando la media generale del mercato (+5,1%).'
+    },
+    {
+      source: 'borsa',
+      sourceName: 'Borsa Italiana • Obbligazionario',
+      title: 'Boom di richieste sui bond societari italiani: Generali ed Hera da record',
+      url: 'https://www.borsaitaliana.it/borsa/notizie/archivi/tutte.html?lang=it',
+      desc: 'Generali ha collocato con successo un bond subordinato da 750 milioni di euro attirando ordini per 1,5 miliardi. Hera lancia un Green Bond a 6 anni da 500 milioni con richieste record oltre i 3,6 miliardi.'
+    },
+    {
+      source: 'investing',
+      sourceName: 'Investing.com • Wall Street',
+      title: 'Chiusura mista a New York: prese di beneficio sul Dow, corrono i semiconduttori',
+      url: 'https://it.investing.com/news',
+      desc: 'Il Dow Jones flette leggermente dello 0,23%, appesantito da Costco e PepsiCo. Al contrario, il comparto tecnologico spinge in avanti S&P500 e Nasdaq trascinati dai massicci acquisti su AMD e Marvell Technology.'
+    },
+    {
+      source: 'soldi',
+      sourceName: 'SoldiOnline • Euronext Growth Milan',
+      title: 'M&A sull\'EGM: Sottoscritto l\'accordo vincolante per la fusione Innovatec-ESI',
+      url: 'https://www.soldionline.it/notizie/',
+      desc: 'Accordo finalizzato per la fusione per incorporazione di ESI in Innovatec. Nel frattempo, Expert.ai chiude l\'esercizio con un valore della produzione pari a 47,82 milioni di euro.'
+    },
+    {
+      source: 'borsa',
+      sourceName: 'Borsa Italiana • Macro & Banche Centrali',
+      title: 'Riflettori sulla BCE: analisti prevedono fino a tre interventi sui tassi nel 2026',
+      url: 'https://www.borsaitaliana.it/borsa/notizie/archivi/tutte.html?lang=it',
+      desc: 'Secondo gli ultimi report macro di Intesa Sanpaolo, aumentano i rischi di una politica monetaria restrittiva con la prima mossa attesa al meeting di giugno. Sul fronte valute, l\'Euro scambia stabile a 0,9134 sul Franco Svizzero.'
+    }
+  ];
+
+  newsContainer.innerHTML = '';
+  newsContainer.style.overflowY = 'auto';
+  newsContainer.style.padding = '12px 16px';
+  
+  // Filtra i dati in base alla selezione del menu a tendina
+  const filteredData = sourceFilter === 'all' ? newsData : newsData.filter(item => item.source === sourceFilter);
+
+  if (filteredData.length === 0) {
+    newsContainer.innerHTML = `<div style="font-size:0.72rem; color:var(--muted); text-align:center; padding-top:30px; font-family:'DM Mono',monospace;">Nessun aggiornamento recente per questa fonte.</div>`;
+    return;
+  }
+
+  filteredData.forEach(item => {
+    const article = document.createElement('article');
+    article.style.marginBottom = '14px';
+    article.style.paddingBottom = '14px';
+    article.style.borderBottom = '1px solid var(--border)';
+    
+    // Assegnazione dinamica del colore del tag in base alla fonte
+    let tagColor = 'var(--accent)';
+    if(item.source === 'soldi') tagColor = 'var(--green)';
+    if(item.source === 'investing') tagColor = '#e91e63';
+
+    article.innerHTML = `
+      <div style="font-family:'DM Mono',monospace; font-size:0.62rem; font-weight:500; color:${tagColor}; text-transform:uppercase; margin-bottom:4px; letter-spacing:0.3px;">
+        ${item.sourceName}
+      </div>
+      <h4 style="margin:0 0 5px 0; font-size:0.85rem; font-weight:700; line-height:1.35;">
+        <a href="${item.url}" target="_blank" class="custom-news-link" style="color:var(--text); text-decoration:none; transition:color 0.15s;">
+          ${item.title}
+        </a>
+      </h4>
+      <p style="margin:0; font-size:0.73rem; color:var(--muted); line-height:1.45; font-family:sans-serif;">
+        ${item.desc}
+      </p>
+    `;
+    newsContainer.appendChild(article);
+  });
+
+  // Iniezione di una singola regola CSS per gestire l'hover dei link in modo pulito
+  if (!document.getElementById('custom-news-hover-effect')) {
+    const styleBlock = document.createElement('style');
+    styleBlock.id = 'custom-news-hover-effect';
+    styleBlock.textContent = `.custom-news-link:hover { color: var(--accent) !important; text-decoration: underline !important; }`;
+    document.head.appendChild(styleBlock);
+  }
+}
+
+function buildDynamicWidgets(theme) {
+  // 1. Market Overview Widget (Mappa Indici Mondiali)
+  const overviewContainer = document.getElementById('market-overview-container');
+  if(overviewContainer) {
+    overviewContainer.innerHTML = '';
+    const wrap = createWidgetWrapper();
+    const scr = document.createElement('script');
+    scr.type = 'text/javascript'; scr.async = true;
+    scr.src = 'https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js';
+    scr.textContent = JSON.stringify({
+      "colorTheme":theme,"dateRange":"12M","showChart":true,"locale":"it","largeChartUrl":"","isTransparent":true,"showSymbolLogo":true,"showFloatingTooltip":true,"width":"100%","height":"100%",
+      "tabs":[
+        {"title":"Indici","symbols":[{"s":"CAPITALCOM:US500","d":"S&P 500"},{"s":"CAPITALCOM:US100","d":"Nasdaq 100"},{"s":"INDEX:FTSEMIB","d":"FTSE MIB"},{"s":"CAPITALCOM:DE40","d":"DAX"},{"s":"CAPITALCOM:UK100","d":"FTSE 100"},{"s":"CAPITALCOM:JP225","d":"Nikkei"},{"s":"CAPITALCOM:HK50","d":"Hang Seng"}],"originalTitle":"Indici"},
+        {"title":"Crypto","symbols":[{"s":"BITSTAMP:BTCUSD","d":"Bitcoin"},{"s":"BITSTAMP:ETHUSD","d":"Ethereum"},{"s":"BINANCE:BNBUSDT","d":"BNB"},{"s":"BINANCE:SOLUSDT","d":"Solana"}],"originalTitle":"Crypto"}
+      ]
+    });
+    wrap.appendChild(scr); overviewContainer.appendChild(wrap);
+  }
+
+  // 2. Calendario Economico
+  const eventsContainer = document.getElementById('events-container');
+  if(eventsContainer) {
+    eventsContainer.innerHTML = '';
+    const wrap = createWidgetWrapper();
+    const scr = document.createElement('script');
+    scr.type = 'text/javascript'; scr.async = true;
+    scr.src = 'https://s3.tradingview.com/external-embedding/embed-widget-events.js';
+    scr.textContent = JSON.stringify({
+      "colorTheme":theme,"isTransparent":true,"width":"100%","height":"100%","locale":"it","importanceFilter":"-1,0,1","countryFilter":"us,eu,it,gb,jp,cn"
+    });
+    wrap.appendChild(scr); eventsContainer.appendChild(wrap);
+  }
+
+  // 3. Hotlists
+  const hotlistsContainer = document.getElementById('hotlists-container');
+  if(hotlistsContainer) {
+    hotlistsContainer.innerHTML = '';
+    const wrap = createWidgetWrapper();
+    const scr = document.createElement('script');
+    scr.type = 'text/javascript'; scr.async = true;
+    scr.src = 'https://s3.tradingview.com/external-embedding/embed-widget-hotlists.js';
+    scr.textContent = JSON.stringify({
+      "colorTheme":theme,"dateRange":"1D","exchange":"US","showChart":false,"locale":"it","largeChartUrl":"","isTransparent":true,"showSymbolLogo":true,"showFloatingTooltip":true,"width":"100%","height":"100%","plotLineColorGrowing":"rgba(41,98,255,1)","plotLineColorFalling":"rgba(41,98,255,1)"
+    });
+    wrap.appendChild(scr); hotlistsContainer.appendChild(wrap);
+  }
+}
+
+function createWidgetWrapper() {
+  const wrap = document.createElement('div');
+  wrap.className = 'tradingview-widget-container';
+  wrap.style.height = '100%';
+  const inner = document.createElement('div');
+  inner.className = 'tradingview-widget-container__widget';
+  wrap.appendChild(inner);
+  return wrap;
+}
+
+function buildMiniChartsFor(box, theme) {
+  const sym = box.dataset.sym;
+  box.innerHTML = ''; 
+  const wrap = createWidgetWrapper();
+  const scr = document.createElement('script');
+  scr.type = 'text/javascript'; scr.async = true;
+  scr.src = 'https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js';
+  scr.textContent = JSON.stringify({
+    symbol:sym,width:'100%',height:'100%',locale:'it',
+    dateRange:'12M',colorTheme:theme,isTransparent:true,autosize:true,largeChartUrl:''
+  });
+  wrap.appendChild(scr); box.appendChild(wrap);
+}
+
+function tick() {
+  const n = new Date();
+  document.getElementById('clock').textContent =
+    n.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) +
+    ' · ' + n.toLocaleDateString('it-IT',{day:'2-digit',month:'short'});
+}
+tick(); setInterval(tick, 1000);
+
+const tdata = [
+  {n:'S&P 500',p:'5 842.14',c:'+0.42%',u:true},{n:'NASDAQ',p:'18 973',c:'+0.61%',u:true},
+  {n:'DOW',p:'42 315',c:'+0.18%',u:true},{n:'FTSE MIB',p:'38 120',c:'-0.18%',u:false},
+  {n:'EUR/USD',p:'1.0834',c:'+0.12%',u:true},{n:'GBP/USD',p:'1.2710',c:'-0.05%',u:false},
+  {n:'BTC',p:'109 420',c:'+1.83%',u:true},{n:'ETH',p:'2 614',c:'+1.22%',u:true},
+  {n:'Gold',p:'3 296',c:'+0.55%',u:true},{n:'WTI',p:'61.42',c:'-0.92%',u:false},
+  {n:'Silver',p:'32.74',c:'+0.44%',u:true},{n:'Brent',p:'65.18',c:'-0.77%',u:false},
+  {n:'SOL',p:'171.3',c:'+2.14%',u:true},{n:'VIX',p:'17.43',c:'-2.10%',u:false},
+];
+const tt = document.getElementById('tt');
+[0,1].forEach(() => tdata.forEach(d => {
+  const el = document.createElement('span'); el.className = 't';
+  el.innerHTML = `<span class="t-n">${d.n}</span><span>${d.p}</span><span class="${d.u?'up':'dn'}">${d.c}</span>`;
+  tt.appendChild(el);
+}));
+</script>
 </body>
 </html>
