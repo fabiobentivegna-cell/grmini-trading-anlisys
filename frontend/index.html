@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <title>Trading Dashboard Web</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="styles.css" />
+  <script src="libs/lightweight-charts.min.js"></script>
+</head>
+<body class="theme-light">
+  <header class="topbar">
+    <h1>Trading Dashboard</h1>
+    <div class="controls">
+      <label>Layout:
+        <select id="layoutSel">
+          <option value="1">1 grafico</option>
+          <option value="2">2 grafici</option>
+          <option value="4" selected>4 grafici</option>
+          <option value="6">6 grafici</option>
+        </select>
+      </label>
+      <button id="toggleTheme" aria-label="Toggle theme">Toggle Theme</button>
+    </div>
+  </header>
+
+  <main id="grid" class="grid grid-4"></main>
+
+  <script src="script.js"></script>
+</body>
+</html>

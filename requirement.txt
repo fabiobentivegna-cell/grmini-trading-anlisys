@@ -1,0 +1,5 @@
+Flask==2.3.2
+Flask-Cors==4.6.0
+yfinance==0.2.9
+pandas>=1.5
+xdg>=0.26
