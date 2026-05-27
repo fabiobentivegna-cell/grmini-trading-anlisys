@@ -1,270 +1,688 @@
 <!DOCTYPE html>
-<html lang="it" data-theme="light">
+<html lang="it">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>MarketPulse — Analisi Tecnica</title>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
-  <style>
-    :root[data-theme="dark"] {
-      --bg:        #070a0f;
-      --surface:   #0d1117;
-      --surface2:  #161b22;
-      --border:    #21262d;
-      --accent:    #58a6ff;
-      --green:     #3fb950;
-      --red:       #f85149;
-      --text:      #e6edf3;
-      --muted:     #8b949e;
-      --hdr:       rgba(7,10,15,.95);
-      --glow:      0 0 20px rgba(88,166,255,.12);
-      --shadow:    0 1px 12px rgba(0,0,0,.6);
-    }
-    :root[data-theme="light"] {
-      --bg:        #f6f8fa;
-      --surface:   #ffffff;
-      --surface2:  #f6f8fa;
-      --border:    #d0d7de;
-      --accent:    #0969da;
-      --green:     #1a7f37;
-      --red:       #cf222e;
-      --text:      #1f2328;
-      --muted:     #656d76;
-      --hdr:       rgba(246,248,250,.95);
-      --glow:      0 0 20px rgba(9,105,218,.08);
-      --shadow:    0 1px 12px rgba(0,0,0,.1);
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal Live Analyzer</title>
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #080b0e;
+            --bg-bar: #0d1117;
+            --bg-panel: #0d1117;
+            --bg-card: #0d1117;
+            --bg-card-header: #111820;
+            --bg-input: #161c24;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --text-muted: #484f58;
+            --accent: #00d4aa;
+            --accent-dim: rgba(0, 212, 170, 0.12);
+            --accent-blue: #388bfd;
+            --accent-red: #ff4d4f;
+            --accent-yellow: #f0c040;
+            --border: #21262d;
+            --border-accent: rgba(0, 212, 170, 0.3);
+            --font-mono: 'IBM Plex Mono', monospace;
+            --font-sans: 'IBM Plex Sans', sans-serif;
+        }
+        [data-theme="light"] {
+            --bg-main: #f5f6fa; --bg-bar: #ffffff; --bg-panel: #ffffff;
+            --bg-card: #ffffff; --bg-card-header: #f0f2f7; --bg-input: #eef0f6;
+            --text-primary: #1c2333; --text-secondary: #57606a; --text-muted: #afb8c1;
+            --accent: #0fa882; --accent-dim: rgba(15,168,130,0.08); --accent-blue: #0969da;
+            --border: #d0d7de; --border-accent: rgba(15,168,130,0.3);
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: var(--font-sans); background: var(--bg-main); color: var(--text-primary); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        /* STATUSBAR SUPERIORE CON TUTTI I CONTROLLI */
+        .statusbar { 
+            background: var(--bg-bar); 
+            border-bottom: 1px solid var(--border); 
+            height: 44px; 
+            display: flex; 
+            align-items: center; 
+            padding: 0 12px; 
+            gap: 8px; 
+            flex-shrink: 0; 
+            z-index: 100;
+        }
+        .statusbar-brand { color: var(--accent); font-weight: 600; font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.05em; white-space: nowrap; display: flex; align-items: center; gap: 5px; margin-right: 4px; }
+        .statusbar-brand::before { content: ''; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: pulse 2s ease-in-out infinite; }
+        @keyframes pulse { 0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,212,170,.4)}50%{opacity:.7;box-shadow:0 0 0 4px rgba(0,212,170,0)} }
+        .statusbar-sep { color: var(--border); font-family: var(--font-mono); font-size: 0.7rem; margin: 0 2px; }
+        .statusbar-time { font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-secondary); margin-left: auto; white-space: nowrap; padding-left: 6px; }
 
-    body{
-      font-family:'Syne',sans-serif;
-      background:var(--bg);
-      color:var(--text);
-      min-height:100vh;
-      transition:background .25s,color .25s;
-    }
+        /* INPUT, SELECT E MENU DROPDOWN */
+        .ctrl-select { 
+            background: var(--bg-input); 
+            border: 1px solid var(--border); 
+            color: var(--text-primary); 
+            font-family: var(--font-mono); 
+            font-size: 0.7rem; 
+            padding: 5px 8px; 
+            border-radius: 4px; 
+            outline: none; 
+            cursor: pointer;
+            transition: border-color .15s;
+        }
+        .ctrl-select:focus { border-color: var(--accent); }
+        
+        .tpl-input { 
+            background: var(--bg-input); 
+            border: 1px solid var(--border); 
+            color: var(--text-primary); 
+            font-family: var(--font-mono); 
+            font-size: 0.7rem; 
+            padding: 5px 8px; 
+            border-radius: 4px; 
+            outline: none; 
+            width: 105px; 
+            transition: border-color .15s; 
+        }
+        .tpl-input:focus { border-color: var(--accent); }
+        .tpl-input::placeholder { color: var(--text-muted); }
 
-    header{
-      position:sticky;top:0;z-index:200;
-      background:var(--hdr);
-      backdrop-filter:blur(20px);
-      border-bottom:1px solid var(--border);
-      height:54px;
-      display:flex;align-items:center;
-      padding:0 20px;gap:12px;
-    }
-    .logo{
-      font-size:1.1rem;font-weight:800;letter-spacing:-.4px;
-      display:flex;align-items:center;gap:8px;white-space:nowrap;
-    }
-    .dot{
-      width:9px;height:9px;border-radius:50%;
-      background:var(--accent);
-      box-shadow:0 0 8px var(--accent);
-      animation:blink 2.4s infinite;
-    }
-    @keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+        .tpl-btn { 
+            background: var(--accent-dim); 
+            border: 1px solid var(--border-accent); 
+            color: var(--accent); 
+            font-family: var(--font-mono); 
+            font-size: 0.7rem; 
+            font-weight: 600; 
+            padding: 5px 10px; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            transition: all .15s; 
+            white-space: nowrap; 
+        }
+        .tpl-btn:hover { background: var(--accent); color: #000; }
+        
+        .tpl-del { 
+            background: transparent; 
+            border: 1px solid var(--border); 
+            color: var(--text-muted); 
+            font-family: var(--font-mono); 
+            font-size: 0.7rem; 
+            padding: 5px 8px; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            transition: all .15s; 
+        }
+        .tpl-del:hover { border-color: var(--accent-red); color: var(--accent-red); }
 
-    nav{display:flex;gap:4px;flex:1;justify-content:center;flex-wrap:wrap;}
-    nav a{
-      font-family:'Syne',sans-serif;font-size:.75rem;font-weight:700;
-      letter-spacing:.05em;text-transform:uppercase;
-      padding:6px 16px;border-radius:6px;
-      border:1px solid transparent;
-      background:transparent;color:var(--muted);cursor:pointer;
-      transition:all .18s;white-space:nowrap;text-decoration:none;
-    }
-    nav a:hover{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 30%,transparent)}
-    nav a.active{
-      color:var(--accent);
-      border-color:var(--accent);
-      background:color-mix(in srgb,var(--accent) 10%,transparent);
-    }
+        .theme-btn { 
+            background: var(--bg-input); 
+            border: 1px solid var(--border); 
+            border-radius: 4px; 
+            color: var(--text-secondary); 
+            cursor: pointer; 
+            padding: 4px 8px; 
+            font-size: 0.72rem; 
+            transition: all .15s; 
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+        }
+        .theme-btn:hover { border-color: var(--accent-yellow); color: var(--accent-yellow); }
 
-    .hdr-right{display:flex;align-items:center;gap:10px;margin-left:auto;}
-    #clock{font-family:'DM Mono',monospace;font-size:.72rem;color:var(--muted);white-space:nowrap;}
+        /* DROPDOWN MULTI-SELEZIONE INDICATORI CUSTOM */
+        .dropdown-multiselect {
+            position: relative;
+            display: inline-block;
+        }
+        .dropdown-multiselect-btn {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            padding: 5px 24px 5px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: left;
+            white-space: nowrap;
+            position: relative;
+        }
+        .dropdown-multiselect-btn::after {
+            content: "▼";
+            font-size: 0.5rem;
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+        }
+        .dropdown-multiselect-content {
+            display: none;
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            background: #0d1117;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 6px;
+            min-width: 140px;
+            max-height: 280px;
+            overflow-y: auto;
+            box-shadow: 0 8px 24px rgba(0,0,0,.5);
+            z-index: 200;
+        }
+        [data-theme="light"] .dropdown-multiselect-content { background: #ffffff; }
+        .dropdown-multiselect-content.open { display: block; }
+        
+        .ind-chip-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 8px;
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background 0.12s;
+            white-space: nowrap;
+            user-select: none;
+        }
+        .ind-chip-label:hover { background: var(--bg-input); color: var(--text-primary); }
+        .ind-chip-label input[type=checkbox] { accent-color: var(--accent); cursor: pointer; width: 12px; height: 12px; }
+        .ind-chip-label:has(input:checked) { color: var(--accent); font-weight: 500; }
 
-    .toggle{
-      width:36px;height:20px;border-radius:10px;
-      background:var(--surface2);border:1px solid var(--border);
-      cursor:pointer;position:relative;flex-shrink:0;transition:background .25s;
-    }
-    .toggle::after{
-      content:'';position:absolute;top:2px;left:2px;
-      width:14px;height:14px;border-radius:50%;
-      background:var(--accent);transition:transform .25s;
-    }
-    [data-theme="light"] .toggle::after{transform:translateX(16px)}
+        /* NUOVA LOGICA: MODULO DI RICERCA UNIFICATO IN ALTO */
+        .search-wrap { position: relative; display: inline-block; }
+        .global-ticker-input { 
+            background: var(--bg-input); 
+            border: 1px solid var(--border-accent); 
+            color: var(--text-primary); 
+            font-family: var(--font-mono); 
+            font-size: 0.72rem; 
+            padding: 5px 10px; 
+            border-radius: 4px; 
+            outline: none; 
+            width: 210px; 
+            transition: all .15s; 
+        }
+        .global-ticker-input:focus { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent-dim); }
+        .global-ticker-input::placeholder { color: var(--text-muted); }
+        
+        .search-dropdown { 
+            display: none; 
+            position: absolute; 
+            top: calc(100% + 4px); 
+            left: 0; 
+            width: 280px; 
+            background: #141b24; 
+            border: 1px solid var(--border); 
+            border-radius: 6px; 
+            z-index: 1000; 
+            max-height: 260px; 
+            overflow-y: auto; 
+            box-shadow: 0 8px 24px rgba(0,0,0,.5); 
+        }
+        [data-theme="light"] .search-dropdown { background: #ffffff; }
+        .search-dropdown.open { display: block; }
+        .search-section-label { padding: 6px 10px 3px; font-family: var(--font-mono); font-size: 0.58rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; border-bottom: 1px solid var(--border); }
+        .search-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; cursor: pointer; transition: background .1s; }
+        .search-item:hover { background: var(--bg-input); }
+        .search-item-name { font-family: var(--font-sans); font-size: 0.75rem; color: var(--text-primary); }
+        .search-item-ticker { font-family: var(--font-mono); font-size: 0.62rem; color: var(--text-muted); }
+        .search-no-results { padding: 10px; font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-muted); text-align: center; }
 
-    @media(max-width:680px){
-      nav{display:none}
-      #msel{display:block!important}
-    }
-    #msel{
-      display:none;font-family:'Syne',sans-serif;font-size:.82rem;
-      padding:5px 10px;border-radius:6px;
-      border:1px solid var(--border);background:var(--surface);
-      color:var(--text);cursor:pointer;
-    }
+        /* GRIDS DEI GRAFICI */
+        .main-content { flex: 1; padding: 6px; overflow: hidden; display: flex; flex-direction: column; }
+        .charts-grid { display: grid; gap: 6px; width: 100%; height: 100%; }
+        .grid-1 { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+        .grid-2 { grid-template-columns: repeat(2,1fr); grid-template-rows: 1fr; }
+        .grid-3 { grid-template-columns: repeat(3,1fr); grid-template-rows: 1fr; }
+        .grid-4 { grid-template-columns: repeat(2,1fr); grid-template-rows: repeat(2,1fr); }
+        .grid-5 { grid-template-columns: repeat(3,1fr); grid-template-rows: repeat(2,1fr); }
+        .grid-6 { grid-template-columns: repeat(3,1fr); grid-template-rows: repeat(2,1fr); }
 
-    main{padding:16px 16px 48px;max-width:1600px;margin:0 auto;}
+        /* SCHEDA GRAFICO CARD */
+        .chart-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; display: flex; flex-direction: column; overflow: hidden; transition: all .2s; height: 100%; cursor: pointer; }
+        .chart-card:hover { border-color: rgba(56,139,253,.35); }
+        /* Grafico Attivo evidenziato in modo netto */
+        .chart-card.active-slot { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent-dim); }
+        .chart-header { background: var(--bg-card-header); border-bottom: 1px solid var(--border); padding: 5px 9px; display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
+        .chart-num { font-family: var(--font-mono); font-size: 0.58rem; color: var(--text-muted); background: var(--border); padding: 1px 5px; border-radius: 3px; font-weight: 600; }
+        .chart-card.active-slot .chart-num { background: var(--accent); color: #000; }
+        .chart-title { font-family: var(--font-mono); font-size: 0.73rem; font-weight: 600; color: var(--text-primary); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .chart-ticker-display { font-family: var(--font-mono); font-size: 0.65rem; color: var(--text-secondary); background: var(--bg-input); padding: 2px 6px; border-radius: 3px; border: 1px solid var(--border); }
+        .tv-container { flex: 1; width: 100%; overflow: hidden; }
 
-    .sec-label{
-      font-size:.65rem;font-weight:700;letter-spacing:.12em;
-      text-transform:uppercase;color:var(--muted);
-      margin-bottom:10px;padding-left:2px;
-      display:flex;align-items:center;gap:6px;
-    }
-    .sec-label::before{
-      content:'';width:3px;height:12px;border-radius:2px;background:var(--accent);
-    }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
-    .page-panel{animation:fadeUp .25s ease}
-    @keyframes fadeUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
-
-    .g-tech{display:grid;grid-template-columns:1fr 2fr;gap:12px}
-    @media(max-width:1100px){ .g-tech{grid-template-columns:1fr;} }
-
-    .card{
-      background:var(--surface);border:1px solid var(--border);
-      border-radius:10px;overflow:hidden;box-shadow:var(--shadow);
-    }
-    .ch{
-      padding:8px 12px;border-bottom:1px solid var(--border);
-      display:flex;align-items:center;justify-content:space-between;
-    }
-    .ct{font-size:.75rem;font-weight:700;letter-spacing:.03em;display:flex;align-items:center;gap:5px}
-    .cb{
-      font-family:'DM Mono',monospace;font-size:.62rem;
-      padding:2px 6px;border-radius:4px;border:1px solid var(--border);color:var(--muted);
-    }
-
-    .wbox{width:100%;overflow:hidden;background:var(--surface2);}
-    .wbox.h600{height:600px}
-
-    footer{
-      text-align:center;padding:20px;font-size:.7rem;color:var(--muted);
-      border-top:1px solid var(--border);font-family:'DM Mono',monospace;
-    }
-  </style>
+        @media (max-width:1250px) {
+            .statusbar { height: auto; padding: 6px; flex-wrap: wrap; gap: 6px; }
+            .statusbar-time { margin-left: 0; width: 100%; padding-top: 4px; border-top: 1px solid var(--border); }
+        }
+        @media (max-width:900px) { .grid-3,.grid-4,.grid-5,.grid-6 { grid-template-columns: repeat(2,1fr); } }
+        @media (max-width:600px) { .grid-2,.grid-3,.grid-4,.grid-5,.grid-6 { grid-template-columns: 1fr; } }
+    </style>
 </head>
 <body>
 
-<header>
-  <div class="logo"><div class="dot"></div>MarketPulse</div>
-  <nav id="nav">
-    <a href="index.html">Home Page</a>
-    <a href="analisitecnica.html" class="active">Analisi Tecnica</a>
-    <a href="screener.html">Screener</a>
-  </nav>
-  <select id="msel" onchange="location = this.value;">
-    <option value="index.html">Home Page</option>
-    <option value="analisitecnica.html" selected>Analisi Tecnica</option>
-    <option value="screener.html">Screener</option>
-  </select>
-  <div class="hdr-right">
-    <span id="clock"></span>
-    <button class="toggle" id="tog"></button>
-  </div>
-</header>
-
-<main>
-  <div class="page-panel">
-    <p class="sec-label">Screening tecnico e Oscillatori multi-asset</p>
+<div class="statusbar">
+    <div class="statusbar-brand">TERMINAL LIVE ANALYZER</div>
     
-    <div class="g-tech">
-      <div class="card">
-        <div class="ch"><span class="ct">📊 Sintesi Tecnica — Oscillatori</span><span class="cb">SUMMARY</span></div>
-        <div class="wbox h600" id="tech-summary-container"></div>
-      </div>
+    <span class="statusbar-sep">│</span>
+    
+    <select class="ctrl-select" id="market-select" onchange="onMarketSelectChange(this.value)">
+        <option value="italia" selected>🇮🇹 Mercato: Italia</option>
+        <option value="usa">🇺🇸 Mercato: USA</option>
+        <option value="indici">🌍 Mercato: Indici Globali</option>
+        <option value="forex">💱 Mercato: Forex</option>
+        <option value="commodities">🛢 Mercato: Materie Prime</option>
+        <option value="crypto">🪙 Mercato: Crypto</option>
+    </select>
 
-      <div class="card">
-        <div class="ch"><span class="ct">📈 Grafico Operativo Avanzato</span><span class="cb">INTERACTIVE CHART</span></div>
-        <div class="wbox h600" id="tech-chart-container"></div>
-      </div>
+    <select class="ctrl-select" id="layout-select" onchange="setLayout(parseInt(this.value))">
+        <option value="1">Layout: Grid 1×1</option>
+        <option value="2">Layout: Grid 1×2</option>
+        <option value="3">Layout: Grid 1×3</option>
+        <option value="4">Layout: Grid 2×2</option>
+        <option value="5">Layout: Grid 2×3−</option>
+        <option value="6" selected>Layout: Grid 2×3</option>
+    </select>
+
+    <div class="dropdown-multiselect" id="indicators-dropdown-wrapper">
+        <button class="dropdown-multiselect-btn" onclick="toggleIndicatorsMenu(event)" id="ind-btn-counter">Indicatori (2)</button>
+        <div class="dropdown-multiselect-content" id="ind-panel">
+            <label class="ind-chip-label"><input type="checkbox" value="RSI@tv-basicstudies" checked> RSI</label>
+            <label class="ind-chip-label"><input type="checkbox" value="MACD@tv-basicstudies" checked> MACD</label>
+            <label class="ind-chip-label"><input type="checkbox" value="BB@tv-basicstudies"> BB</label>
+            <label class="ind-chip-label"><input type="checkbox" value="MAExp@tv-basicstudies"> EMA 20</label>
+            <label class="ind-chip-label"><input type="checkbox" value="MASimple@tv-basicstudies"> SMA 50</label>
+            <label class="ind-chip-label"><input type="checkbox" value="MASimple@tv-basicstudies"> SMA 200</label>
+            <label class="ind-chip-label"><input type="checkbox" value="Volume@tv-basicstudies"> Vol</label>
+            <label class="ind-chip-label"><input type="checkbox" value="Stochastic@tv-basicstudies"> Stoch</label>
+            <label class="ind-chip-label"><input type="checkbox" value="ATR@tv-basicstudies"> ATR</label>
+            <label class="ind-chip-label"><input type="checkbox" value="VWAP@tv-basicstudies"> VWAP</label>
+        </div>
     </div>
-  </div>
-</main>
 
-<footer>
-  MarketPulse &nbsp;·&nbsp; Grafici <a href="https://www.tradingview.com" target="_blank">TradingView</a>
-</footer>
+    <span class="statusbar-sep">│</span>
 
-<script src="config.js"></script>
+    <div class="search-wrap" id="global-search-wrapper">
+        <input class="global-ticker-input" type="text" id="global-search-input" placeholder="Cerca e cambia asset grafico attivo…" autocomplete="off">
+        <div class="search-dropdown" id="global-search-dropdown"></div>
+    </div>
+
+    <span class="statusbar-sep">│</span>
+
+    <input class="tpl-input" type="text" id="template-name" placeholder="Nuovo nome…">
+    <button class="tpl-btn" onclick="saveCurrentTemplate()">Salva</button>
+    
+    <select class="ctrl-select" id="template-select" onchange="loadSavedTemplate(this.value)">
+        <option value="" disabled selected>I tuoi layout…</option>
+    </select>
+    <button class="tpl-del" onclick="deleteSelectedTemplate()" title="Elimina">✕</button>
+
+    <span class="statusbar-sep">│</span>
+    
+    <a href="index.html" class="theme-btn" title="Torna alla Home">🏠</a>
+    <button class="theme-btn" onclick="toggleTheme()">☀︎</button>
+
+    <div class="statusbar-time" id="clock"></div>
+</div>
+
+<div class="main-content">
+    <div class="charts-grid grid-6" id="charts-container"></div>
+</div>
+
 <script>
-const root = document.documentElement;
-const tog  = document.getElementById('tog');
+/* ═══════════════════════════════════════════
+   TICKER DATABASE — DATABASE STRUMENTI
+   ═══════════════════════════════════════════ */
+const TICKER_DB = [
+    // ── ITALIA ──
+    { name:"FTSE MIB", ticker:"SPREADEX:ITALY40", interval:"D", cat:"🇮🇹 Italia" },
+    { name:"Eni", ticker:"CAPITALCOM:ENI", interval:"D", cat:"🇮🇹 Italia" },
+    { name:"UniCredit", ticker:"CAPITALCOM:UCG", interval:"D", cat:"🇮🇹 Italia" },
+    { name:"Intesa Sanpaolo", ticker:"CAPITALCOM:ISP", interval:"D", cat:"🇮🇹 Italia" },
+    { name:"Enel", ticker:"CAPITALCOM:ENEL", interval:"D", cat:"🇮🇹 Italia" },
+    { name:"Ferrari", ticker:"CAPITALCOM:RACE", interval:"D", cat:"🇮🇹 Italia" },
+    { name:"Telecom Italia", ticker:"CAPITALCOM:TIT", interval:"D", cat:"🇮🇹 Italia" },
+    { name:"Generali", ticker:"CAPITALCOM:G", interval:"D", cat:"🇮🇹 Italia" },
+    { name:"Stellantis", ticker:"CAPITALCOM:STLAM", interval:"D", cat:"🇮🇹 Italia" },
+    { name:"Mediobanca", ticker:"CAPITALCOM:MB", interval:"D", cat:"🇮🇹 Italia" },
+    { name:"Leonardo", ticker:"CAPITALCOM:LDO", interval:"D", cat:"🇮🇹 Italia" },
+    { name:"Moncler", ticker:"CAPITALCOM:MONC", interval:"D", cat:"🇮🇹 Italia" },
+    // ── USA INDICI & STOCKS ──
+    { name:"Nasdaq 100", ticker:"FXCM:NAS100", interval:"5", cat:"🇺🇸 USA" },
+    { name:"S&P 500", ticker:"FXCM:SPX500", interval:"5", cat:"🇺🇸 USA" },
+    { name:"Dow Jones", ticker:"FXCM:US30", interval:"5", cat:"🇺🇸 USA" },
+    { name:"Apple", ticker:"NASDAQ:AAPL", interval:"5", cat:"🇺🇸 USA"  },
+    { name:"Tesla", ticker:"NASDAQ:TSLA", interval:"5", cat:"🇺🇸 USA"  },
+    { name:"NVIDIA", ticker:"NASDAQ:NVDA", interval:"5", cat:"🇺🇸 USA"  },
+    { name:"Amazon", ticker:"NASDAQ:AMZN", interval:"5", cat:"🇺🇸 USA"  },
+    { name:"Microsoft", ticker:"NASDAQ:MSFT", interval:"5", cat:"🇺🇸 USA"  },
+    // ── INDICI GLOBALI ──
+    { name:"S&P 500 Index", ticker:"SP:SPX", interval:"D", cat:"🌍 Indici" },
+    { name:"Nasdaq Composite", ticker:"NASDAQ:IXIC", interval:"D", cat:"🌍 Indici" },
+    { name:"Dow 30", ticker:"DJ:DJI", interval:"D", cat:"🌍 Indici" },
+    { name:"DAX 40", ticker:"XETR:DAX", interval:"D", cat:"🌍 Indici" },
+    { name:"CAC 40", ticker:"Euronext:PX1", interval:"D", cat:"🌍 Indici" },
+    { name:"Nikkei 225", ticker:"TVC:NI225", interval:"D", cat:"🌍 Indici" },
+    { name:"Euro Stoxx 50", ticker:"INDEX:SX5E", interval:"D", cat:"🌍 Indici" },
+    { name:"FTSE 100", ticker:"INDEX:UKX", interval:"D", cat:"🌍 Indici" },
+    // ── FOREX ──
+    { name:"EUR/USD", ticker:"FX:EURUSD", interval:"5", cat:"💱 Forex"  },
+    { name:"GBP/USD", ticker:"FX:GBPUSD", interval:"5", cat:"💱 Forex"  },
+    { name:"USD/JPY", ticker:"FX:USDJPY", interval:"5", cat:"💱 Forex"  },
+    { name:"AUD/USD", ticker:"FX:AUDUSD", interval:"5", cat:"💱 Forex"  },
+    { name:"EUR/GBP", ticker:"FX:EURGBP", interval:"5", cat:"💱 Forex"  },
+    // ── COMMODITIES ──
+    { name:"Oro (Gold)", ticker:"FXCM:XAUUSD", interval:"5", cat:"🛢 Materie" },
+    { name:"Petrolio (WTI)", ticker:"FXCM:USOIL", interval:"5", cat:"🛢 Materie" },
+    { name:"Gas Naturale", ticker:"TVC:NG1!", interval:"5", cat:"🛢 Materie"  },
+    { name:"Argento (Silver)", ticker:"FXCM:XAGUSD", interval:"5", cat:"🛢 Materie" },
+    // ── CRYPTO ──
+    { name:"Bitcoin (BTC)", ticker:"BINANCE:BTCUSDT", interval:"5", cat:"🪙 Crypto"  },
+    { name:"Ethereum (ETH)", ticker:"BINANCE:ETHUSDT", interval:"5", cat:"🪙 Crypto"  },
+    { name:"Solana (SOL)", ticker:"BINANCE:SOLUSDT", interval:"5", cat:"🪙 Crypto"  },
+    { name:"Ripple (XRP)", ticker:"BINANCE:XRPUSDT", interval:"5", cat:"🪙 Crypto"  },
+];
 
-function applyTheme(t) {
-  root.setAttribute('data-theme', t);
-  localStorage.setItem('mp-theme', t);
-  buildTechWidgets(t);
+const marketProducts = {
+    "italia":      TICKER_DB.filter(t=>t.cat==="🇮🇹 Italia").slice(0,6),
+    "usa":         TICKER_DB.filter(t=>t.cat==="🇺🇸 USA").slice(0,6),
+    "indici":      TICKER_DB.filter(t=>t.cat==="🌍 Indici").slice(0,6),
+    "forex":       TICKER_DB.filter(t=>t.cat==="💱 Forex").slice(0,6),
+    "commodities": TICKER_DB.filter(t=>t.cat==="🛢 Materie").slice(0,6),
+    "crypto":      TICKER_DB.filter(t=>t.cat==="🪙 Crypto").slice(0,6),
+};
+
+/* STATE SYSTEM */
+let currentTheme = "dark";
+let currentChartCount = 6;
+let activeMarket = "italia";
+let activeProducts = [...marketProducts["italia"]];
+let selectedSlotIndex = 0; // Tiene traccia del grafico selezionato/attivo a video
+
+function getActiveStudies() {
+    const studies = [];
+    document.querySelectorAll("#ind-panel input[type=checkbox]:checked").forEach(cb => {
+        if (!studies.includes(cb.value)) studies.push(cb.value);
+    });
+    return studies;
 }
 
-const saved = localStorage.getItem('mp-theme') || 'light';
-applyTheme(saved);
+function updateIndicatorsCount() {
+    const count = document.querySelectorAll("#ind-panel input[type=checkbox]:checked").length;
+    document.getElementById("ind-btn-counter").textContent = `Indicatori (${count})`;
+}
 
-tog.addEventListener('click', () => {
-  applyTheme(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
-  location.reload();
+function toggleIndicatorsMenu(e) {
+    e.stopPropagation();
+    document.getElementById("ind-panel").classList.toggle("open");
+}
+
+document.getElementById("ind-panel").addEventListener("change", () => {
+    updateIndicatorsCount();
+    renderCharts();
 });
 
-function buildTechWidgets(theme) {
-  // 1. Costruzione widget Summary Tecnico
-  const sumContainer = document.getElementById('tech-summary-container');
-  if(sumContainer) {
-    sumContainer.innerHTML = '';
-    const wrap = document.createElement('div');
-    wrap.className = 'tradingview-widget-container';
-    wrap.style.height = '100%';
-    const inner = document.createElement('div');
-    inner.className = 'tradingview-widget-container__widget';
-    wrap.appendChild(inner);
+/* LIVE SYSTEM CLOCK */
+function updateClock() {
+    const now = new Date();
+    document.getElementById("clock").textContent =
+        now.toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit",second:"2-digit"})
+        + "  " + now.toLocaleDateString("it-IT",{day:"2-digit",month:"short"});
+}
+setInterval(updateClock, 1000);
+updateClock();
 
-    const scr = document.createElement('script');
-    scr.type = 'text/javascript';
-    scr.async = true;
-    scr.src = 'https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js';
-    scr.textContent = JSON.stringify({
-      interval: "1D", width: "100%", isTransparent: true, height: "100%",
-      symbol: "CAPITALCOM:US500", showHeading: true, locale: "it", colorTheme: theme
+/* EVENT LISTENERS GLOBALI */
+document.addEventListener("DOMContentLoaded", () => {
+    if (localStorage.getItem("dashboard-theme")) {
+        currentTheme = localStorage.getItem("dashboard-theme");
+        document.documentElement.setAttribute("data-theme", currentTheme);
+    }
+    updateLocalStorageDropdown();
+    updateIndicatorsCount();
+    renderCharts();
+    
+    // Setup Barra di ricerca globale unica superiore
+    const searchInput = document.getElementById("global-search-input");
+    const searchDropdown = document.getElementById("global-search-dropdown");
+    
+    searchInput.addEventListener("focus", () => openGlobalSearch(searchInput, searchDropdown));
+    searchInput.addEventListener("input", () => buildGlobalDropdown(searchInput.value, searchDropdown, searchInput));
+
+    document.addEventListener("click", e => {
+        if (!e.target.closest("#indicators-dropdown-wrapper")) {
+            document.getElementById("ind-panel").classList.remove("open");
+        }
+        if (!e.target.closest("#global-search-wrapper")) {
+            searchDropdown.classList.remove("open");
+        }
     });
-    wrap.appendChild(scr);
-    sumContainer.appendChild(wrap);
-  }
+});
 
-  // 2. Costruzione Grafico Operativo Avanzato per Analisi Tecnica
-  const chartContainer = document.getElementById('tech-chart-container');
-  if(chartContainer) {
-    chartContainer.innerHTML = '';
-    const wrap = document.createElement('div');
-    wrap.className = 'tradingview-widget-container';
-    wrap.style.height = '100%';
-    const inner = document.createElement('div');
-    inner.className = 'tradingview-widget-container__widget';
-    wrap.appendChild(inner);
-
-    const scr = document.createElement('script');
-    scr.type = 'text/javascript';
-    scr.async = true;
-    scr.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
-    scr.textContent = JSON.stringify({
-      autosize: true, symbol: "CAPITALCOM:US500", interval: "D", timezone: "Europe/Rome",
-      theme: theme, style: "1", locale: "it", allow_symbol_change: true,
-      withideas: false, show_popup_button: false, studies: ["RSI@tv-basicstudies", "MASimple@tv-basicstudies"],
-      support_host: "https://www.tradingview.com"
-    });
-    wrap.appendChild(scr);
-    chartContainer.appendChild(wrap);
-  }
+function toggleTheme() {
+    currentTheme = (currentTheme==="dark")?"light":"dark";
+    document.documentElement.setAttribute("data-theme", currentTheme);
+    localStorage.setItem("dashboard-theme", currentTheme);
+    renderCharts();
 }
 
-function tick() {
-  const n = new Date();
-  document.getElementById('clock').textContent = n.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+function onMarketSelectChange(key) {
+    activeMarket = key;
+    activeProducts = [...marketProducts[key]];
+    selectedSlotIndex = 0; // Resetta sul primo grafico al cambio di paniere
+    renderCharts();
 }
-tick(); setInterval(tick, 1000);
+
+function setLayout(n) {
+    currentChartCount = n;
+    if (selectedSlotIndex >= n) selectedSlotIndex = 0; 
+    document.getElementById("layout-select").value = n;
+    renderCharts();
+}
+
+/* LOGICA DELLA BARRA DI RICERCA CENTRALIZZATA */
+function openGlobalSearch(inputEl, dropdownEl) {
+    buildGlobalDropdown(inputEl.value, dropdownEl, inputEl);
+    dropdownEl.classList.add("open");
+}
+
+function buildGlobalDropdown(query, dropdownEl, inputEl) {
+    const q = query.toLowerCase().trim();
+    const results = q.length === 0
+        ? TICKER_DB.slice(0, 30)
+        : TICKER_DB.filter(t =>
+            t.name.toLowerCase().includes(q) ||
+            t.ticker.toLowerCase().includes(q) ||
+            t.cat.toLowerCase().includes(q)
+          ).slice(0, 25);
+
+    if (results.length === 0) {
+        dropdownEl.innerHTML = `<div class="search-no-results">Nessun risultato per "${query}"</div>`;
+        return;
+    }
+
+    const groups = {};
+    results.forEach(r => {
+        if (!groups[r.cat]) groups[r.cat] = [];
+        groups[r.cat].push(r);
+    });
+
+    let html = "";
+    for (const [cat, items] of Object.entries(groups)) {
+        html += `<div class="search-section-label">${cat}</div>`;
+        items.forEach(item => {
+            html += `<div class="search-item" onclick="pickGlobalTicker('${item.ticker}','${item.name}')">
+                <span class="search-item-name">${highlight(item.name, q)}</span>
+                <span class="search-item-ticker">${item.ticker}</span>
+            </div>`;
+        });
+    }
+    dropdownEl.innerHTML = html;
+}
+
+function highlight(text, q) {
+    if (!q) return text;
+    const idx = text.toLowerCase().indexOf(q);
+    if (idx === -1) return text;
+    return text.slice(0,idx) + `<strong style="color:var(--accent)">${text.slice(idx,idx+q.length)}</strong>` + text.slice(idx+q.length);
+}
+
+function pickGlobalTicker(ticker, name) {
+    // Aggiorna l'asset solo per lo slot correntemente evidenziato ed attivo
+    activeProducts[selectedSlotIndex] = { name, ticker };
+    document.getElementById("global-search-dropdown").classList.remove("open");
+    document.getElementById("global-search-input").value = "";
+    renderCharts();
+}
+
+function changeActiveSlot(idx) {
+    selectedSlotIndex = idx;
+    // Aggiorna visivamente la classe attiva sui bordi senza fare il refresh totale del widget TV
+    document.querySelectorAll(".chart-card").forEach((card, i) => {
+        if(i === idx) {
+            card.classList.add("active-slot");
+        } else {
+            card.classList.remove("active-slot");
+        }
+    });
+}
+
+/* COMPILAZIONE STRUTTURA DEI GRAFICI */
+function renderCharts() {
+    const container = document.getElementById("charts-container");
+    container.innerHTML = "";
+    container.className = `charts-grid grid-${currentChartCount}`;
+    const studies = getActiveStudies();
+
+    for (let i = 0; i < currentChartCount; i++) {
+        const product = activeProducts[i] || { name:"FTSE MIB", ticker:"SPREADEX:ITALY40", interval:"D" };
+
+        const card = document.createElement("div");
+        card.className = "chart-card";
+        if (i === selectedSlotIndex) {
+            card.classList.add("active-slot");
+        }
+        
+        // Cliccando sulla card, essa diventa il bersaglio attivo della barra di ricerca superiore
+        card.onclick = () => changeActiveSlot(i);
+
+        const header = document.createElement("div");
+        header.className = "chart-header";
+
+        const num = document.createElement("span");
+        num.className = "chart-num";
+        num.textContent = String(i+1).padStart(2,"0");
+
+        const title = document.createElement("span");
+        title.className = "chart-title";
+        title.textContent = product.name;
+
+        const tickerDisplay = document.createElement("span");
+        tickerDisplay.className = "chart-ticker-display";
+        tickerDisplay.textContent = product.ticker;
+
+        header.appendChild(num);
+        header.appendChild(title);
+        header.appendChild(tickerDisplay);
+
+        const widgetDiv = document.createElement("div");
+        const widgetId = `widget_slot_${i}`;
+        widgetDiv.id = widgetId;
+        widgetDiv.className = "tv-container";
+
+        card.appendChild(header);
+        card.appendChild(widgetDiv);
+        container.appendChild(card);
+
+        setTimeout(() => {
+            new TradingView.widget({
+                "autosize": true,
+                "symbol": product.ticker,
+                "interval": product.interval || "D",
+                "timezone": "Europe/Rome",
+                "theme": currentTheme,
+                "style": "1",
+                "locale": "it",
+                "toolbar_bg": currentTheme==="dark" ? "#0d1117" : "#ffffff",
+                "enable_publishing": false,
+                "hide_top_toolbar": false,
+                "hide_legend": false,
+                "container_id": widgetId,
+                "studies": studies
+            });
+        }, i * 50);
+    }
+}
+
+/* STORAGE E LAYOUT SALVATI */
+function saveCurrentTemplate() {
+    const nameInput = document.getElementById("template-name");
+    const templateName = nameInput.value.trim();
+    if (!templateName) return;
+    const checkedInds = [...document.querySelectorAll("#ind-panel input:checked")].map(c=>c.value);
+    const tpl = { chartCount:currentChartCount, market:activeMarket, products:activeProducts.slice(0,currentChartCount), studies:checkedInds };
+    let saved = JSON.parse(localStorage.getItem("unlocked-dashboard-layouts"))||{};
+    saved[templateName] = tpl;
+    localStorage.setItem("unlocked-dashboard-layouts", JSON.stringify(saved));
+    nameInput.value = "";
+    updateLocalStorageDropdown();
+    document.getElementById("template-select").value = templateName;
+    alert(`Layout "${templateName}" registrato correttamente!`);
+}
+
+function loadSavedTemplate(name) {
+    if (!name) return;
+    const saved = JSON.parse(localStorage.getItem("unlocked-dashboard-layouts"))||{};
+    const tpl = saved[name];
+    if (tpl) {
+        currentChartCount = tpl.chartCount;
+        if(tpl.market) {
+            activeMarket = tpl.market;
+            document.getElementById("market-select").value = tpl.market;
+        }
+        activeProducts = [...tpl.products];
+        if (tpl.studies) {
+            document.querySelectorAll("#ind-panel input").forEach(cb => {
+                cb.checked = tpl.studies.includes(cb.value);
+            });
+        }
+        document.getElementById("layout-select").value = currentChartCount;
+        selectedSlotIndex = 0;
+        updateIndicatorsCount();
+        renderCharts();
+    }
+}
+
+function deleteSelectedTemplate() {
+    const select = document.getElementById("template-select");
+    const name = select.value;
+    if (!name) return;
+    if (confirm(`Cancellare definitivamente il layout "${name}"?`)) {
+        let saved = JSON.parse(localStorage.getItem("unlocked-dashboard-layouts"))||{};
+        delete saved[name];
+        localStorage.setItem("unlocked-dashboard-layouts", JSON.stringify(saved));
+        updateLocalStorageDropdown();
+    }
+}
+
+function updateLocalStorageDropdown() {
+    const select = document.getElementById("template-select");
+    select.innerHTML = '<option value="" disabled selected>I tuoi layout…</option>';
+    const saved = JSON.parse(localStorage.getItem("unlocked-dashboard-layouts"))||{};
+    Object.keys(saved).forEach(n => {
+        const opt = document.createElement("option");
+        opt.value = n; opt.textContent = n;
+        select.appendChild(opt);
+    });
+}
 </script>
 </body>
 </html>
