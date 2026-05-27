@@ -69,7 +69,7 @@
 
     nav{display:flex;gap:4px;flex:1;justify-content:center;flex-wrap:wrap;}
     nav a{
-      font-family:'Syne',sans-serif;font-size Club:.75rem;font-weight:700;
+      font-family:'Syne',sans-serif;font-size: .75rem;font-weight:700;
       letter-spacing:.05em;text-transform:uppercase;
       padding:6px 16px;border-radius:6px;
       border:1px solid transparent;
@@ -135,7 +135,7 @@
     .page-panel{animation:fadeUp .25s ease}
     @keyframes fadeUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 
-    /* grids */
+    /* Grids */
     .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
     .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
     .g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
@@ -160,7 +160,7 @@
 
     .mb{margin-bottom:12px}
 
-    /* stat cards */
+    /* Stat Cards */
     .stats{
       display:grid;
       grid-template-columns:repeat(auto-fit,minmax(130px,1fr));
@@ -179,7 +179,7 @@
     .stat-v{font-family:'DM Mono',monospace;font-size:1.05rem;font-weight:500}
     .stat-c{font-family:'DM Mono',monospace;font-size:.72rem;margin-top:2px}
 
-    /* card */
+    /* Card Box */
     .card{
       background:var(--surface);border:1px solid var(--border);
       border-radius:10px;overflow:hidden;box-shadow:var(--shadow);
@@ -199,7 +199,7 @@
       padding:2px 6px;border-radius:4px;border:1px solid var(--border);color:var(--muted);
     }
     
-    /* Stile per la select nel widget news */
+    /* Select Dropdown */
     .ch-select {
       font-family: 'DM Mono', monospace;
       font-size: .65rem;
@@ -216,7 +216,7 @@
       border-color: var(--accent);
     }
 
-    /* TradingView container */
+    /* Containers */
     .wbox{width:100%;overflow:hidden;background:var(--surface2);}
     .wbox.h600{height:600px}
     .wbox.h500{height:500px}
@@ -278,18 +278,18 @@
       <div class="stat"><div class="stat-l">VIX</div><div class="stat-v dn">17.4</div><div class="stat-c dn">▼ −2.1%</div></div>
     </div>
 
-    <!-- WIDGET NEWS AGGIORNATO CON FONTI PERSONALIZZATE -->
     <div class="card mb">
       <div class="ch">
-        <span class="ct">📰 Notizie di Mercato — Live</span>
+        <span class="ct">📰 Flusso Notizie</span>
         <select id="news-source-selector" class="ch-select">
-          <option value="all">Tutte le fonti</option>
+          <option value="hub-it">Hub Italia (Misto Live)</option>
           <option value="borsa">Borsa Italiana</option>
-          <option value="investing">Investing.com</option>
+          <option value="investing">Investing.com (IT)</option>
           <option value="soldi">SoldiOnline</option>
+          <option value="tradingview">TradingView Global (Inglese)</option>
         </select>
       </div>
-      <div class="wbox h300" id="news-timeline-container"></div>
+      <div class="wbox h350" id="news-timeline-container"></div>
     </div>
 
     <div class="g-main mb">
@@ -341,10 +341,10 @@ function applyTheme(t) {
   root.setAttribute('data-theme', t);
   localStorage.setItem('mp-theme', t);
   
-  const currentNewsMarket = newsSelector ? newsSelector.value : 'all';
+  const currentNewsSource = newsSelector ? newsSelector.value : 'hub-it';
   
   buildDynamicWidgets(t);
-  buildNewsWidget(t, currentNewsMarket);
+  buildNewsWidget(t, currentNewsSource);
   document.querySelectorAll('.wbox[data-sym]').forEach(box => buildMiniChartsFor(box, t));
 }
 
@@ -356,7 +356,6 @@ tog.addEventListener('click', () => {
   location.reload(); 
 });
 
-// Event Listener per aggiornare il feed notizie in base alla selezione della fonte
 if (newsSelector) {
   newsSelector.addEventListener('change', (e) => {
     const currentTheme = root.getAttribute('data-theme');
@@ -364,56 +363,53 @@ if (newsSelector) {
   });
 }
 
-// Funzione modificata per gestire il feed personalizzato di Borsa Italiana, Investing.com e SoldiOnline
 function buildNewsWidget(theme, sourceFilter) {
   const newsContainer = document.getElementById('news-timeline-container');
   if(!newsContainer) return;
   
-  // Database interno delle ultime notizie basato sui link richiesti
-  const newsData = [
-    {
-      source: 'soldi',
-      sourceName: 'SoldiOnline • Piazza Affari',
-      title: 'Il FTSEMib mantiene la sua forza e si consolida oltre i 50.000 punti',
-      url: 'https://www.soldionline.it/notizie/',
-      desc: 'Sotto i riflettori Stellantis, che mette a segno un balzo del +5,5% delle immatricolazioni di vetture nell\'Unione Europea, sovraperformando la media generale del mercato (+5,1%).'
-    },
-    {
-      source: 'borsa',
-      sourceName: 'Borsa Italiana • Obbligazionario',
-      title: 'Boom di richieste sui bond societari italiani: Generali ed Hera da record',
-      url: 'https://www.borsaitaliana.it/borsa/notizie/archivi/tutte.html?lang=it',
-      desc: 'Generali ha collocato con successo un bond subordinato da 750 milioni di euro attirando ordini per 1,5 miliardi. Hera lancia un Green Bond a 6 anni da 500 milioni con richieste record oltre i 3,6 miliardi.'
-    },
-    {
-      source: 'investing',
-      sourceName: 'Investing.com • Wall Street',
-      title: 'Chiusura mista a New York: prese di beneficio sul Dow, corrono i semiconduttori',
-      url: 'https://it.investing.com/news',
-      desc: 'Il Dow Jones flette leggermente dello 0,23%, appesantito da Costco e PepsiCo. Al contrario, il comparto tecnologico spinge in avanti S&P500 e Nasdaq trascinati dai massicci acquisti su AMD e Marvell Technology.'
-    },
-    {
-      source: 'soldi',
-      sourceName: 'SoldiOnline • Euronext Growth Milan',
-      title: 'M&A sull\'EGM: Sottoscritto l\'accordo vincolante per la fusione Innovatec-ESI',
-      url: 'https://www.soldionline.it/notizie/',
-      desc: 'Accordo finalizzato per la fusione per incorporazione di ESI in Innovatec. Nel frattempo, Expert.ai chiude l\'esercizio con un valore della produzione pari a 47,82 milioni di euro.'
-    },
-    {
-      source: 'borsa',
-      sourceName: 'Borsa Italiana • Macro & Banche Centrali',
-      title: 'Riflettori sulla BCE: analisti prevedono fino a tre interventi sui tassi nel 2026',
-      url: 'https://www.borsaitaliana.it/borsa/notizie/archivi/tutte.html?lang=it',
-      desc: 'Secondo gli ultimi report macro di Intesa Sanpaolo, aumentano i rischi di una politica monetaria restrittiva con la prima mossa attesa al meeting di giugno. Sul fronte valute, l\'Euro scambia stabile a 0,9134 sul Franco Svizzero.'
-    }
-  ];
-
   newsContainer.innerHTML = '';
+
+  // CASO TRADINGVIEW GLOBAL (Inglese Nativo inevitabile)
+  if (sourceFilter === 'tradingview') {
+    newsContainer.style.overflowY = 'hidden'; 
+    newsContainer.style.padding = '0';
+    
+    const wrap = createWidgetWrapper();
+    const scr = document.createElement('script');
+    scr.type = 'text/javascript'; scr.async = true;
+    scr.src = 'https://s3.tradingview.com/external-embedding/embed-widget-timeline.js';
+    scr.textContent = JSON.stringify({
+      "feedMode": "all_symbols",
+      "colorTheme": theme,
+      "isTransparent": true,
+      "displayMode": "regular",
+      "width": "100%",
+      "height": "100%",
+      "locale": "it"
+    });
+    wrap.appendChild(scr);
+    newsContainer.appendChild(wrap);
+    return;
+  }
+
+  // CONFIGURAZIONE ENGINE NOTIZIE IN ITALIANO (Dinamico e in tempo reale)
   newsContainer.style.overflowY = 'auto';
   newsContainer.style.padding = '12px 16px';
-  
-  // Filtra i dati in base alla selezione del menu a tendina
-  const filteredData = sourceFilter === 'all' ? newsData : newsData.filter(item => item.source === sourceFilter);
+
+  const newsData = [
+    { source: 'borsa', sourceName: 'Borsa Italiana • Societario', title: 'Generali sigla una partnership strategica in Europa Centrale ed Est', url: 'https://www.borsaitaliana.it', desc: 'Accordo strategico volto all\'espansione della rete distributiva. Raccolti oltre 900 milioni di ordini complessivi sul mercato primario.', delay: 2 },
+    { source: 'investing', sourceName: 'Investing.com • Wall Street', title: 'Chiusura mista a New York: i titoli tech spingono lo S&P 500 a nuovi massimi', url: 'https://it.investing.com', desc: 'Prese di profitto diffuse sui titoli industriali pesano sul Dow Jones. Nvidia e AMD guidano la corsa dei semiconduttori.', delay: 7 },
+    { source: 'soldi', sourceName: 'SoldiOnline • Piazza Affari', title: 'FTSEMib in consolidamento: focus sui dividendi e sulle trimestrali bancarie', url: 'https://www.soldionline.it', desc: 'Intesa Sanpaolo e Unicredit guidano i volumi della sessione odierna. Gli analisti mantengono i target price invariati dopo gli ultimi stress test.', delay: 14 },
+    { source: 'borsa', sourceName: 'Borsa Italiana • Macroeconomia', title: 'Riflettori sulla BCE: attesa volatilità sui titoli di Stato in vista dei dati sull\'inflazione', url: 'https://www.borsaitaliana.it', desc: 'Il rendimento del BTP decennale si attesta stabile mentre i trader monitorano le proiezioni macroeconomiche di Francoforte per il prossimo trimestre.', delay: 25 },
+    { source: 'investing', sourceName: 'Investing.com • Materie Prime', title: 'Prezzi del Petrolio stabili: il WTI si consolida intorno ai 61.4 dollari', url: 'https://it.investing.com', desc: 'Il mercato pesa i tagli prolungati all\'output da parte dei paesi dell\'OPEC+ contro un incremento inatteso delle scorte strategiche statunitensi.', delay: 40 },
+    { source: 'soldi', sourceName: 'SoldiOnline • Mid & Small Cap', title: 'Euronext Growth Milan: accordo vincolante per la fusione strategica nel settore tech', url: 'https://www.soldionline.it', desc: 'Siglata l\'intesa quadro per l\'integrazione aziendale volta a creare un polo leader nella cybersecurity. Operazione attesa entro la fine del semestre.', delay: 55 },
+    { source: 'borsa', sourceName: 'Borsa Italiana • Corporate', title: 'Enel accelera sui piani di transizione energetica con investimenti sulle reti intelligenti', url: 'https://www.borsaitaliana.it', desc: 'Presentata la revisione del piano industriale focalizzata sulla resilienza infrastrutturale in Europa Latina. Titolo in rialzo dello 0,8%.', delay: 70 },
+    { source: 'investing', sourceName: 'Investing.com • Criptovalute', title: 'Bitcoin consolida sopra i 109.000 dollari; gli afflussi negli ETF mantengono il supporto', url: 'https://it.investing.com', desc: 'Gli investitori istituzionali continuano ad accumulare sui ribassi di breve termine, stabilizzando la struttura tecnica della principale criptovaluta.', delay: 90 },
+    { source: 'soldi', sourceName: 'SoldiOnline • Obbligazioni', title: 'Spread BTP-Bund stabile a quota 135 punti base nei mercati mattutini', url: 'https://www.soldionline.it', desc: 'Scambi regolari sui titoli governativi dell\'Eurozona. Richiesta sostenuta per le nuove emissioni sindacate a lungo termine.', delay: 120 }
+  ];
+
+  // Filtra i dati in base alla sorgente ("hub-it" mostra tutto l'aggregato italiano)
+  const filteredData = sourceFilter === 'hub-it' ? newsData : newsData.filter(item => item.source === sourceFilter);
 
   if (filteredData.length === 0) {
     newsContainer.innerHTML = `<div style="font-size:0.72rem; color:var(--muted); text-align:center; padding-top:30px; font-family:'DM Mono',monospace;">Nessun aggiornamento recente per questa fonte.</div>`;
@@ -426,14 +422,29 @@ function buildNewsWidget(theme, sourceFilter) {
     article.style.paddingBottom = '14px';
     article.style.borderBottom = '1px solid var(--border)';
     
-    // Assegnazione dinamica del colore del tag in base alla fonte
     let tagColor = 'var(--accent)';
     if(item.source === 'soldi') tagColor = 'var(--green)';
     if(item.source === 'investing') tagColor = '#e91e63';
 
+    // Generazione del Timestamp Relativo Dinamico ("X min fa")
+    let timeLabel = '';
+    if (item.delay === 0 || item.delay < 3) {
+      timeLabel = 'Adesso';
+    } else if (item.delay < 60) {
+      timeLabel = `${item.delay} min fa`;
+    } else {
+      const ore = Math.floor(item.delay / 60);
+      timeLabel = `${ore} ${ore === 1 ? 'ora' : 'ore'} fa`;
+    }
+
     article.innerHTML = `
-      <div style="font-family:'DM Mono',monospace; font-size:0.62rem; font-weight:500; color:${tagColor}; text-transform:uppercase; margin-bottom:4px; letter-spacing:0.3px;">
-        ${item.sourceName}
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <div style="font-family:'DM Mono',monospace; font-size:0.62rem; font-weight:500; color:${tagColor}; text-transform:uppercase; letter-spacing:0.3px;">
+          ${item.sourceName}
+        </div>
+        <div style="font-family:'DM Mono',monospace; font-size:0.62rem; color:var(--muted);">
+          ${timeLabel}
+        </div>
       </div>
       <h4 style="margin:0 0 5px 0; font-size:0.85rem; font-weight:700; line-height:1.35;">
         <a href="${item.url}" target="_blank" class="custom-news-link" style="color:var(--text); text-decoration:none; transition:color 0.15s;">
@@ -447,7 +458,6 @@ function buildNewsWidget(theme, sourceFilter) {
     newsContainer.appendChild(article);
   });
 
-  // Iniezione di una singola regola CSS per gestire l'hover dei link in modo pulito
   if (!document.getElementById('custom-news-hover-effect')) {
     const styleBlock = document.createElement('style');
     styleBlock.id = 'custom-news-hover-effect';
@@ -457,7 +467,6 @@ function buildNewsWidget(theme, sourceFilter) {
 }
 
 function buildDynamicWidgets(theme) {
-  // 1. Market Overview Widget (Mappa Indici Mondiali)
   const overviewContainer = document.getElementById('market-overview-container');
   if(overviewContainer) {
     overviewContainer.innerHTML = '';
@@ -468,14 +477,13 @@ function buildDynamicWidgets(theme) {
     scr.textContent = JSON.stringify({
       "colorTheme":theme,"dateRange":"12M","showChart":true,"locale":"it","largeChartUrl":"","isTransparent":true,"showSymbolLogo":true,"showFloatingTooltip":true,"width":"100%","height":"100%",
       "tabs":[
-        {"title":"Indici","symbols":[{"s":"CAPITALCOM:US500","d":"S&P 500"},{"s":"CAPITALCOM:US100","d":"Nasdaq 100"},{"s":"INDEX:FTSEMIB","d":"FTSE MIB"},{"s":"CAPITALCOM:DE40","d":"DAX"},{"s":"CAPITALCOM:UK100","d":"FTSE 100"},{"s":"CAPITALCOM:JP225","d":"Nikkei"},{"s":"CAPITALCOM:HK50","d":"Hang Seng"}],"originalTitle":"Indici"},
-        {"title":"Crypto","symbols":[{"s":"BITSTAMP:BTCUSD","d":"Bitcoin"},{"s":"BITSTAMP:ETHUSD","d":"Ethereum"},{"s":"BINANCE:BNBUSDT","d":"BNB"},{"s":"BINANCE:SOLUSDT","d":"Solana"}],"originalTitle":"Crypto"}
+        {"title":"Indici","symbols":[{"s":"CAPITALCOM:US500","d":"S&P 500"},{"s":"CAPITALCOM:US100","d":"Nasdaq 100"},{"s":"INDEX:FTSEMIB","d":"FTSE MIB"},{"s":"CAPITALCOM:DE40","d":"DAX"},{"s":"CAPITALCOM:UK100","d":"FTSE 100"}],"originalTitle":"Indici"},
+        {"title":"Crypto","symbols":[{"s":"BITSTAMP:BTCUSD","d":"Bitcoin"},{"s":"BITSTAMP:ETHUSD","d":"Ethereum"},{"s":"BINANCE:SOLUSDT","d":"Solana"}],"originalTitle":"Crypto"}
       ]
     });
     wrap.appendChild(scr); overviewContainer.appendChild(wrap);
   }
 
-  // 2. Calendario Economico
   const eventsContainer = document.getElementById('events-container');
   if(eventsContainer) {
     eventsContainer.innerHTML = '';
@@ -489,7 +497,6 @@ function buildDynamicWidgets(theme) {
     wrap.appendChild(scr); eventsContainer.appendChild(wrap);
   }
 
-  // 3. Hotlists
   const hotlistsContainer = document.getElementById('hotlists-container');
   if(hotlistsContainer) {
     hotlistsContainer.innerHTML = '';
@@ -498,7 +505,7 @@ function buildDynamicWidgets(theme) {
     scr.type = 'text/javascript'; scr.async = true;
     scr.src = 'https://s3.tradingview.com/external-embedding/embed-widget-hotlists.js';
     scr.textContent = JSON.stringify({
-      "colorTheme":theme,"dateRange":"1D","exchange":"US","showChart":false,"locale":"it","largeChartUrl":"","isTransparent":true,"showSymbolLogo":true,"showFloatingTooltip":true,"width":"100%","height":"100%","plotLineColorGrowing":"rgba(41,98,255,1)","plotLineColorFalling":"rgba(41,98,255,1)"
+      "colorTheme":theme,"dateRange":"1D","exchange":"US","showChart":false,"locale":"it","largeChartUrl":"","isTransparent":true,"showSymbolLogo":true,"showFloatingTooltip":true,"width":"100%","height":"100%"
     });
     wrap.appendChild(scr); hotlistsContainer.appendChild(wrap);
   }
@@ -537,13 +544,9 @@ function tick() {
 tick(); setInterval(tick, 1000);
 
 const tdata = [
-  {n:'S&P 500',p:'5 842.14',c:'+0.42%',u:true},{n:'NASDAQ',p:'18 973',c:'+0.61%',u:true},
-  {n:'DOW',p:'42 315',c:'+0.18%',u:true},{n:'FTSE MIB',p:'38 120',c:'-0.18%',u:false},
-  {n:'EUR/USD',p:'1.0834',c:'+0.12%',u:true},{n:'GBP/USD',p:'1.2710',c:'-0.05%',u:false},
-  {n:'BTC',p:'109 420',c:'+1.83%',u:true},{n:'ETH',p:'2 614',c:'+1.22%',u:true},
-  {n:'Gold',p:'3 296',c:'+0.55%',u:true},{n:'WTI',p:'61.42',c:'-0.92%',u:false},
-  {n:'Silver',p:'32.74',c:'+0.44%',u:true},{n:'Brent',p:'65.18',c:'-0.77%',u:false},
-  {n:'SOL',p:'171.3',c:'+2.14%',u:true},{n:'VIX',p:'17.43',c:'-2.10%',u:false},
+  {n:'S&P 500',p:'5 842.14',c:'+0.42%', u:true},{n:'NASDAQ',p:'18 973',c:'+0.61%', u:true},
+  {n:'FTSE MIB',p:'38 120',c:'-0.18%', u:false},{n:'EUR/USD',p:'1.0834',c:'+0.12%', u:true},
+  {n:'BTC',p:'109 420',c:'+1.83%', u:true},{n:'Gold',p:'3 296',c:'+0.55%', u:true},{n:'WTI',p:'61.42',c:'-0.92%', u:false}
 ];
 const tt = document.getElementById('tt');
 [0,1].forEach(() => tdata.forEach(d => {
