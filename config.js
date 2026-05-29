@@ -1,13 +1,34 @@
-// MarketPulse - API Configuration
-// ATTENZIONE: Questo file è pubblico su GitHub Pages. 
-// Non inserire mai chiavi di account con credito reale o permessi amministrativi.
-
-const API_CONFIG = {
-  finnhub: d850mk1r01qrqbnnsksgd850mk1r01qrqbnnskt0, 
-  alphaVantage: 9CKZO2SLSQZ47S8W,
-  newsApi: c6efa4f6efbb440eb4996e24b26ea4c2,
-  fred: bf9ce29fa0c0dd9e6ccf82878e2f1519
+/**
+ * config.js - Configurazione Endpoint MarketPulse
+ * Le chiavi API NON devono essere qui. 
+ * Questo file punta al tuo proxy server (es. Vercel Functions).
+ */
+const MARKETPULSE_CONFIG = {
+    // URL del tuo backend/proxy (dove risiedono le chiamate API protette)
+    PROXY_BASE_URL: 'https://tuo-dominio-vercel.app/api',
+    
+    // Configurazione dei servizi
+    SERVICES: {
+        ALPHA_VANTAGE: '/alpha-vantage', // Proxy per Alpha Vantage
+        FINNHUB:       '/finnhub',       // Proxy per Finnhub
+        FRED:          '/fred',          // Proxy per FRED
+        NEWS_API:      '/news'           // Proxy per NewsAPI
+    }
 };
 
-// Esporta la configurazione per renderla disponibile globalmente
-window.API_CONFIG = API_CONFIG;
+/**
+ * Helper per chiamate sicure
+ */
+async function getMarketData(service, params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const url = `${MARKETPULSE_CONFIG.PROXY_BASE_URL}${MARKETPULSE_CONFIG.SERVICES[service]}?${query}`;
+    
+    try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Errore API: ${service}`);
+        return await response.json();
+    } catch (error) {
+        console.error("MarketPulse Engine Error:", error);
+        return null;
+    }
+}
