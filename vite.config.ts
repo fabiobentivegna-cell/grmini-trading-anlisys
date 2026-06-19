@@ -5,6 +5,7 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
+    base: '/grmini-trading-anlisys/',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
