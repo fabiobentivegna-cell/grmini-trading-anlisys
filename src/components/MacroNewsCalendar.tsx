@@ -68,286 +68,64 @@ export default function MacroNewsCalendar({ isDark }: MacroNewsCalendarProps) {
   const [aiReportText, setAiReportText] = useState<string>("");
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Hardcoded premium mock datasets in Italian
-  const [newsItems, setNewsItems] = useState<MacroNewsItem[]>([
-    {
-      id: "mn1",
-      time: "10 min fa",
-      category: "MONETARY",
-      source: "Milano Finanza",
-      title: "I governatori BCE indicano possibile taglio tassi di 25pb a Luglio",
-      summary: "Fonti interne segnalano un consenso crescente tra i membri falchi del Consiglio Direttivo BCE per avviare una prima riduzione dello spread di tasso di riferimento, grazie al contenimento dell'inflazione core al 2.4%.",
-      sentiment: "RIALZISTA",
-      impact: "ALTO",
-      aiSummary: "La BCE si prepara a invertire la politica monetaria restrittiva. Questo riduce i rendimenti obbligazionari sovrani (BTP) ed incrementa i flussi verso l'azionario a leva (banche e utilities).",
-      tradingImplication: "Acquisto speculativo su FTSE MIB in prossimità del supporto volumetrico. Calo dei rendimenti atteso sul BTP decennale.",
-      fullArticle: "MILANO — Il Consiglio Direttivo della Banca Centrale Europea (BCE) starebbe convergendo verso una decisione storica per il prossimo meeting di Luglio. Secondo fonti qualificate vicine al board di Francoforte, l'inflazione 'core' armonizzata (depurata dalle componenti energetiche e alimentari volatili) si è assestata stabilmente al 2.4%, aprendo uno spazio di manovra confortevole per allentare la morsa restrittiva.\n\nSebbene i governatori considerati tradizionalmente 'falchi' (tra cui esponenti della Bundesbank tedesca) abbiano espresso cautela circa i possibili effetti di secondo round sui salari di servizio, si registra un ampio consenso di massima per un primo taglio del saggio di sconto di riferimento pari a 25 punti base. Gli investitori istituzionali accolgono favorevolmente l'indiscrezione, che ridurrebbe i costi di finanziamento per lo stato italiano (contrazione del rendimento dei BTP decennali) e darebbe nuova linfa alle utility e banche commerciali quotate a Piazza Affari."
-    },
-    {
-      id: "mn2",
-      time: "25 min fa",
-      category: "MACRO",
-      source: "Il Sole 24 Ore",
-      title: "La produzione industriale italiana batte le aspettative nel Q2: +0.6%",
-      summary: "Aumento robusto dei beni strumentali e della meccanica di precisione. L'import-export verso i paesi extra-UE funge da volano principale per la ripresa manifatturiera.",
-      sentiment: "RIALZISTA",
-      impact: "ALTO",
-      aiSummary: "Il settore industriale italiano mostra una resilienza inaspettata. Questo mitiga le paure di recessione nell'Eurozona e rafforza il premio al rischio sul listino milanese.",
-      tradingImplication: "Bullish su comparto industriale medio-cap e banche retail italiane.",
-      fullArticle: "ROMA — Sorpresa macroeconomica dal comparto manifatturiero italiano: nel secondo trimestre dell'anno la produzione industriale ha superato ogni stima di consensus degli analisti, facendo registrare un incremento robustissimo dello 0.6% su base congiunturale rispetto al trimestre precedente. I dati diffusi dall'ISTAT evidenziano un vigore spettacolare per i segmenti dei beni strumentali, della robotica avanzata e della meccanica di precisione.\n\nIl principale motore di questa rinascita si conferma l'export, alimentato da contratti bilaterali ad alta tecnologia con partner americani ed asiatici. Gli analisti di settore fanno notare che la manifattura italiana sta dimostrando una flessibilità operativa di gran lunga superiore a quella tedesca, attenuando la percezione di debolezza recessiva per la periferia dell'Eurozona e inducendo una forte rivalutazione dell'indice FTSE MIB."
-    },
-    {
-      id: "mn3",
-      time: "1 ora fa",
-      category: "GEOPOLITICS",
-      source: "Reuters Italia",
-      title: "Nuove tensioni sui dazi doganali USA-Cina: tariffe del 20% su semilavorati tecnologici",
-      summary: "La Casa Bianca giustifica le nuove misure come necessarie per proteggere le filiere dometiche di semiconduttori e stelle fotovoltaiche. Pechino promette contromisure simmetriche.",
-      sentiment: "RIBASSISTA",
-      impact: "ALTO",
-      aiSummary: "L'aumento dell'inflazione importata potrebbe frenare il ritmo di discesa dei tassi di interesse della Federal Reserve, ostacolando i titoli tecnologici ad alta capitalizzazione.",
-      tradingImplication: "Short tattico Nasdaq 100/Micro-chip. Copertura su materie prime (Oro).",
-      fullArticle: "WASHINGTON — Il Dipartimento del Commercio degli Stati Uniti d'America ha ufficializzato l'adozione di un nuovo pacchetto di tariffe protezionistiche su vasta scala, concentrato in particolar modo sui semilavorati tecnologici, moduli fotovoltaici e semiconduttori in arrivo dalla Repubblica Popolare Cinese. Le imposte doganali subiranno un incremento immediato fino al 20%, una misura definita dalla Casa Bianca 'essenziale per preservare la sovranità tecnologica ed incoraggiare la produzione all'interno dei confini nazionali'.\n\nLa reazione di Pechino non si è fatta attendere, con il Ministero degli Esteri cinese che ha definito la delibera unilaterale 'un grave vulnus al commercio globale multilaterale' ed ha promesso rappresaglie simmetriche e mirate sulle materie prime industriali (terre rare ed alluminio). Le implicazioni sui mercati preoccupano i gestori di fondi tematici, data la probabile interruzione delle catene di approvvigionamento tecnologiche."
-    },
-    {
-      id: "mn4",
-      time: "2 ore fa",
-      category: "MACRO",
-      source: "Bloomberg Term",
-      title: "Inflazione Core (CPI) USA si attesta al 3.2% a/a, leggermente sotto il 3.3% stimato",
-      summary: "I dati del Dipartimento del Lavoro statunitense evidenziano un raffreddamento nei costi degli immobili residenziali e dei servizi di trasporto, sollevando i mercati azionari mondiali.",
-      sentiment: "RIALZISTA",
-      impact: "ALTO",
-      aiSummary: "Allontanamento dello scenario di inflazione persistente 'sticky'. Aumenta all'82% la probabilità implicita nei futures sui tassi di un primo allentamento Fed a Settembre.",
-      tradingImplication: "Long EUR/USD, long obbligazionario US Treasury 10Y. Rally di sollievo sull'azionariato tecnologico.",
-      fullArticle: "NEW YORK — L'ufficio di statistica del lavoro degli Stati Uniti (BLS) ha comunicato l'andamento dei prezzi al consumo (CPI) relativo al mese precedente. L'inflazione di fondo 'Core' (escludendo i beni alimentari ed energetici) si attesta al 3.2% su base annua, leggermente al di sotto delle proiezioni medie degli esperti che si attendevano un consolidamento al 3.3%. Il rallentamento è stato trainato da un calo generalizzato delle tariffe aeree, dei servizi alberghieri e di un limitato allentamento del comparto immobiliare domestico.\n\nI mercati finanziari globali hanno reagito con estremo entusiasmo a questo dato energetico: i futures sui tassi federali indicano ora un'impennata all'82% della probabilità implicita che la Federal Reserve avvii il primo storico taglio del costo del denaro durante la sessione governativa del prossimo Settembre."
-    },
-    {
-      id: "mn5",
-      time: "3 ore fa",
-      category: "EQUITIES",
-      source: "CNBC",
-      title: "ENI stringe accordo strategico in Libia per l'approvvigionamento di gas naturale",
-      summary: "Investimento programmato da 4 miliardi di dollari per lo sviluppo di due campi offshore ad alta capacità produttiva. Fornitura garantita all'Italia a partire dal 2027.",
-      sentiment: "NEUTRALE",
-      impact: "MEDIO",
-      aiSummary: "Miglioramento dell'indipendenza energetica domestica italiana. ENI consolida il proprio posizionamento strategico nel Mediterraneo, proteggendo la stabilità dei dividendi futuri.",
-      tradingImplication: "Acquisto sul supporto per investitori di lungo termine alla ricerca di dividendo stabile. Target price immutato.",
-      fullArticle: "ROMA — Il gruppo energetico guidato da Claudio Descalzi ha siglato a Tripoli un memorandum d'intesa vincolante della durata di venticinque anni con l'istituzione petrolifera nazionale libica (NOC) per sbloccare investimenti strategici per oltre 4 miliardi di dollari. L'accordo consentirà lo sviluppo congiunto di due nuovi grandi giacimenti offshore di gas naturale capaci di convogliare annualmente oltre 10 miliardi di metri cubi verso la rete continentale.\n\nLa fornitura, destinata a incrementare sensibilmente l'indipendenza energetica dell'Italia, sarà commercializzata interamente a partire dal primo trimestre del 2027 tramite la condotta transmediterranea. Gli esperti di Corporate Finance ritengono che l'operazione permetterà alla compagnia di conseguire flussi di cassa solidi a lungo termine, a protezione del piano di buyback e dividendi del titolo."
-    },
-    {
-      id: "mn6",
-      time: "4 ore fa",
-      category: "GEOPOLITICS",
-      source: "Ansa Economia",
-      title: "Il greggio Brent sale a 82.5$ al barile tra timori logistici nel Canale di Suez",
-      summary: "Nuovi attacchi a portacontainer costringono le compagnie marittime a circumnavigare l'Africa. I costi dei noli marittimi subiscono un rialzo del 15% in sole 48 ore.",
-      sentiment: "RIBASSISTA",
-      impact: "MEDIO",
-      aiSummary: "Premio al rischio geopolitico sui contratti energetici. Il prolungarsi di queste deviazioni logistiche rischia di causare un moderato shock d'offerta transitorio nei beni di consumo.",
-      tradingImplication: "Long su contratti Brent spot e posizionamento su compagnie di logistica merci marittima globale.",
-      fullArticle: "LONDRA — Tensione e nervosismo sul mercato energetico spot: le quotazioni del petrolio greggio di qualità Brent del Mare del Nord hanno rotto con violenza la resistenza tecnica di breve periodo a quota 82.5 dollari al barile. La spinta rialzista è originata dall'ennesima ondata di attacchi missilistici asimmetrici contro le navi commerciali in transito nel Canale di Suez, che ha costretto le primarie agenzie di navigazione globali a deviare tutte le navi portacontainer attorno al Capo di Buona Speranza in Africa.\n\nQuesta deviazione logistica allunga i tempi di percoronza marittima di oltre 12 giorni, causando un brusco rialzo delle tariffe di trasporto (noli) del 15% nel giro di poche ore. Gli analisti temono che in mancanza di una rapida stabilizzazione la strozzatura logistica possa innescare una nuova spinta inflazionistica transitoria nell'Eurozona."
-    },
-    {
-      id: "mn7",
-      time: "6 ore fa",
-      category: "MONETARY",
-      source: "Reuters",
-      title: "La Banca d'Inghilterra taglia a sorpresa il tasso di sconto ufficiale dal 5.25% al 5.00%",
-      summary: "La BoE è la prima grande banca centrale anglosassone ad agire sul costo del denaro, citando una discesa stabile dell'indice d'inflazione armonizzato stabilmente al target del 2.0%.",
-      sentiment: "RIALZISTA",
-      impact: "ALTO",
-      aiSummary: "Azione monetaria aggressiva che riflette una vittoria definitiva sulla spiralizzazione dei prezzi. Questa mossa mette sotto pressione la Fed e la BCE affinché accelerino i propri piani d'azione.",
-      tradingImplication: "Pressione ribassista immediata sulla Sterlina (GBP/USD). Buona accoglienza per le aziende edili e i mutuatari residenziali UK.",
-      fullArticle: "LONDRA — Con una mossa a sorpresa che ha disorientato gran parte della piazza finanziaria globale, il Comitato di Politica Monetaria della Bank of England (BoE) ha deliberato a maggioranza la contrazione del tasso di rifinanziamento principale dal 5.25% al 5.00%. La decisione rappresenta un capitolo cruciale nella lotta globale contro l'inflazione degli ultimi anni, rendendo la BoE la prima grande istituzione anglosassone ad allentare significativamente il costo del capitale.\n\nIl governatore Andrew Bailey ha dichiarato che la discesa dell'indice dei prezzi al consumo armonizzato si è stabilizzata stabilmente nell'intorno del target istituzionale del 2.0%, consentendo di dare sostegno all'economia reale ed in particolare al comparto edilizio domestico che si trovava sotto una severa morsa creditizia."
-    }
-  ]);
+  // Real-time datasets fetched from backend
+  const [newsItems, setNewsItems] = useState<MacroNewsItem[]>([]);
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
 
-  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([
-    {
-      id: "c1",
-      time: "09:00",
-      country: "IT",
-      indicator: "Fatturato dell'industria m/m",
-      period: "Mag",
-      actual: "+0.8%",
-      forecast: "+0.2%",
-      previous: "-0.4%",
-      impact: "MEDIUM",
-      status: "RILASCIATO",
-      aiInterpretation: "La domanda domestica e l'export italiano tengono straordinariamente bene. La revisione al rialzo del dato precedente conferma un quadro strutturale positivo per la manifattura.",
-      fullDetails: "Questo indice misura il fatturato generato dalle imprese industriali italiane operanti sul territorio nazionale ed estero. Nel mese di maggio si è registrato un formidabile +0.8%, superando ampiamente le previsioni degli analisti che si attestavano ad un prudente +0.2%. Il dato indica una tenuta formidabile della domanda e smentisce i timori di una recessione immediata d'area, sostenendo le aziende industriali a media capitalizzazione quotate sul listino FTSE MIB."
-    },
-    {
-      id: "c2",
-      time: "11:00",
-      country: "UE",
-      indicator: "Indice dei Prezzi al Consumo (CPI) a/a (Armonizzato)",
-      period: "Giu",
-      actual: "+2.4%",
-      forecast: "+2.5%",
-      previous: "+2.6%",
-      impact: "HIGH",
-      status: "RILASCIATO",
-      aiInterpretation: "Discesa più veloce del previsto dell'indice armonizzato. Rimuove l'ultimo ostacolo per la BCE per attuare politiche distensive nel comitato di Luglio.",
-      fullDetails: "L'indice armonizzato dei prezzi al consumo (HICP) monitora la variazione dei prezzi dei beni e dei servizi in tutta l'Eurozona secondo standard unificati. Il rallentamento al +2.4% annuo rispetto alle attese del +2.5% costituisce un segnale rialzista per l'azionario europeo e conferma il superamento definitivo delle pressioni inflattive, spianando la strada per tagli successivi del costo del denaro."
-    },
-    {
-      id: "c3",
-      time: "14:30",
-      country: "US",
-      indicator: "Nuove Richieste Sussidi Disoccupazione",
-      period: "Settimanale",
-      actual: "218k",
-      forecast: "225k",
-      previous: "221k",
-      impact: "HIGH",
-      status: "RILASCIATO",
-      aiInterpretation: "Il mercato del lavoro americano si conferma estremamente rigido. Meno licenziamenti indicano che l'economia americana continua a viaggiare in territorio di espansione, limitando le spinte Fed a tagli multipli.",
-      fullDetails: "Il report delle richieste settimanali di disoccupazione negli Stati Uniti misura il numero di individui che presentano domanda di indennizzo per la prima volta. Il dato di 218k (inferiore alle 225k stimate) denota un mercato del lavoro ancora molto tonico e resiliente. Sebbene rifletta un'economia forte, questo costringe la Federal Reserve a muoversi con estrema cautela prima di avviare cicli aggressivi di ribasso dei tassi d'interesse."
-    },
-    {
-      id: "c4",
-      time: "14:30",
-      country: "US",
-      indicator: "Permessi di Costruzione Rilasciati",
-      period: "Maggio",
-      actual: "1.38M",
-      forecast: "1.42M",
-      previous: "1.34M",
-      impact: "MEDIUM",
-      status: "RILASCIATO",
-      aiInterpretation: "Frenata modesta nel comparto immobiliare a causa dei tassi di mutuo trentennali ancora insostenibili sopra il 6.8%. Segnale di raffreddamento controllato.",
-      fullDetails: "Il rilascio di permessi di costruzione rappresenta un indicatore anticipatore fondamentale della salute del mercato immobiliare statunitense d'area. Il consuntivo di 1.38 milioni conferma una lieve contrazione dovuta ai tassi d'interesse ancora elevati per i mutui ipotecari commerciali. Si tratta tuttavia di una flessione ordinata che supporta il percorso di stabilizzazione macro senza generare crisi sistemiche."
-    },
-    {
-      id: "c5",
-      time: "16:00",
-      country: "UE",
-      indicator: "Indice di Fiducia dei Consumatori",
-      period: "Giu",
-      actual: "—",
-      forecast: "-13.5",
-      previous: "-14.3",
-      impact: "MEDIUM",
-      status: "ATTESA",
-      aiInterpretation: "Un aumento della fiducia consumer indicherebbe che il calo dell'inflazione ed il bonus energia stanno migliorando il potere d'acquisto dei cittadini dell'area euro.",
-      fullDetails: "Questo sondaggio rileva il clima di ottimismo economico delle famiglie nell'Eurozona su posizioni occupazionali, risparmiali e investimenti programmati. Un rimbalzo stimato a -13.5 punti rispetto al precedente -14.3 segnala gli effetti benefici della stabilità dell'occupazione e del rallentamento del paniere energia/carburante sui consumi domestici di base."
-    },
-    {
-      id: "c6",
-      time: "Domani 10:00",
-      country: "IT",
-      indicator: "Bilancia Commerciale Mensile",
-      period: "Maggio",
-      actual: "—",
-      forecast: "4.86B",
-      previous: "4.21B",
-      impact: "LOW",
-      status: "ATTESA",
-      aiInterpretation: "Surplus commerciale atteso in crescita grazie alla diminuzione del valore nominale energetico importato e alla ripresa dell'export chimico/meccanico.",
-      fullDetails: "La bilancia commerciale italiana misura lo scarto netto di valore monetario tra beni esportati ed importati. Il surplus stimato in crescita a 4.86 miliardi testimonia la straordinaria competitività globale della meccanica, del bio-farmaco e della moda italiana, in concomitanza con la decisa contrazione dei costi di importazione delle materie prime energetiche (gas)."
-    },
-    {
-      id: "c7",
-      time: "Ven 14:30",
-      country: "US",
-      indicator: "Indice dei Prezzi PCE Core m/m (Indicatore Fed)",
-      period: "Maggio",
-      actual: "—",
-      forecast: "+0.1%",
-      previous: "+0.2%",
-      impact: "HIGH",
-      status: "ATTESA",
-      aiInterpretation: "Questo è l'indicatore principe monitorato dalla Federal Reserve. Se confermato allo 0.1% mensile, sbloccherà una proiezioni pluriennale di rendimenti calanti sui bond americani.",
-      fullDetails: "L'indice Core PCE (Personal Consumption Expenditures) misura le variazioni di spesa dei consumatori americani depurate dalle componenti volatili cibo ed alimentari. Trattandosi dell'indicatore di inflazione preferito dalla Fed, un dato effettivo allineato allo +0.1% mensile fornirebbe l'evidenza empirica che i fautori di tagli dei tassi cercano per procedere speditamente già a partire da fine estate."
+  const fetchNewsData = async (force: boolean = false) => {
+    setIsRefreshing(true);
+    if (force) {
+      setIsAiLoading(true);
     }
-  ]);
+    try {
+      const res = await fetch(`/api/news${force ? "?refresh=true" : ""}`);
+      const data = await res.json();
+      if (data.newsItems) setNewsItems(data.newsItems);
+      if (data.calendarEvents) setCalendarEvents(data.calendarEvents);
+      if (data.aiReportText) setAiReportText(data.aiReportText);
+      
+      // Auto-select first news as default in AI panel if none is active
+      if (data.newsItems && data.newsItems.length > 0 && !selectedNews && !selectedEvent) {
+        setSelectedNews(data.newsItems[0]);
+      }
+    } catch (e) {
+      console.error("Error fetching live news:", e);
+    } finally {
+      setIsRefreshing(false);
+      setIsAiLoading(false);
+    }
+  };
 
-  // Handle active details
   useEffect(() => {
-    // Select first news as default in AI panel
+    fetchNewsData();
+    const interval = setInterval(() => fetchNewsData(false), 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
     if (newsItems.length > 0 && !selectedNews && !selectedEvent) {
       setSelectedNews(newsItems[0]);
     }
   }, [newsItems]);
 
-  // Generate Global AI Macro Report
   const triggerGlobalMacroReport = () => {
-    setIsAiLoading(true);
-    setAiReportText("");
-    
-    setTimeout(() => {
-      const report = `### 🧠 REPORT GENERATION: COGNITIVE INTELLIGENCE MACRO ITALIA
-**Data Elaborazione**: 17 Giugno 2026 | **Modello AI**: *Gemini-3.5-Intelligence-Core*
-**Status Operativo**: GENERAZIONE OTTIMIZZATA PER TERMINAL MONITOR
-
----
-
-#### 1. QUADRO DI SINTESI MACROECONOMICO (ZONA EURO & ITALIA)
-La combinazione dei dati macro odierni delinea uno scenario di **"Soft Landing controllato"** molto favorevole per i mercati azionari dell'Europa periferica, in particolare per il listino **FTSE MIB (Milano)**. 
-- **Inflazione Area Euro (CPI) scesa al +2.4%**: Questo valore confuta i timori di inflazione persistente ("sticky inflation") e offre un margine di tolleranza di quasi 60 punti base rispetto al target statutario BCE del 2%.
-- **Resilienza Industriale Italiana (+0.6%)**: Sfata le aspettative di una contrazione nel secondo trimestre. Il manifatturiero italiano si dimostra più flessibile di quello tedesco, beneficiando di linee di approvvigionamento diversificate.
-
-#### 2. VALUTAZIONE DI RISCHIO E CORRELAZIONE ASSET
-L'indicatore di **Rischio Sistemico Interno** si attesta attualmente a un livello di **35/100 (Basso-Moderato)**.
-- **BTP Decennale Italiano**: Il rendimento spot è impostato per scendere verso l'area **3.65%** con contrazione dello **Spread BTP-Bund** sotto la soglia critica dei 128 punti base. Questo stimola immediatamente i titoli finanziari (Intesa Sanpaolo, Unicredit) e i grandi distributori energetici ad alto dividendo (Enel, Terna).
-- **EUR/USD (Cambio Euro-Dollaro)**: Bias direzionale debolmente rialzista verso **1.0920** sostenuto dalla divergenza tra il rigido mercato del lavoro US (richieste sussidi a 218K) e l'allentamento delle dinamiche monetarie dell'eurozona.
-
-#### 3. SCENARIO PREDITTIVO A 15 GIORNI (TRADING STRATEGIES)
-* **SCENARIO A (70% Probabilità) - RALLENTAMENTO CONTROLLATO CPI**: Il listino milanese rompe la resistenza dinamica a 34.200 punti, trascinato dal recupero di utilities e bancari sensibili allo spread. *Azione: Accumulare titoli con P/E inferiore a 14 e Dividend Yield > 5%.*
-* **SCENARIO B (30% Probabilità) - RISCHIO GEOPOLITICO NOLI**: Escalation nel canale di Suez che forza il Brent di nuovo sopra i 86$. Spinte inflazionistiche isolate rinviano i tagli dei tassi complessivi a fine autunno. *Azione: Hedge parziale con titoli energetici (Eni, Saras) ed acquisto opzioni protettive Put.*`;
-
-      setAiReportText(report);
-      setIsAiLoading(false);
-    }, 1200);
+    fetchNewsData(true);
   };
-
-  useEffect(() => {
-    triggerGlobalMacroReport();
-  }, []);
 
   const handleNewsClick = (item: MacroNewsItem) => {
     setSelectedEvent(null);
     setSelectedNews(item);
     setActiveModalNews(item);
-    setIsAiLoading(true);
-    
-    // Simulate smart AI analysis on this specific news item
-    setTimeout(() => {
-      setIsAiLoading(false);
-    }, 300);
   };
 
   const handleEventClick = (item: CalendarEvent) => {
     setSelectedNews(null);
     setSelectedEvent(item);
     setActiveModalEvent(item);
-    setIsAiLoading(true);
-    
-    // Simulate smart AI analysis on this specific event
-    setTimeout(() => {
-      setIsAiLoading(false);
-    }, 300);
   };
 
   const forceDataRefresh = () => {
-    setIsRefreshing(true);
-    setTimeout(() => {
-      // randomly permute slightly actual values or times to simulate real-time live connection
-      const updatedNews = [...newsItems];
-      updatedNews[0].time = "Ora";
-      setNewsItems(updatedNews);
-      
-      const updatedEvents = [...calendarEvents];
-      if (updatedEvents[4].actual === "—") {
-        updatedEvents[4].actual = "-13.2";
-        updatedEvents[4].status = "RILASCIATO";
-      }
-      setCalendarEvents(updatedEvents);
-      
-      setIsRefreshing(false);
-    }, 500);
+    fetchNewsData(true);
   };
 
   // Filter computations

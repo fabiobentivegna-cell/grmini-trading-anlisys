@@ -3,6 +3,8 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
+import YahooFinance from "yahoo-finance2";
+const yahooFinance = new YahooFinance();
 
 dotenv.config();
 
@@ -30,7 +32,7 @@ function makeInstrument(raw: {
   sym: string;
   tvSym: string;
   name: string;
-  market: "italia" | "usa" | "forex" | "commodities" | "crypto";
+  market: "italia" | "usa" | "forex" | "commodities" | "crypto" | "indici";
   price: number;
   pe?: number | string;
   ps?: number | string;
@@ -224,7 +226,17 @@ let instruments = [
   makeInstrument({ sym: "LTCUSD", tvSym: "COINBASE:LTCUSD", name: "Litecoin", market: "crypto", price: 72.80, vol: "420M", mktcap: "5.4B", w52h: 112.50, w52l: 55.40, valScore: 66, fair: 85.00 }),
   makeInstrument({ sym: "MATICUSD", tvSym: "COINBASE:MATICUSD", name: "Polygon", market: "crypto", price: 0.58, vol: "280M", mktcap: "5.6B", w52h: 1.28, w52l: 0.48, valScore: 68, fair: 0.85 }),
   makeInstrument({ sym: "SOLUSD", tvSym: "COINBASE:SOLUSD", name: "Solana / Dollaro US", market: "crypto", price: 142.50, vol: "3.8B", mktcap: "64.2B", w52h: 210.00, w52l: 14.12, valScore: 65, fair: 130.00 }),
-  makeInstrument({ sym: "XRPUSD", tvSym: "COINBASE:XRPUSD", name: "Ripple", market: "crypto", price: 0.4850, vol: "1.1B", mktcap: "26.4B", w52h: 0.7410, w52l: 0.4105, valScore: 55, fair: 0.55 })
+  makeInstrument({ sym: "XRPUSD", tvSym: "COINBASE:XRPUSD", name: "Ripple", market: "crypto", price: 0.4850, vol: "1.1B", mktcap: "26.4B", w52h: 0.7410, w52l: 0.4105, valScore: 55, fair: 0.55 }),
+
+  // ==================== INDICI (ALPHABETICAL) ====================
+  makeInstrument({ sym: "CAC40", tvSym: "INDEX:CAC40", name: "CAC 40", market: "indici", price: 7900.00, vol: "—", mktcap: "—", w52h: 8200.00, w52l: 6800.00, valScore: 50, fair: 8000 }),
+  makeInstrument({ sym: "DAX", tvSym: "INDEX:DAX", name: "DAX Performance-Index", market: "indici", price: 18000.00, vol: "—", mktcap: "—", w52h: 18500.00, w52l: 14500.00, valScore: 55, fair: 18200 }),
+  makeInstrument({ sym: "DOWJONES", tvSym: "INDEX:DJI", name: "Dow Jones Industrial Average", market: "indici", price: 39000.00, vol: "—", mktcap: "—", w52h: 40000.00, w52l: 32000.00, valScore: 58, fair: 39500 }),
+  makeInstrument({ sym: "FTSEMIB", tvSym: "INDEX:FTSEMIB", name: "FTSE MIB", market: "indici", price: 34000.00, vol: "—", mktcap: "—", w52h: 35500.00, w52l: 27000.00, valScore: 60, fair: 34500 }),
+  makeInstrument({ sym: "NASDAQ", tvSym: "INDEX:IXIC", name: "NASDAQ Composite", market: "indici", price: 16500.00, vol: "—", mktcap: "—", w52h: 16800.00, w52l: 12500.00, valScore: 65, fair: 17000 }),
+  makeInstrument({ sym: "NIKKEI", tvSym: "INDEX:N225", name: "Nikkei 225", market: "indici", price: 38000.00, vol: "—", mktcap: "—", w52h: 41000.00, w52l: 30000.00, valScore: 50, fair: 39000 }),
+  makeInstrument({ sym: "S&P500", tvSym: "INDEX:SPX", name: "S&P 500", market: "indici", price: 5200.00, vol: "—", mktcap: "—", w52h: 5300.00, w52l: 4100.00, valScore: 62, fair: 5350 }),
+  makeInstrument({ sym: "VIX", tvSym: "INDEX:VIX", name: "CBOE Volatility Index", market: "indici", price: 13.50, vol: "—", mktcap: "—", w52h: 21.00, w52l: 11.50, valScore: 50, fair: 15.00 })
 ];
 
 // Active notifications log
@@ -255,56 +267,124 @@ const notifications = [
   }
 ];
 
-// Background pricing update loop on the server
-setInterval(() => {
-  instruments.forEach(inst => {
-    // Only apply tiny random movements to mock live feeds
-    const mult = inst.market === 'crypto' ? 0.0015 : inst.market === 'forex' ? 0.0002 : 0.0008;
-    const isUp = Math.random() > 0.48; // slight upward bias
-    const changePct = Math.random() * mult;
-    const delta = inst.price * changePct * (isUp ? 1 : -1);
-    inst.price = +(inst.price + delta);
-    inst.chg = +(inst.chg + delta);
-    inst.chgPct = +(inst.chgPct + changePct * 100 * (isUp ? 1 : -1));
+const symbolMap: Record<string, string> = {
+  // Italia
+  "A2A": "A2A.MI", "AMP": "AMP.MI", "AZM": "AZM.MI", "BAMI": "BAMI.MI", "BGN": "BGN.MI",
+  "BMED": "BMED.MI", "BPE": "BPE.MI", "BRN": "BC.MI", "DIA": "DIA.MI", "ENEL": "ENEL.MI",
+  "ENI": "ENI.MI", "ERG": "ERG.MI", "FBK": "FBK.MI", "G": "G.MI", "HER": "HER.MI",
+  "INW": "INW.MI", "ISP": "ISP.MI", "LDO": "LDO.MI", "MB": "MB.MI", "MONC": "MONC.MI",
+  "NEXI": "NEXI.MI", "PIRE": "PIRC.MI", "PRY": "PRY.MI", "PST": "PST.MI", "RACE": "RACE.MI",
+  "REC": "REC.MI", "SPM": "SPM.MI", "SRG": "SRG.MI", "STLAM": "STLAM.MI", "STM": "STM.MI",
+  "TEN": "TEN.MI", "TRN": "TRN.MI", "UCG": "UCG.MI", "UNI": "UNI.MI",
 
-    // Occasionally generate random notifications
-    if (Math.random() > 0.98) {
-      const now = new Date();
-      const nType = Math.random() > 0.6 ? 'indicator' : Math.random() > 0.5 ? 'ai_alert' : 'price';
-      const sev = nType === 'indicator' ? 'success' : nType === 'ai_alert' ? 'warning' : 'info';
-      let title = "";
-      let msg = "";
+  // USA
+  "AAPL": "AAPL", "ADBE": "ADBE", "AMD": "AMD", "AMZN": "AMZN", "AVGO": "AVGO",
+  "BAC": "BAC", "BRK.B": "BRK-B", "COST": "COST", "CRM": "CRM", "CVX": "CVX",
+  "DIS": "DIS", "GOOGL": "GOOGL", "HD": "HD", "JNJ": "JNJ", "JPM": "JPM", "KO": "KO",
+  "LLY": "LLY", "MA": "MA", "META": "META", "MRK": "MRK", "MSFT": "MSFT", "NFLX": "NFLX",
+  "NVDA": "NVDA", "PEP": "PEP", "PG": "PG", "TSLA": "TSLA", "UNH": "UNH", "V": "V",
+  "WMT": "WMT", "XOM": "XOM",
 
-      if (nType === 'price') {
-        title = `${inst.sym} Svolta Prezzo`;
-        msg = `Il prezzo di ${inst.name} (${inst.sym}) si muove rapidamente a ${inst.price.toFixed(inst.market === 'forex' ? 4 : 2)} (${inst.chgPct >= 0 ? '+' : ''}${inst.chgPct.toFixed(2)}%).`;
-      } else if (nType === 'indicator') {
-        const indName = Math.random() > 0.5 ? 'RSI Ipervenduto' : 'Incrocio EMA';
-        title = `${inst.sym}: ${indName}`;
-        msg = indName === 'RSI Ipervenduto' ? 
-          `L'indicatore RSI (14) è sceso sotto 30 (valore: 28.5) segnalando potenziale inversione di tendenza.` :
-          `EMA 20 e EMA 50 si sono incrociate decretando l'avvio di un trend rialzista di breve termine.`;
-      } else {
-        const modelName = Math.random() > 0.5 ? 'Buffett Check' : 'InvestingPro Screener';
-        title = `Segnale AI (${modelName})`;
-        msg = modelName === 'Buffett Check' ? 
-          `${inst.sym} evidenzia caratteristiche di moat coerenti con la tesi Warren Buffett (ROE > 20% e P/E favorevole).` :
-          `Modello InvestingPro individua uno sconto del ${Math.abs(inst.valScore - 50)}% sul fair value stimato.`;
-      }
+  // Forex
+  "AUDJPY": "AUDJPY=X", "AUDUSD": "AUDUSD=X", "EURCHF": "EURCHF=X", "EURGBP": "EURGBP=X",
+  "EURJPY": "EURJPY=X", "EURUSD": "EURUSD=X", "GBPJPY": "GBPJPY=X", "GBPUSD": "GBPUSD=X",
+  "NZDUSD": "NZDUSD=X", "USDCAD": "USDCAD=X", "USDCHF": "USDCHF=X", "USDJPY": "USDJPY=X",
 
-      notifications.unshift({
-        type: nType,
-        id: "gen_" + Date.now() + "_" + inst.sym + "_" + Math.floor(Math.random() * 1000000),
-        title,
-        message: msg,
-        timestamp: now.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }),
-        severity: sev
-      } as any);
+  // Commodities
+  "BRENT": "BZ=F", "COFFEE": "KC=F", "COPPER": "HG=F", "CORN": "ZC=F", "GOLD": "GC=F",
+  "NATGAS": "NG=F", "PLATINUM": "PL=F", "SILVER": "SI=F", "SOYBEAN": "ZS=F", "SUGAR": "SB=F",
+  "WHEAT": "ZW=F", "WTI": "CL=F",
 
-      if (notifications.length > 50) notifications.pop();
+  // Crypto
+  "ADAUSD": "ADA-USD", "AVAXUSD": "AVAX-USD", "BNBUSD": "BNB-USD", "BTCUSD": "BTC-USD",
+  "DOGEUSD": "DOGE-USD", "DOTUSD": "DOT-USD", "ETHUSD": "ETH-USD", "LINKUSD": "LINK-USD",
+  "LTCUSD": "LTC-USD", "MATICUSD": "MATIC-USD", "SOLUSD": "SOL-USD", "XRPUSD": "XRP-USD",
+
+  // Indici
+  "S&P500": "^GSPC", "NASDAQ": "^IXIC", "DOWJONES": "^DJI", "FTSEMIB": "FTSEMIB.MI",
+  "DAX": "^GDAXI", "CAC40": "^FCHI", "NIKKEI": "^N225", "VIX": "^VIX"
+};
+
+const updateMarketData = async () => {
+  try {
+    const symbolsToFetch = instruments.map(inst => symbolMap[inst.sym] || inst.sym);
+    
+    // Chunk array into pieces of 50 to respect API limits
+    const chunkSize = 50;
+    const chunks = [];
+    for (let i = 0; i < symbolsToFetch.length; i += chunkSize) {
+      chunks.push(symbolsToFetch.slice(i, i + chunkSize));
     }
-  });
-}, 4500);
+
+    const quotes = [];
+    for (const chunk of chunks) {
+      const results = await yahooFinance.quote(chunk);
+      quotes.push(...results);
+    }
+
+    // Now update instruments array with REAL data
+    instruments.forEach(inst => {
+      const yfSym = symbolMap[inst.sym] || inst.sym;
+      const quote = quotes.find(q => q.symbol === yfSym);
+      if (quote && quote.regularMarketPrice) {
+        inst.price = quote.regularMarketPrice;
+        inst.chg = quote.regularMarketChange || 0;
+        inst.chgPct = quote.regularMarketChangePercent || 0;
+        if (quote.trailingPE) inst.pe = parseFloat(quote.trailingPE.toFixed(1));
+        if (quote.priceToBook) inst.pb = parseFloat(quote.priceToBook.toFixed(2));
+        if (quote.trailingAnnualDividendYield) inst.div = parseFloat((quote.trailingAnnualDividendYield * 100).toFixed(2));
+        if (quote.epsTrailingTwelveMonths) inst.eps = quote.epsTrailingTwelveMonths;
+        if (quote.bookValue) inst.bvps = quote.bookValue;
+        if (quote.marketCap) {
+          inst.mktcapN = quote.marketCap;
+          if (quote.marketCap >= 1e12) inst.mktcap = (quote.marketCap / 1e12).toFixed(2) + "T";
+          else if (quote.marketCap >= 1e9) inst.mktcap = (quote.marketCap / 1e9).toFixed(2) + "B";
+          else if (quote.marketCap >= 1e6) inst.mktcap = (quote.marketCap / 1e6).toFixed(2) + "M";
+        }
+        if (quote.regularMarketDayVolume) {
+          if (quote.regularMarketDayVolume >= 1e6) inst.vol = (quote.regularMarketDayVolume / 1e6).toFixed(1) + "M";
+          else inst.vol = (quote.regularMarketDayVolume / 1e3).toFixed(1) + "k";
+        }
+        if (quote.fiftyTwoWeekHigh) inst.w52h = quote.fiftyTwoWeekHigh;
+        if (quote.fiftyTwoWeekLow) inst.w52l = quote.fiftyTwoWeekLow;
+        if (quote.targetMeanPrice) inst.fair = quote.targetMeanPrice;
+      }
+    });
+  } catch (err) {
+    console.error("Errore durante l'aggiornamento da Yahoo Finance:", err);
+  }
+};
+
+const fetchRealNews = async () => {
+  try {
+    const res = await yahooFinance.search("market news", { newsCount: 3 });
+    if (res.news && res.news.length > 0) {
+      const newNotifs = res.news.map(n => ({
+        type: "price",
+        id: "news_" + n.uuid,
+        title: "News Globale",
+        message: n.title,
+        timestamp: new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }),
+        severity: "info"
+      }));
+      // Filter out existing by id
+      for (const nn of newNotifs) {
+        if (!notifications.find(existing => existing.id === nn.id)) {
+          notifications.unshift(nn as any);
+        }
+      }
+      if (notifications.length > 50) notifications.length = 50;
+    }
+  } catch (err) {
+    console.error("Errore recupero news:", err);
+  }
+};
+
+// Start real update loops
+setInterval(updateMarketData, 10000); // 10s for prices
+setInterval(fetchRealNews, 60000); // 1m for news
+updateMarketData();
+fetchRealNews();
 
 // API Endpoints
 app.get("/api/market-data", (req, res) => {
@@ -317,7 +397,7 @@ app.post("/api/market-data/add", (req, res) => {
     return res.status(400).json({ error: "Parametri mancanti." });
   }
   const targetMarket = market.toLowerCase();
-  const basePrice = targetMarket === 'crypto' ? 2500 : targetMarket === 'forex' ? 1.05 : targetMarket === 'commodities' ? 100 : 75;
+  const basePrice = targetMarket === 'crypto' ? 2500 : targetMarket === 'forex' ? 1.05 : targetMarket === 'commodities' ? 100 : targetMarket === 'indici' ? 10000 : 75;
   const isDup = instruments.find(i => i.sym.toUpperCase() === sym.toUpperCase());
   if (isDup) {
     return res.json({ instruments, message: "Strumento già presente." });
@@ -353,8 +433,263 @@ app.post("/api/market-data/add", (req, res) => {
   res.json({ instruments, success: true });
 });
 
+interface ServerNewsCache {
+  timestamp: number;
+  newsItems: any[];
+  calendarEvents: any[];
+  aiReportText: string;
+}
+let serverNewsCache: ServerNewsCache | null = null;
+const SERVER_CACHE_DURATION = 15 * 60 * 1000;
+
+app.get("/api/news", async (req, res) => {
+  const forceRefresh = req.query.refresh === "true";
+
+  if (!forceRefresh && serverNewsCache && (Date.now() - serverNewsCache.timestamp < SERVER_CACHE_DURATION)) {
+    return res.json({
+      newsItems: serverNewsCache.newsItems,
+      calendarEvents: serverNewsCache.calendarEvents,
+      aiReportText: serverNewsCache.aiReportText,
+      cached: true
+    });
+  }
+
+  try {
+    let rawNews: any[] = [];
+    try {
+      const searchRes = await yahooFinance.search("global economy financial markets news", { newsCount: 10 });
+      if (searchRes.news && searchRes.news.length > 0) {
+        rawNews = searchRes.news.map((item, idx) => ({
+          id: item.uuid || `news_${idx}`,
+          title: item.title,
+          publisher: item.publisher || "Yahoo Finance",
+          link: item.link,
+          timeEpoch: item.providerPublishTime ? new Date(item.providerPublishTime).getTime() : Date.now()
+        }));
+      }
+    } catch (err) {
+      console.error("Error fetching news from Yahoo Finance:", err);
+    }
+
+    let rawCalendar: any[] = [];
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      const calendarRes = await fetch("https://nfs.faireconomy.media/ff_calendar_thisweek.json", {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        },
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      if (calendarRes.ok) {
+        const data: any = await calendarRes.json();
+        const now = new Date();
+        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        const endOfTomorrow = startOfDay + 2 * 24 * 60 * 60 * 1000;
+
+        rawCalendar = data.filter((item: any) => {
+          const itemTime = new Date(item.date).getTime();
+          return itemTime >= startOfDay - (12 * 60 * 60 * 1000) && itemTime <= endOfTomorrow;
+        }).slice(0, 12);
+      }
+    } catch (err) {
+      console.error("Error fetching economic calendar:", err);
+    }
+
+    let newsItems: any[] = [];
+    let calendarEvents: any[] = [];
+    let aiReportText = "";
+
+    if (ai && (rawNews.length > 0 || rawCalendar.length > 0)) {
+      try {
+        const prompt = `Sei un esperto di finanza e mercati globali. Traduci, arricchisci e formatta le notizie economiche e il calendario economico in italiano strutturato.
+
+DATA DI RIFERIMENTO CORRENTE: ${new Date().toISOString()}
+
+NOTIZIE IN INGRESSO (inglese):
+${JSON.stringify(rawNews)}
+
+CALENDARIO IN INGRESSO (inglese):
+${JSON.stringify(rawCalendar)}
+
+Devi rispondere ESCLUSIVAMENTE con un oggetto JSON valido che rispetta esattamente questa struttura:
+{
+  "newsItems": [
+    {
+      "id": "string (usa lo stesso id fornito)",
+      "time": "string (calcola approssimativamente quanto tempo fa, es. '10 min fa', '2 ore fa' rispetto ad ora)",
+      "category": "MONETARY | MACRO | EQUITIES | GEOPOLITICS",
+      "source": "string (publisher)",
+      "title": "string (tradotto e ottimizzato in italiano in modo attraente e formale)",
+      "summary": "string (riassunto dettagliato in italiano di 2 frasi)",
+      "sentiment": "RIALZISTA | NEUTRALE | RIBASSISTA",
+      "impact": "ALTO | MEDIO | BASSO",
+      "aiSummary": "string (analisi macro-economica in italiano del dato/notizia)",
+      "tradingImplication": "string (implicazione operativa sui mercati, es. Borsa Italiana, BTP decennale, Euro/Dollaro)",
+      "fullArticle": "string (articolo dettagliato in italiano di 2 paragrafi basato sul titolo e riassunto)"
+    }
+  ],
+  "calendarEvents": [
+    {
+      "id": "string (genera un id univoco)",
+      "time": "string (es. '14:30' o '10:00' convertito all'ora italiana locale)",
+      "country": "IT | UE | US | UK | CA | JP | AU (mappa la valuta country, es. USD->US, EUR->UE, GBP->UK, JPY->JP, CAD->CA, AUD->AU, NZD->NZ)",
+      "indicator": "string (tradotto in italiano, es. 'Indice dei Prezzi al Consumo')",
+      "period": "string (periodo stimato, es. 'Giu' o 'Maggio' o 'Settimanale')",
+      "actual": "string (valore effettivo o '—')",
+      "forecast": "string (valore previsto o '—')",
+      "previous": "string (valore precedente o '—')",
+      "impact": "HIGH | MEDIUM | LOW",
+      "status": "RILASCIATO | ATTESA (RILASCIATO se actual è presente e non vuoto, altrimenti ATTESA)",
+      "aiInterpretation": "string (spiegazione dettagliata dell'impatto del rilascio macro e reazione della banca centrale)"
+    }
+  ],
+  "aiReportText": "string (un report generale macroeconomico giornaliero in italiano di circa 3-4 paragrafi formattato in elegante Markdown che riassume l'impatto complessivo delle notizie e degli eventi di calendario di oggi, delineando scenari operativi e conclusioni)"
+}
+
+Assicurati che:
+- Tutti i testi siano scritti in un italiano finanziario impeccabile ed estremamente professionale.
+- Rispondi solo con il JSON puro, senza tag markdown come \`\`\`json o altro testo di contorno.`;
+
+        const response = await ai.models.generateContent({
+          model: "gemini-3.5-flash",
+          contents: prompt,
+        });
+
+        const cleanedText = response.text ? response.text.replace(/```json/g, "").replace(/```/g, "").trim() : "{}";
+        const parsed = JSON.parse(cleanedText);
+        
+        newsItems = parsed.newsItems || [];
+        calendarEvents = parsed.calendarEvents || [];
+        aiReportText = parsed.aiReportText || "";
+      } catch (err) {
+        console.error("Gemini news processing error:", err);
+      }
+    }
+
+    if (newsItems.length === 0 && rawNews.length > 0) {
+      newsItems = rawNews.map((n, idx) => {
+        const timeDiff = Date.now() - n.timeEpoch;
+        const minutes = Math.floor(timeDiff / 60000);
+        let timeStr = `${minutes} min fa`;
+        if (minutes >= 60) {
+          const hours = Math.floor(minutes / 60);
+          timeStr = `${hours} ${hours === 1 ? "ora" : "ore"} fa`;
+        }
+        return {
+          id: n.id,
+          time: timeStr,
+          category: idx % 4 === 0 ? "MONETARY" : idx % 4 === 1 ? "MACRO" : idx % 4 === 2 ? "EQUITIES" : "GEOPOLITICS",
+          source: n.publisher,
+          title: n.title,
+          summary: `Notizia di mercato rilevata da ${n.publisher}.`,
+          sentiment: idx % 3 === 0 ? "RIALZISTA" : idx % 3 === 1 ? "NEUTRALE" : "RIBASSISTA",
+          impact: idx % 3 === 0 ? "ALTO" : "MEDIO",
+          aiSummary: `Aggiornamento in tempo reale del mercato: ${n.title}`,
+          tradingImplication: "Monitorare la volatilità sui titoli correlati.",
+          fullArticle: `${n.title}\n\nNotizia originale da ${n.publisher}. Maggiori dettagli su Yahoo Finance.`
+        };
+      });
+    }
+
+    if (calendarEvents.length === 0 && rawCalendar.length > 0) {
+      calendarEvents = rawCalendar.map((c, idx) => {
+        const curDate = new Date(c.date);
+        const timeStr = curDate.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+        const currencyMap: Record<string, string> = {
+          "USD": "US", "EUR": "UE", "GBP": "UK", "JPY": "JP", "CAD": "CA", "AUD": "AU", "NZD": "NZ", "CHF": "CH"
+        };
+        return {
+          id: `evt_${idx}_${curDate.getTime()}`,
+          time: timeStr,
+          country: currencyMap[c.country] || c.country,
+          indicator: c.title,
+          period: "Mese",
+          actual: c.actual || "—",
+          forecast: c.forecast || "—",
+          previous: c.previous || "—",
+          impact: c.impact === "High" ? "HIGH" : c.impact === "Medium" ? "MEDIUM" : "LOW",
+          status: c.actual ? "RILASCIATO" : "ATTESA",
+          aiInterpretation: `Rilascio dell'indicatore ${c.title} per la valuta ${c.country}.`
+        };
+      });
+    }
+
+    if (!aiReportText) {
+      aiReportText = `### 🧠 QUADRO DI SINTESI MACROECONOMICO REALE
+**Data di sincronizzazione**: ${new Date().toLocaleDateString("it-IT")} | **Aggiornamento**: In tempo reale
+
+#### 1. SINTESI DEI MERCATI
+Le ultime notizie indicano attività nei mercati globali con contributi da editori quali ${[...new Set(newsItems.map(n => n.source))].join(', ')}.
+
+#### 2. FOCUS EVENTI MACRO
+Sono attesi o stati rilasciati dati importanti per ${[...new Set(calendarEvents.map(c => c.country))].join(', ')}. Monitorare la volatilità nelle fasce orarie indicate nel calendario economico.`;
+    }
+
+    if (newsItems.length > 0 || calendarEvents.length > 0) {
+      serverNewsCache = {
+        timestamp: Date.now(),
+        newsItems,
+        calendarEvents,
+        aiReportText
+      };
+    }
+
+    res.json({ newsItems, calendarEvents, aiReportText, cached: false });
+  } catch (error) {
+    console.error("Error in /api/news:", error);
+    res.status(500).json({ error: "Errore durante il recupero delle notizie e del calendario economico." });
+  }
+});
+
 app.get("/api/notifications", (req, res) => {
   res.json({ notifications });
+});
+
+app.get("/api/chart-data", async (req, res) => {
+  const { sym, tf } = req.query;
+  if (!sym || typeof sym !== 'string') return res.status(400).json({ error: "Simbolo mancante" });
+
+  const yfSym = symbolMap[sym] || sym;
+  
+  // Map timeframe to yahoo finance interval and period
+  // tf: 5m, 15m, 1h, 4h, 1D, 1W, 1M
+  let interval: '1m'|'2m'|'5m'|'15m'|'30m'|'60m'|'90m'|'1h'|'1d'|'5d'|'1wk'|'1mo'|'3mo' = '1d';
+  let range = '1y'; // default data range
+
+  const t = (tf as string).toLowerCase();
+  if (t === '1m' || t === '5m') { interval = '5m'; range = '5d'; }
+  else if (t === '15m' || t === '30m') { interval = '15m'; range = '1mo'; }
+  else if (t === '1h') { interval = '60m'; range = '1mo'; }
+  else if (t === '4h') { interval = '60m'; range = '3mo'; }
+  else if (t === '1d') { interval = '1d'; range = '1y'; }
+  else if (t === '1w' || t === 'sett.') { interval = '1wk'; range = '5y'; }
+  else if (t === '1mo' || t === 'mens.') { interval = '1mo'; range = '10y'; }
+
+  try {
+    const queryOptions = { period1: range, interval };
+    const result = await yahooFinance.chart(yfSym, queryOptions);
+    
+    if (result && result.quotes && result.quotes.length > 0) {
+      // Format for lightweight-charts
+      const data = result.quotes.map(q => ({
+        time: Math.floor(new Date(q.date).getTime() / 1000),
+        open: q.open || q.close,
+        high: q.high || q.close,
+        low: q.low || q.close,
+        close: q.close,
+        volume: q.volume || 0
+      })).filter(q => q.close !== null && q.close !== undefined && !isNaN(q.close));
+
+      res.json({ data });
+    } else {
+      res.json({ data: [] });
+    }
+  } catch (err) {
+    console.error("Chart data error:", err);
+    res.status(500).json({ error: "Errore recupero dati chart" });
+  }
 });
 
 // AI endpoints using official @google/genai syntax

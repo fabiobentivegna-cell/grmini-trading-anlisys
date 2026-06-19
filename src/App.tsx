@@ -16,10 +16,11 @@ import MacroNewsCalendar from "./components/MacroNewsCalendar";
 import SectorIndexComparison from "./components/SectorIndexComparison";
 import MarketCorrelations from "./components/MarketCorrelations";
 import { getTradingViewUrl } from "./utils/tradingViewHelper";
+import { initialInstruments, makeInstrument } from "./data/instruments";
 
 export default function App() {
-  const [instruments, setInstruments] = useState<Instrument[]>([]);
-  const [watchlist, setWatchlist] = useState<Instrument[]>([]);
+  const [instruments, setInstruments] = useState<Instrument[]>(initialInstruments);
+  const [watchlist, setWatchlist] = useState<Instrument[]>(initialInstruments);
   const [activeIdx, setActiveIdx] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<"tecnica" | "fondamentale" | "screener" | "journal" | "macro">("macro");
   const [isDark, setIsDark] = useState<boolean>(false);
@@ -41,10 +42,10 @@ export default function App() {
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
   const [formSym, setFormSym] = useState<string>("");
   const [formName, setFormName] = useState<string>("");
-  const [formMarket, setFormMarket] = useState<"italia" | "usa" | "forex" | "commodities" | "crypto">("italia");
+  const [formMarket, setFormMarket] = useState<"italia" | "usa" | "indici" | "forex" | "commodities" | "crypto">("italia");
 
   // Screener state variables
-  const [scrMarket, setScrMarket] = useState<"tutti" | "italia" | "usa">("tutti");
+  const [scrMarket, setScrMarket] = useState<"tutti" | "italia" | "usa" | "indici">("tutti");
   const [scrPECeiling, setScrPECeiling] = useState<number>(80);
   const [scrMinDivCell, setScrMinDivCell] = useState<number>(0);
   const [scrMinRoe, setScrMinRoe] = useState<number>(0);
@@ -80,13 +81,23 @@ export default function App() {
 
   // Load and refresh market data and notifications on polling loops
   useEffect(() => {
+    let currentInstruments = instruments;
+
     const loadMarketDataAndNotifications = async () => {
       try {
-        const res = await fetch("/api/market-data");
+        setInstruments((prevInstruments: any) => {
+          currentInstruments = prevInstruments;
+          return prevInstruments;
+        });
+
+        const res = await fetch("/api/market-data", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ instruments: currentInstruments })
+        });
         const data = await res.json();
         if (data.instruments) {
           setInstruments(data.instruments);
-          // Auto-sync active selection list with the main instruments list
           setWatchlist(data.instruments);
         }
 
@@ -122,28 +133,36 @@ export default function App() {
     e.preventDefault();
     if (!formSym) return;
 
-    try {
-      const res = await fetch("/api/market-data/add", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sym: formSym.toUpperCase(),
-          name: formName || formSym.toUpperCase(),
-          market: formMarket
-        })
-      });
-      const data = await res.json();
-      if (data.instruments) {
-        setInstruments(data.instruments);
-        setWatchlist(data.instruments);
-        setActiveIdx(data.instruments.findIndex((i: Instrument) => i.sym.toUpperCase() === formSym.toUpperCase()));
-        setShowAddModal(false);
-        setFormSym("");
-        setFormName("");
-      }
-    } catch (err) {
-      alert("Impossibile connettersi al server TradeDESK.");
+    const targetMarket = formMarket.toLowerCase();
+    const basePrice = targetMarket === 'crypto' ? 2500 : targetMarket === 'forex' ? 1.05 : targetMarket === 'commodities' ? 100 : targetMarket === 'indici' ? 10000 : 75;
+    const isDup = instruments.find((i: any) => i.sym.toUpperCase() === formSym.toUpperCase());
+    
+    if (isDup) {
+      alert("Strumento già presente.");
+      return;
     }
+
+    // Assuming makeInstrument is a local utility helper available in the scope
+    const newInstrument = {
+      id: Date.now(),
+      sym: formSym.toUpperCase(),
+      name: formName || formSym.toUpperCase(),
+      market: targetMarket,
+      price: basePrice,
+      pe: 0, ps: 0, pb: 0, roe: 0, div: 0, valScore: 0, chgPct: 0
+    } as unknown as Instrument;
+
+    setInstruments(prev => {
+      const next = [...prev, newInstrument];
+      setWatchlist(next);
+      setActiveIdx(next.length - 1);
+      return next;
+    });
+
+    setShowAddModal(false);
+    setFormSym("");
+    setFormName("");
+    setFormMarket("italia");
   };
 
   // Run AI Fundamental analysis
@@ -770,6 +789,8 @@ export default function App() {
                           >
                             <option value="usa">🇺🇸 USA</option>
                             <option value="italia">🇮🇹 Italia</option>
+<option value="indici">📊 Indici Globali</option>
+
                             <option value="forex">💱 Forex</option>
                             <option value="commodities">📦 Commodities</option>
                             <option value="crypto">🪙 Crypto</option>
@@ -879,6 +900,8 @@ export default function App() {
                   >
                     <option value="usa">🇺🇸 USA</option>
                     <option value="italia">🇮🇹 Italia</option>
+<option value="indici">📊 Indici Globali</option>
+
                     <option value="forex">💱 Forex</option>
                     <option value="commodities">📦 Commodities</option>
                     <option value="crypto">🪙 Crypto</option>
@@ -1547,6 +1570,8 @@ export default function App() {
                     >
                       <option value="usa">🇺🇸 USA</option>
                       <option value="italia">🇮🇹 Italia</option>
+<option value="indici">📊 Indici Globali</option>
+
                       <option value="forex">💱 Forex</option>
                       <option value="commodities">📦 Commodities</option>
                       <option value="crypto">🪙 Crypto</option>

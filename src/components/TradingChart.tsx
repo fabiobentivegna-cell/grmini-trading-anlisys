@@ -97,6 +97,7 @@ export default function TradingChart({ instrument, timeframe, indicators, isDark
   const macdChartInstance = useRef<any>(null);
 
   const candlestickSeriesRef = useRef<any>(null);
+  const lastTickRef = useRef<any>(null);
 
   // AI assessment indicators
   const [aiAnalysis, setAiAnalysis] = useState<string>("");
@@ -202,35 +203,8 @@ export default function TradingChart({ instrument, timeframe, indicators, isDark
     return 3600;
   };
 
-  // Generate historical data based on instrument price and selected timeframe
-  const generateChartData = (basePrice: number, points = 120) => {
-    const data = [];
-    const intervalSeconds = getSecondsForTimeframe(timeframe);
-    const startTimestamp = Math.floor(Date.now() / 1000) - points * intervalSeconds;
-    
-    let currentPrice = basePrice * 0.95;
-    const volatility = basePrice > 1000 ? 15 : basePrice > 100 ? 2 : basePrice > 10 ? 0.2 : 0.004;
-
-    for (let i = 0; i < points; i++) {
-      const time = startTimestamp + i * intervalSeconds;
-      const open = currentPrice;
-      const change = (Math.random() - 0.49) * volatility;
-      const close = currentPrice + change;
-      const high = Math.max(open, close) + Math.random() * (volatility * 0.5);
-      const low = Math.min(open, close) - Math.random() * (volatility * 0.5);
-      
-      data.push({
-        time,
-        open,
-        high,
-        low,
-        close,
-        volume: Math.floor(Math.random() * 5000 + 500)
-      });
-      currentPrice = close;
-    }
-    return data;
-  };
+  // Generate historical data is now fetched from backend, so we leave this empty or remove it.
+  // Actually we will fetch the data inside useEffect.
 
   // Synchronize pixel coordinate state of drawings
   const updateDrawingCoordinates = () => {
@@ -405,201 +379,110 @@ export default function TradingChart({ instrument, timeframe, indicators, isDark
     });
     candlestickSeriesRef.current = candlestickSeries;
 
-    // Set mockup candle historical data
-    const historyData = generateChartData(instrument.price);
-    candlestickSeries.setData(historyData.map(d => ({
-      time: d.time,
-      open: d.open,
-      high: d.high,
-      low: d.low,
-      close: d.close
-    })));
+    // Set initial empty data while fetching
+    let historyData: any[] = [];
 
-    // Create volume sub-histogram overlay inside main price chart
-    const volumeSeries = chart.addSeries(HistogramSeries, {
-      priceFormat: { type: "volume" },
-      priceScaleId: "", // overlay scale
-    });
-    volumeSeries.priceScale().applyOptions({
-      scaleMargins: {
-        top: 0.8, // takes only bottom 20%
-        bottom: 0,
-      },
-    });
-    volumeSeries.setData(historyData.map(d => ({
-      time: d.time,
-      value: d.volume,
-      color: d.close >= d.open ? (isDark ? "rgba(0, 217, 126, 0.2)" : "rgba(0, 168, 94, 0.17)") : (isDark ? "rgba(255, 77, 106, 0.2)" : "rgba(224, 40, 62, 0.17)")
-    })));
+    // Auxiliary charting setups are deferred until we get data
+    let volumeSeries: any;
+    let emaSeries: any;
+    let emaMidSeries: any;
+    let smaSeries: any;
+    let bbBasisLine: any, bbUpperLine: any, bbLowerLine: any;
+    let rsiLineSeries: any;
+    let macdSeries: any, signalSeries: any, histogramSeries: any;
 
-    // EMA Short (1)
-    if (indicators.ema?.on) {
-      const period = indicatorSettings.ema.period;
-      const emaSeries = chart.addSeries(LineSeries, {
-        color: indicatorSettings.ema.color,
-        lineWidth: 1.5,
-      });
-      const emaValues = calculateEMA(historyData.map(d => d.close), period);
-      emaSeries.setData(historyData.map((d, index) => ({ time: d.time, value: emaValues[index] })));
-    }
+    const volumeColorUp = isDark ? "rgba(0, 217, 126, 0.2)" : "rgba(0, 168, 94, 0.17)";
+    const volumeColorDown = isDark ? "rgba(255, 77, 106, 0.2)" : "rgba(224, 40, 62, 0.17)";
 
-    // EMA Mid (2)
-    if (indicators.ema2?.on) {
-      const period = indicatorSettings.ema2.period;
-      const emaMidSeries = chart.addSeries(LineSeries, {
-        color: indicatorSettings.ema2.color,
-        lineWidth: 1.5,
-      });
-      const emaMidValues = calculateEMA(historyData.map(d => d.close), period);
-      emaMidSeries.setData(historyData.map((d, index) => ({ time: d.time, value: emaMidValues[index] })));
-    }
+    const loadData = async () => {
+      try {
+        const res = await fetch(`/api/chart-data?sym=${instrument.sym}&tf=${timeframe}`);
+        const result = await res.json();
+        if (result && result.data && result.data.length > 0) {
+          historyData = result.data;
+          lastTickRef.current = { ...historyData[historyData.length - 1] };
 
-    // SMA Long (200)
-    if (indicators.sma200?.on) {
-      const period = indicatorSettings.sma200.period;
-      const smaSeries = chart.addSeries(LineSeries, {
-        color: indicatorSettings.sma200.color,
-        lineWidth: 2,
-      });
-      const smaValues = calculateSMA(historyData.map(d => d.close), period);
-      smaSeries.setData(historyData.map((d, index) => ({ time: d.time, value: smaValues[index] })));
-    }
+          candlestickSeries.setData(historyData);
 
-    // Bollinger Bands
-    if (indicators.bb?.on) {
-      const bbBasisLine = chart.addSeries(LineSeries, {
-        color: indicatorSettings.bb.basisColor,
-        lineWidth: 1.2,
-        lineStyle: 1, // dashed style
-      });
-      const bbUpperLine = chart.addSeries(LineSeries, {
-        color: indicatorSettings.bb.bandsColor,
-        lineWidth: 1.2,
-      });
-      const bbLowerLine = chart.addSeries(LineSeries, {
-        color: indicatorSettings.bb.bandsColor,
-        lineWidth: 1.2,
-      });
+          // Add volume overlay
+          volumeSeries = chart.addSeries(HistogramSeries, {
+            priceFormat: { type: "volume" },
+            priceScaleId: "",
+          });
+          volumeSeries.priceScale().applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
+          volumeSeries.setData(historyData.map(d => ({
+            time: d.time,
+            value: d.volume,
+            color: d.close >= d.open ? volumeColorUp : volumeColorDown
+          })));
 
-      const bbData = calculateBollingerBands(
-        historyData.map(d => d.close), 
-        indicatorSettings.bb.period, 
-        indicatorSettings.bb.mult
-      );
-      bbBasisLine.setData(historyData.map((d, idx) => ({ time: d.time, value: bbData.basis[idx] })));
-      bbUpperLine.setData(historyData.map((d, idx) => ({ time: d.time, value: bbData.upper[idx] })));
-      bbLowerLine.setData(historyData.map((d, idx) => ({ time: d.time, value: bbData.lower[idx] })));
-    }
+          // Apply Indicators
+          // EMA Short (1)
+          if (indicators.ema?.on) {
+            emaSeries = chart.addSeries(LineSeries, { color: indicatorSettings.ema.color, lineWidth: 1.5 });
+            const emaValues = calculateEMA(historyData.map(d => d.close), indicatorSettings.ema.period);
+            emaSeries.setData(historyData.map((d, i) => ({ time: d.time, value: emaValues[i] })));
+          }
 
-    // 2. Auxiliary Chart: RSI pane
-    if (indicators.rsi?.on && rsiContainerRef.current) {
-      const rsiChart = createChart(rsiContainerRef.current, {
-        width: containerWidth,
-        height: 85,
-        ...themeOptions,
-        grid: {
-          vertLines: { visible: false },
-          horzLines: { color: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)" },
-        },
-        timeScale: {
-          visible: false, // hide auxiliary chart horizontal scale
+          // EMA Mid (2)
+          if (indicators.ema2?.on) {
+            emaMidSeries = chart.addSeries(LineSeries, { color: indicatorSettings.ema2.color, lineWidth: 1.5 });
+            const emaMidValues = calculateEMA(historyData.map(d => d.close), indicatorSettings.ema2.period);
+            emaMidSeries.setData(historyData.map((d, i) => ({ time: d.time, value: emaMidValues[i] })));
+          }
+
+          // SMA Long (200)
+          if (indicators.sma200?.on) {
+            smaSeries = chart.addSeries(LineSeries, { color: indicatorSettings.sma200.color, lineWidth: 2 });
+            const smaValues = calculateSMA(historyData.map(d => d.close), indicatorSettings.sma200.period);
+            smaSeries.setData(historyData.map((d, i) => ({ time: d.time, value: smaValues[i] })));
+          }
+
+          // Bollinger Bands
+          if (indicators.bb?.on) {
+            bbBasisLine = chart.addSeries(LineSeries, { color: indicatorSettings.bb.basisColor, lineWidth: 1.2, lineStyle: 1 });
+            bbUpperLine = chart.addSeries(LineSeries, { color: indicatorSettings.bb.bandsColor, lineWidth: 1.2 });
+            bbLowerLine = chart.addSeries(LineSeries, { color: indicatorSettings.bb.bandsColor, lineWidth: 1.2 });
+            const bbData = calculateBollingerBands(historyData.map(d => d.close), indicatorSettings.bb.period, indicatorSettings.bb.mult);
+            bbBasisLine.setData(historyData.map((d, i) => ({ time: d.time, value: bbData.basis[i] })));
+            bbUpperLine.setData(historyData.map((d, i) => ({ time: d.time, value: bbData.upper[i] })));
+            bbLowerLine.setData(historyData.map((d, i) => ({ time: d.time, value: bbData.lower[i] })));
+          }
+
+          // 2. Auxiliary Chart: RSI pane
+          if (indicators.rsi?.on && rsiChartInstance.current) {
+            rsiLineSeries = rsiChartInstance.current.addSeries(LineSeries, { color: indicatorSettings.rsi.color, lineWidth: 1.5 });
+            const rsiValues = calculateRSIValues(historyData.map(d => d.close), indicatorSettings.rsi.period);
+            rsiLineSeries.setData(historyData.map((d, i) => ({ time: d.time, value: rsiValues[i] })));
+            rsiLineSeries.createPriceLine({ price: 70, color: "rgba(239, 68, 68, 0.4)", lineWidth: 1, lineStyle: 1, title: "Ipercomprato (70)" });
+            rsiLineSeries.createPriceLine({ price: 30, color: "rgba(34, 197, 94, 0.4)", lineWidth: 1, lineStyle: 1, title: "Ipervenduto (30)" });
+            rsiLineSeries.createPriceLine({ price: 50, color: "rgba(144, 151, 162, 0.15)", lineWidth: 1, lineStyle: 1 });
+          }
+
+          // 3. Auxiliary Chart: MACD pane
+          if (indicators.macd?.on && macdChartInstance.current) {
+            macdSeries = macdChartInstance.current.addSeries(LineSeries, { color: indicatorSettings.macd.macdColor, lineWidth: 1.5, title: "MACD Line" });
+            signalSeries = macdChartInstance.current.addSeries(LineSeries, { color: indicatorSettings.macd.signalColor, lineWidth: 1.2, title: "Segnale" });
+            histogramSeries = macdChartInstance.current.addSeries(HistogramSeries, { priceFormat: { type: "price" }, priceScaleId: "" });
+            const macdOutputs = calculateMACDOutputs(historyData.map(d => d.close), indicatorSettings.macd.fast, indicatorSettings.macd.slow, indicatorSettings.macd.signal);
+            macdSeries.setData(historyData.map((d, i) => ({ time: d.time, value: macdOutputs.macd[i] })));
+            signalSeries.setData(historyData.map((d, i) => ({ time: d.time, value: macdOutputs.signal[i] })));
+            histogramSeries.setData(historyData.map((d, i) => {
+              const value = macdOutputs.macd[i] - macdOutputs.signal[i];
+              return { time: d.time, value, color: value >= 0 ? "rgba(34, 197, 94, 0.45)" : "rgba(239, 68, 68, 0.45)" };
+            }));
+          }
+
+          chart.timeScale().fitContent();
         }
-      }) as any;
-      rsiChartInstance.current = rsiChart;
+      } catch (err) {
+        console.error("Error loading chart data", err);
+      }
+    };
 
-      const rsiLineSeries = rsiChart.addSeries(LineSeries, {
-        color: indicatorSettings.rsi.color,
-        lineWidth: 1.5,
-      });
+    loadData();
 
-      const rsiValues = calculateRSIValues(historyData.map(d => d.close), indicatorSettings.rsi.period);
-      rsiLineSeries.setData(historyData.map((d, index) => ({
-        time: d.time,
-        value: rsiValues[index]
-      })));
-
-      // Add RSI Overbought and Oversold threshold guidelines
-      rsiLineSeries.createPriceLine({
-        price: 70,
-        color: "rgba(239, 68, 68, 0.4)",
-        lineWidth: 1,
-        lineStyle: 1,
-        title: "Ipercomprato (70)",
-      });
-      rsiLineSeries.createPriceLine({
-        price: 30,
-        color: "rgba(34, 197, 94, 0.4)",
-        lineWidth: 1,
-        lineStyle: 1,
-        title: "Ipervenduto (30)",
-      });
-      rsiLineSeries.createPriceLine({
-        price: 50,
-        color: "rgba(144, 151, 162, 0.15)",
-        lineWidth: 1,
-        lineStyle: 1,
-      });
-    }
-
-    // 3. Auxiliary Chart: MACD pane
-    if (indicators.macd?.on && macdContainerRef.current) {
-      const macdChart = createChart(macdContainerRef.current, {
-        width: containerWidth,
-        height: 85,
-        ...themeOptions,
-        grid: {
-          vertLines: { visible: false },
-          horzLines: { color: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)" },
-        },
-        timeScale: {
-          visible: false,
-        }
-      }) as any;
-      macdChartInstance.current = macdChart;
-
-      const macdSeries = macdChart.addSeries(LineSeries, {
-        color: indicatorSettings.macd.macdColor,
-        lineWidth: 1.5,
-        title: "MACD Line"
-      });
-
-      const signalSeries = macdChart.addSeries(LineSeries, {
-        color: indicatorSettings.macd.signalColor,
-        lineWidth: 1.2,
-        title: "Segnale"
-      });
-
-      const histogramSeries = macdChart.addSeries(HistogramSeries, {
-        priceFormat: { type: "price" },
-        priceScaleId: ""
-      });
-
-      const macdOutputs = calculateMACDOutputs(
-        historyData.map(d => d.close),
-        indicatorSettings.macd.fast,
-        indicatorSettings.macd.slow,
-        indicatorSettings.macd.signal
-      );
-      
-      macdSeries.setData(historyData.map((d, index) => ({
-        time: d.time,
-        value: macdOutputs.macd[index]
-      })));
-
-      signalSeries.setData(historyData.map((d, index) => ({
-        time: d.time,
-        value: macdOutputs.signal[index]
-      })));
-
-      histogramSeries.setData(historyData.map((d, index) => {
-        const value = macdOutputs.macd[index] - macdOutputs.signal[index];
-        return {
-          time: d.time,
-          value,
-          color: value >= 0 ? "rgba(34, 197, 94, 0.45)" : "rgba(239, 68, 68, 0.45)"
-        };
-      }));
-    }
+    // Indicators are now handled inside loadData after fetch.
 
     // Align and lock zooming and panning timescales across charts
     const priceScale = chart.timeScale();
@@ -729,33 +612,8 @@ export default function TradingChart({ instrument, timeframe, indicators, isDark
       }
     });
 
-    // Simulative live market updates stream
-    let localPrice = instrument.price;
-    let intervalId = setInterval(() => {
-      if (!candlestickSeriesRef.current || historyData.length === 0) return;
-      const lastTick = historyData[historyData.length - 1];
-      
-      // Calculate micro-tick price variation depending on market volatility
-      const isForex = instrument.market === "forex";
-      const isCrypto = instrument.market === "crypto";
-      const isCommodities = instrument.market === "commodities";
-      
-      const wave = (Math.random() - 0.495) * (isCrypto ? 0.0015 : isForex ? 0.00015 : isCommodities ? 0.0004 : 0.0005);
-      localPrice = localPrice * (1 + wave);
-      localPrice = +(localPrice.toFixed(isForex ? 4 : 2));
-
-      lastTick.close = localPrice;
-      lastTick.high = Math.max(lastTick.high, localPrice);
-      lastTick.low = Math.min(lastTick.low, localPrice);
-
-      candlestickSeriesRef.current.update({
-        time: lastTick.time,
-        open: lastTick.open,
-        high: lastTick.high,
-        low: lastTick.low,
-        close: lastTick.close
-      });
-    }, 1000);
+    // Live stream generator removed to respect real historical static data for now.
+    // Realtime update should come from a websocket or re-fetch in a real scenario.
 
     // Coordinate translation triggers on resize
     const handleResize = () => {
@@ -779,7 +637,6 @@ export default function TradingChart({ instrument, timeframe, indicators, isDark
     }, 120);
 
     return () => {
-      clearInterval(intervalId);
       clearTimeout(timeoutId);
       window.removeEventListener("resize", handleResize);
       if (chartInstance.current) {
@@ -801,8 +658,32 @@ export default function TradingChart({ instrument, timeframe, indicators, isDark
         macdChartInstance.current = null;
       }
       candlestickSeriesRef.current = null;
+      lastTickRef.current = null;
     };
   }, [instrument, indicators, isDark, timeframe, activeTool, indicatorSettings]);
+
+  // Live price updates
+  useEffect(() => {
+    if (!candlestickSeriesRef.current || !lastTickRef.current) return;
+    
+    const lastTick = lastTickRef.current;
+    
+    lastTick.close = instrument.price;
+    lastTick.high = Math.max(lastTick.high, instrument.price);
+    lastTick.low = Math.min(lastTick.low, instrument.price);
+
+    try {
+      candlestickSeriesRef.current.update({
+        time: lastTick.time,
+        open: lastTick.open,
+        high: lastTick.high,
+        low: lastTick.low,
+        close: lastTick.close
+      });
+    } catch (e) {
+      // ignore
+    }
+  }, [instrument.price]);
 
   // Indicator math helpers
   const calculateEMA = (values: number[], period: number) => {
