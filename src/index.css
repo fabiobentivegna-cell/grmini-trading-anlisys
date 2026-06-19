@@ -1,0 +1,155 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-green: var(--green);
+  --color-red: var(--red);
+  --color-orange: var(--orange);
+  --color-blue: var(--blue);
+  --color-bg1: var(--bg1);
+  --color-bg2: var(--bg2);
+  --color-bg3: var(--bg3);
+  --color-border: var(--border);
+  --color-text1: var(--text1);
+  --color-text2: var(--text2);
+  --color-text3: var(--text3);
+  --color-gray: var(--gray);
+}
+
+:root {
+  --bg1: #f0f2f5;
+  --bg2: #ffffff;
+  --bg3: #eef1f6;
+  --border: #cfd4db;
+  --text1: #11141a;
+  --text2: #4f5664;
+  --text3: #848c9c;
+  --green: #00a85e;
+  --red: #df2c3e;
+  --orange: #c87c00;
+  --blue: #1052ca;
+  --gray: #eaf0f6;
+}
+
+[data-theme="dark"] {
+  --bg1: #0B0E11;
+  --bg2: #161A1E;
+  --bg3: #1E2329;
+  --border: #2B2F36;
+  --text1: #EAECEF;
+  --text2: #9097A2;
+  --text3: #474D57;
+  --green: #00FF88;
+  --red: #FF4444;
+  --orange: #FFB100;
+  --blue: #50B1FF;
+  --gray: #2B2F36;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg1);
+  color: var(--text1);
+}
+
+/* Hardcoded color utility overrides to adapt to High Density theme dynamically */
+[data-theme="dark"] .bg-\[\#0a0c0f\] {
+  background-color: #0B0E11 !important;
+}
+[data-theme="dark"] .bg-\[\#111318\] {
+  background-color: #161A1E !important;
+}
+[data-theme="dark"] .bg-\[\#181c23\] {
+  background-color: #1E2329 !important;
+}
+[data-theme="dark"] .border-\[\#ffffff12\] {
+  border-color: #2B2F36 !important;
+}
+[data-theme="dark"] .border-\[\#ffffff22\] {
+  border-color: #2B2F36 !important;
+}
+[data-theme="dark"] .text-\[\#e8eaf0\] {
+  color: #EAECEF !important;
+}
+
+/* Light mode overrides for the same components to keep them beautifully aligned */
+[data-theme="light"] .bg-\[\#0a0c0f\] {
+  background-color: #f0f2f5 !important;
+}
+[data-theme="light"] .bg-\[\#111318\] {
+  background-color: #ffffff !important;
+}
+[data-theme="light"] .bg-\[\#181c23\] {
+  background-color: #eef1f6 !important;
+}
+[data-theme="light"] .border-\[\#ffffff12\] {
+  border-color: #cfd4db !important;
+}
+[data-theme="light"] .border-\[\#ffffff22\] {
+  border-color: #cfd4db !important;
+}
+[data-theme="light"] .text-\[\#e8eaf0\] {
+  color: #11141a !important;
+}
+
+/* Subtle scrollbars and high detail styling for dense information grids */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg1);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text3);
+}
+
+/* Custom interactive refinements for broker feel */
+input, select, textarea {
+  border-radius: 3px !important;
+  font-size: 11px !important;
+}
+button {
+  border-radius: 2px !important;
+}
+
+/* Seamless infinite scrolling ticker tape animation */
+@keyframes marquee {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-33.3333%, 0, 0); }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 320s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* High fidelity broker flash for price action */
+@keyframes flash-green {
+  0%, 100% { background-color: transparent; }
+  50% { background-color: rgba(0, 255, 136, 0.15); }
+}
+
+@keyframes flash-red {
+  0%, 100% { background-color: transparent; }
+  50% { background-color: rgba(255, 68, 68, 0.15); }
+}
+
+.flash-up {
+  animation: flash-green 1s ease-in-out;
+}
+
+.flash-down {
+  animation: flash-red 1s ease-in-out;
+}
