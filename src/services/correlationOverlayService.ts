@@ -368,9 +368,6 @@ export const correlationOverlayService = {
   }
 };
 
-/**
- * Standard Pearson correlation coefficient helper
- */
 function computePearson(x: number[], y: number[]): number {
   const n = x.length;
   if (n !== y.length || n < 2) return 0;

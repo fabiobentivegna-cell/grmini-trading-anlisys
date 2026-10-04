@@ -1,4 +1,4 @@
-import { ApiKeysConfig, IndicatorConfig, MovingAverageConfig, OverlayConfig, PriceAlert } from '../types';
+import { ApiKeysConfig, IndicatorConfig, MovingAverageConfig, OverlayConfig, PriceAlert, SentimentAlert } from '../types';
 
 const STORAGE_KEYS = {
   API_CONFIG: 'market_station_api_keys',
@@ -6,6 +6,7 @@ const STORAGE_KEYS = {
   THEME: 'market_station_theme',
   DRAWINGS_PREFIX: 'market_station_drawings_',
   ALERTS: 'market_station_price_alerts',
+  SENTIMENT_ALERTS: 'market_station_sentiment_alerts',
   WATCHLIST: 'market_station_watchlist',
   OVERLAYS: 'market_station_chart_overlays'
 };
@@ -24,7 +25,6 @@ export const DEFAULT_OVERLAYS: OverlayConfig[] = [
     scaleMode: 'percent'
   }
 ];
-
 
 export const DEFAULT_WATCHLIST: string[] = [
   'FTSEMIB.MI',
@@ -97,7 +97,9 @@ export const DEFAULT_INDICATOR_CONFIG: IndicatorConfig = {
   atrEnabled: false,
   atrLen: 14,
   atrColor: '#26c6da',
-  atrWidth: 2
+  atrWidth: 2,
+  sentimentOverlayEnabled: false,
+  sentimentOverlayOpacity: 0.25
 };
 
 export const DEFAULT_API_KEYS: ApiKeysConfig = {
@@ -158,18 +160,45 @@ export const storageService = {
     localStorage.setItem(STORAGE_KEYS.THEME, theme);
   },
 
-  getDrawings(ticker: string): any[] {
+  getDrawings(ticker: string, interval?: string): any[] {
     try {
-      const saved = localStorage.getItem(`${STORAGE_KEYS.DRAWINGS_PREFIX}${ticker}`);
+      const cleanTicker = (ticker || 'DEFAULT').trim().toUpperCase();
+      if (interval) {
+        const intervalKey = `${STORAGE_KEYS.DRAWINGS_PREFIX}${cleanTicker}_${interval}`;
+        const savedInterval = localStorage.getItem(intervalKey);
+        if (savedInterval) return JSON.parse(savedInterval);
+      }
+      const saved = localStorage.getItem(`${STORAGE_KEYS.DRAWINGS_PREFIX}${cleanTicker}`);
       if (saved) return JSON.parse(saved);
     } catch {}
     return [];
   },
 
-  saveDrawings(ticker: string, drawings: any[]): void {
+  saveDrawings(ticker: string, arg2: any, arg3?: any): void {
     try {
-      localStorage.setItem(`${STORAGE_KEYS.DRAWINGS_PREFIX}${ticker}`, JSON.stringify(drawings));
-    } catch {}
+      const cleanTicker = (ticker || 'DEFAULT').trim().toUpperCase();
+      let drawings: any[] = [];
+      let interval: string | undefined = undefined;
+
+      // Handle both saveDrawings(ticker, drawings, interval) and saveDrawings(ticker, interval, drawings)
+      if (Array.isArray(arg2)) {
+        drawings = arg2;
+        interval = typeof arg3 === 'string' ? arg3 : undefined;
+      } else if (typeof arg2 === 'string') {
+        interval = arg2;
+        drawings = Array.isArray(arg3) ? arg3 : [];
+      } else if (Array.isArray(arg3)) {
+        drawings = arg3;
+      }
+
+      if (interval) {
+        const intervalKey = `${STORAGE_KEYS.DRAWINGS_PREFIX}${cleanTicker}_${interval}`;
+        localStorage.setItem(intervalKey, JSON.stringify(drawings));
+      }
+      localStorage.setItem(`${STORAGE_KEYS.DRAWINGS_PREFIX}${cleanTicker}`, JSON.stringify(drawings));
+    } catch (err) {
+      console.warn('Errore salvataggio disegni per ticker:', err);
+    }
   },
 
   getPriceAlerts(): PriceAlert[] {
@@ -183,6 +212,39 @@ export const storageService = {
   savePriceAlerts(alerts: PriceAlert[]): void {
     try {
       localStorage.setItem(STORAGE_KEYS.ALERTS, JSON.stringify(alerts));
+    } catch {}
+  },
+
+  getSentimentAlerts(): SentimentAlert[] {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.SENTIMENT_ALERTS);
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return [
+      {
+        id: 'sent_alert_default_1',
+        ticker: 'FTSEMIB.MI',
+        targetScore: 0.50,
+        condition: 'ABOVE',
+        createdAt: new Date().toISOString(),
+        triggered: false,
+        active: true
+      },
+      {
+        id: 'sent_alert_default_2',
+        ticker: 'FTSEMIB.MI',
+        targetScore: -0.30,
+        condition: 'BELOW',
+        createdAt: new Date().toISOString(),
+        triggered: false,
+        active: true
+      }
+    ];
+  },
+
+  saveSentimentAlerts(alerts: SentimentAlert[]): void {
+    try {
+      localStorage.setItem(STORAGE_KEYS.SENTIMENT_ALERTS, JSON.stringify(alerts));
     } catch {}
   },
 
@@ -220,4 +282,3 @@ export const storageService = {
     } catch {}
   }
 };
-

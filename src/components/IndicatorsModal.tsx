@@ -53,7 +53,7 @@ export const IndicatorsModal: React.FC<IndicatorsModalProps> = ({
           </h3>
           <button
             onClick={onClose}
-            className="p-1 rounded hover:bg-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition"
+            className="p-1 rounded hover:bg-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -69,7 +69,7 @@ export const IndicatorsModal: React.FC<IndicatorsModalProps> = ({
               </span>
               <button
                 onClick={handleAddMa}
-                className="flex items-center gap-1 px-2 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold text-[11px] transition"
+                className="flex items-center gap-1 px-2 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold text-[11px] transition cursor-pointer"
               >
                 <Plus className="w-3 h-3" />
                 <span>Aggiungi Media</span>
@@ -122,7 +122,7 @@ export const IndicatorsModal: React.FC<IndicatorsModalProps> = ({
                   </select>
                   <button
                     onClick={() => handleRemoveMa(ma.id)}
-                    className="p-1 rounded text-red-500 hover:bg-red-500/10 transition ml-auto"
+                    className="p-1 rounded text-red-500 hover:bg-red-500/10 transition ml-auto cursor-pointer"
                     title="Rimuovi"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -252,6 +252,224 @@ export const IndicatorsModal: React.FC<IndicatorsModalProps> = ({
                   className="w-5 h-5 rounded cursor-pointer border-0 bg-transparent"
                 />
               </div>
+            </div>
+
+            {/* Ichimoku Kinko Hyo */}
+            <div className="p-2 rounded bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2 cursor-pointer font-medium">
+                  <input
+                    type="checkbox"
+                    checked={!!config.ichimokuEnabled}
+                    onChange={e => onChange({ ...config, ichimokuEnabled: e.target.checked })}
+                  />
+                  <span>☁️ Ichimoku Kinko Hyo (Nuvola Kumo)</span>
+                </label>
+                <div className="flex items-center gap-1 text-[var(--text-muted)]">
+                  <span>Tenkan:</span>
+                  <input
+                    type="number"
+                    value={config.ichimokuConversionPeriod || 9}
+                    onChange={e => onChange({ ...config, ichimokuConversionPeriod: parseInt(e.target.value) || 9 })}
+                    className="w-10 px-1 py-0.5 rounded border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-main)] text-center"
+                  />
+                  <span>Kijun:</span>
+                  <input
+                    type="number"
+                    value={config.ichimokuBasePeriod || 26}
+                    onChange={e => onChange({ ...config, ichimokuBasePeriod: parseInt(e.target.value) || 26 })}
+                    className="w-10 px-1 py-0.5 rounded border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-main)] text-center"
+                  />
+                  <span>Span B:</span>
+                  <input
+                    type="number"
+                    value={config.ichimokuSpanBPeriod || 52}
+                    onChange={e => onChange({ ...config, ichimokuSpanBPeriod: parseInt(e.target.value) || 52 })}
+                    className="w-10 px-1 py-0.5 rounded border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-main)] text-center"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Pivot Points */}
+            <div className="p-2 rounded bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-between">
+              <label className="flex items-center gap-2 cursor-pointer font-medium">
+                <input
+                  type="checkbox"
+                  checked={!!config.pivotEnabled}
+                  onChange={e => onChange({ ...config, pivotEnabled: e.target.checked })}
+                />
+                <span>🎯 Pivot Points (Supporti & Resistenze)</span>
+              </label>
+              <div className="flex items-center gap-1.5 text-[var(--text-muted)]">
+                <span>Tipo:</span>
+                <select
+                  value={config.pivotType || 'STANDARD'}
+                  onChange={e => onChange({ ...config, pivotType: e.target.value as any })}
+                  className="px-1.5 py-0.5 rounded border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-main)] font-semibold"
+                >
+                  <option value="STANDARD">Standard Floor</option>
+                  <option value="FIBONACCI">Fibonacci</option>
+                  <option value="CAMARILLA">Camarilla</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Keltner Channels */}
+            <div className="p-2 rounded bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-between">
+              <label className="flex items-center gap-2 cursor-pointer font-medium">
+                <input
+                  type="checkbox"
+                  checked={!!config.keltnerEnabled}
+                  onChange={e => onChange({ ...config, keltnerEnabled: e.target.checked })}
+                />
+                <span>📊 Canali di Keltner (EMA + ATR)</span>
+              </label>
+              <div className="flex items-center gap-1.5 text-[var(--text-muted)]">
+                <span>Periodo:</span>
+                <input
+                  type="number"
+                  value={config.keltnerPeriod || 20}
+                  onChange={e => onChange({ ...config, keltnerPeriod: parseInt(e.target.value) || 20 })}
+                  className="w-12 px-1 py-0.5 rounded border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-main)] text-center"
+                />
+                <span>Mult:</span>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={config.keltnerMult || 1.5}
+                  onChange={e => onChange({ ...config, keltnerMult: parseFloat(e.target.value) || 1.5 })}
+                  className="w-12 px-1 py-0.5 rounded border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-main)] text-center"
+                />
+              </div>
+            </div>
+
+            {/* VWAP */}
+            <div className="p-2 rounded bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-between">
+              <label className="flex items-center gap-2 cursor-pointer font-medium">
+                <input
+                  type="checkbox"
+                  checked={!!config.vwapEnabled}
+                  onChange={e => onChange({ ...config, vwapEnabled: e.target.checked })}
+                />
+                <span>⚖️ VWAP (Volume Weighted Average Price con Deviazioni)</span>
+              </label>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/15 text-blue-500 font-bold">
+                {config.vwapEnabled ? 'ATTIVO (±1σ, ±2σ)' : 'DISATTIVO'}
+              </span>
+            </div>
+
+            {/* AI Sentiment Background Overlay */}
+            <div className="p-2.5 rounded-lg bg-linear-to-r from-emerald-500/10 via-blue-500/10 to-rose-500/10 border border-blue-500/30 space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2 cursor-pointer font-bold text-xs text-[var(--text-main)]">
+                  <input
+                    type="checkbox"
+                    checked={!!config.sentimentOverlayEnabled}
+                    onChange={e => onChange({ ...config, sentimentOverlayEnabled: e.target.checked })}
+                  />
+                  <span>🧠 Overlay Sentiment AI sul Grafico</span>
+                </label>
+                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-blue-600/20 text-blue-500 border border-blue-500/30">
+                  {config.sentimentOverlayEnabled ? 'ATTIVO' : 'DISATTIVO'}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)] pl-5">
+                <span>Intensità Trasparenza:</span>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="range"
+                    min="0.10"
+                    max="0.50"
+                    step="0.05"
+                    value={config.sentimentOverlayOpacity ?? 0.25}
+                    onChange={e => onChange({ ...config, sentimentOverlayOpacity: parseFloat(e.target.value) || 0.25 })}
+                    className="w-24 cursor-pointer accent-blue-500 h-1.5 bg-[var(--input-bg)] rounded"
+                  />
+                  <span className="font-mono text-xs font-bold text-[var(--text-main)] w-8 text-right">
+                    {Math.round((config.sentimentOverlayOpacity ?? 0.25) * 100)}%
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-[10px] text-[var(--text-muted)] pl-5 leading-relaxed">
+                Colora lo sfondo di ogni barra di prezzo in base al punteggio di Sentiment elaborato da Gemini AI (Verde = Bullish, Rosso = Bearish).
+              </p>
+            </div>
+
+            {/* Smart Money Concepts (SMC) & Market Structure */}
+            <div className="p-3 rounded-xl bg-gradient-to-r from-blue-950/40 via-indigo-950/40 to-purple-950/40 border border-blue-500/40 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2 cursor-pointer font-bold text-xs text-white">
+                  <input
+                    type="checkbox"
+                    checked={config.smcEnabled ?? true}
+                    onChange={e => onChange({ ...config, smcEnabled: e.target.checked })}
+                  />
+                  <span>💎 Smart Money Concepts & Price Action Automatica</span>
+                </label>
+                <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border ${
+                  (config.smcEnabled ?? true) ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40' : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+                }`}>
+                  {(config.smcEnabled ?? true) ? 'ATTIVO' : 'DISATTIVO'}
+                </span>
+              </div>
+
+              {(config.smcEnabled ?? true) && (
+                <div className="grid grid-cols-2 gap-2 pt-1 border-t border-[var(--border-color)]/60 text-[11px]">
+                  <label className="flex items-center gap-2 cursor-pointer text-[var(--text-main)]">
+                    <input
+                      type="checkbox"
+                      checked={config.smcShowBosChoch ?? true}
+                      onChange={e => onChange({ ...config, smcShowBosChoch: e.target.checked })}
+                    />
+                    <span>Rilevamento BOS & CHoCH</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer text-[var(--text-main)]">
+                    <input
+                      type="checkbox"
+                      checked={config.smcShowOrderBlocks ?? true}
+                      onChange={e => onChange({ ...config, smcShowOrderBlocks: e.target.checked })}
+                    />
+                    <span>Order Blocks Istituzionali</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer text-[var(--text-main)]">
+                    <input
+                      type="checkbox"
+                      checked={config.smcShowFvg ?? true}
+                      onChange={e => onChange({ ...config, smcShowFvg: e.target.checked })}
+                    />
+                    <span>Fair Value Gaps (FVG)</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer text-[var(--text-main)]">
+                    <input
+                      type="checkbox"
+                      checked={config.smcShowLiquiditySweeps ?? true}
+                      onChange={e => onChange({ ...config, smcShowLiquiditySweeps: e.target.checked })}
+                    />
+                    <span>Liquidity Sweeps (Wick Break)</span>
+                  </label>
+                </div>
+              )}
+            </div>
+
+            {/* Multi-Timeframe Confluence Hub */}
+            <div className="flex items-center justify-between p-2.5 rounded-lg bg-[var(--bg-card)] border border-blue-500/30">
+              <label className="flex items-center gap-2 cursor-pointer font-bold text-xs text-[var(--text-main)]">
+                <input
+                  type="checkbox"
+                  checked={config.multiTimeframeHubEnabled ?? true}
+                  onChange={e => onChange({ ...config, multiTimeframeHubEnabled: e.target.checked })}
+                />
+                <span>🌐 Multi-Timeframe Confluence Hub (HUD 15m, 1h, 4h, 1d)</span>
+              </label>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 font-bold">
+                {(config.multiTimeframeHubEnabled ?? true) ? 'MOSTRA HUD' : 'NASCONDI'}
+              </span>
             </div>
           </div>
 
@@ -439,6 +657,43 @@ export const IndicatorsModal: React.FC<IndicatorsModalProps> = ({
               </div>
             </div>
 
+            {/* Stochastic RSI */}
+            <div className="p-2 rounded bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2 cursor-pointer font-medium">
+                  <input
+                    type="checkbox"
+                    checked={!!config.stochRsiEnabled}
+                    onChange={e => onChange({ ...config, stochRsiEnabled: e.target.checked })}
+                  />
+                  <span>Stochastic RSI (%K / %D)</span>
+                </label>
+                <div className="flex items-center gap-1 text-[var(--text-muted)]">
+                  <span>Len:</span>
+                  <input
+                    type="number"
+                    value={config.stochRsiLen || 14}
+                    onChange={e => onChange({ ...config, stochRsiLen: parseInt(e.target.value) || 14 })}
+                    className="w-10 px-1 py-0.5 rounded border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-main)] text-center"
+                  />
+                  <span>%K:</span>
+                  <input
+                    type="number"
+                    value={config.stochRsiK || 3}
+                    onChange={e => onChange({ ...config, stochRsiK: parseInt(e.target.value) || 3 })}
+                    className="w-8 px-1 py-0.5 rounded border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-main)] text-center"
+                  />
+                  <span>%D:</span>
+                  <input
+                    type="number"
+                    value={config.stochRsiD || 3}
+                    onChange={e => onChange({ ...config, stochRsiD: parseInt(e.target.value) || 3 })}
+                    className="w-8 px-1 py-0.5 rounded border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-main)] text-center"
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* ADX / DMI */}
             <div className="p-2 rounded bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1.5">
               <div className="flex items-center justify-between">
@@ -525,7 +780,7 @@ export const IndicatorsModal: React.FC<IndicatorsModalProps> = ({
         <div className="flex justify-end p-3 border-t border-[var(--border-color)] bg-[var(--bg-card)]">
           <button
             onClick={onClose}
-            className="px-4 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white font-bold transition"
+            className="px-4 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white font-bold transition cursor-pointer"
           >
             Applica & Chiudi
           </button>

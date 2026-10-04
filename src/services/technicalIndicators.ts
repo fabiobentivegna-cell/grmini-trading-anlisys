@@ -10,7 +10,42 @@ export interface CalculatedIndicators {
     bbLower: LineData[];
     sar: { time: string | number; value: number; color: string }[];
     supertrend: { time: string | number; value: number; color: string }[];
+    supertrendUpper?: LineData[];
+    supertrendLower?: LineData[];
+    supertrendSignals?: { time: string | number; type: 'BUY' | 'SELL'; price: number }[];
     atrTsl: LineData[];
+    // Ichimoku
+    ichimoku?: {
+      tenkan: LineData[];
+      kijun: LineData[];
+      senkouA: LineData[];
+      senkouB: LineData[];
+      chikou: LineData[];
+    };
+    // Pivot Points
+    pivots?: {
+      pp: LineData[];
+      r1: LineData[];
+      r2: LineData[];
+      r3: LineData[];
+      s1: LineData[];
+      s2: LineData[];
+      s3: LineData[];
+    };
+    // Keltner Channels
+    keltner?: {
+      upper: LineData[];
+      middle: LineData[];
+      lower: LineData[];
+    };
+    // VWAP
+    vwap?: {
+      vwap: LineData[];
+      upper1: LineData[];
+      lower1: LineData[];
+      upper2: LineData[];
+      lower2: LineData[];
+    };
   };
   oscillators: {
     rsi: LineData[];
@@ -20,6 +55,10 @@ export interface CalculatedIndicators {
       hist: { time: string | number; value: number; color: string }[];
     };
     stoch: {
+      k: LineData[];
+      d: LineData[];
+    };
+    stochRsi?: {
       k: LineData[];
       d: LineData[];
     };
@@ -271,6 +310,202 @@ export function computeTechnicalIndicators(
     }
   }
 
+  // Supertrend Advanced Upper/Lower bands & signals
+  const stUpperData: LineData[] = [];
+  const stLowerData: LineData[] = [];
+  const stSignals: { time: string | number; type: 'BUY' | 'SELL'; price: number }[] = [];
+
+  if (n >= stPeriod) {
+    let prevDir = 1;
+    for (let i = stPeriod - 1; i < n; i++) {
+      const hl2 = (highs[i] + lows[i]) / 2;
+      const curAtr = atrValues[i] || tr[i];
+      const curUpper = hl2 + stMult * curAtr;
+      const curLower = hl2 - stMult * curAtr;
+      stUpperData.push({ time: times[i], value: Number(curUpper.toFixed(4)) });
+      stLowerData.push({ time: times[i], value: Number(curLower.toFixed(4)) });
+
+      const curColor = supertrendData.find(s => s.time === times[i])?.color;
+      const curDir = curColor === '#089981' ? 1 : -1;
+      if (i > stPeriod - 1 && curDir !== prevDir) {
+        stSignals.push({
+          time: times[i],
+          type: curDir === 1 ? 'BUY' : 'SELL',
+          price: curDir === 1 ? lows[i] : highs[i]
+        });
+      }
+      prevDir = curDir;
+    }
+  }
+
+  // -------------------------------------------------------------
+  // Ichimoku Kinko Hyo (Tenkan 9, Kijun 26, Senkou B 52, Shift 26)
+  // -------------------------------------------------------------
+  const ichimokuTenkan: LineData[] = [];
+  const ichimokuKijun: LineData[] = [];
+  const ichimokuSenkouA: LineData[] = [];
+  const ichimokuSenkouB: LineData[] = [];
+  const ichimokuChikou: LineData[] = [];
+
+  const convPeriod = config.ichimokuConversionPeriod || 9;
+  const basePeriod = config.ichimokuBasePeriod || 26;
+  const spanBPeriod = config.ichimokuSpanBPeriod || 52;
+
+  const getHighLowMid = (start: number, end: number) => {
+    let h = -Infinity;
+    let l = Infinity;
+    for (let k = start; k <= end; k++) {
+      if (highs[k] > h) h = highs[k];
+      if (lows[k] < l) l = lows[k];
+    }
+    return (h + l) / 2;
+  };
+
+  for (let i = 0; i < n; i++) {
+    // Tenkan-sen
+    if (i >= convPeriod - 1) {
+      const tenkan = getHighLowMid(i - convPeriod + 1, i);
+      ichimokuTenkan.push({ time: times[i], value: Number(tenkan.toFixed(4)) });
+    }
+    // Kijun-sen
+    if (i >= basePeriod - 1) {
+      const kijun = getHighLowMid(i - basePeriod + 1, i);
+      ichimokuKijun.push({ time: times[i], value: Number(kijun.toFixed(4)) });
+    }
+    // Senkou Span A & B (evaluated at i, mapped to current time for display)
+    if (i >= basePeriod - 1) {
+      const tenkan = getHighLowMid(i - convPeriod + 1, i);
+      const kijun = getHighLowMid(i - basePeriod + 1, i);
+      const spanA = (tenkan + kijun) / 2;
+      ichimokuSenkouA.push({ time: times[i], value: Number(spanA.toFixed(4)) });
+    }
+    if (i >= spanBPeriod - 1) {
+      const spanB = getHighLowMid(i - spanBPeriod + 1, i);
+      ichimokuSenkouB.push({ time: times[i], value: Number(spanB.toFixed(4)) });
+    }
+    // Chikou Span
+    ichimokuChikou.push({ time: times[i], value: Number(closes[i].toFixed(4)) });
+  }
+
+  // -------------------------------------------------------------
+  // Pivot Points (Standard, Fibonacci, Camarilla)
+  // -------------------------------------------------------------
+  const pivotPP: LineData[] = [];
+  const pivotR1: LineData[] = [];
+  const pivotR2: LineData[] = [];
+  const pivotR3: LineData[] = [];
+  const pivotS1: LineData[] = [];
+  const pivotS2: LineData[] = [];
+  const pivotS3: LineData[] = [];
+
+  const pType = config.pivotType || 'STANDARD';
+  const pivotWindow = 20;
+
+  for (let i = pivotWindow; i < n; i++) {
+    let pH = -Infinity;
+    let pL = Infinity;
+    for (let k = i - pivotWindow; k < i; k++) {
+      if (highs[k] > pH) pH = highs[k];
+      if (lows[k] < pL) pL = lows[k];
+    }
+    const pC = closes[i - 1];
+    const diff = pH - pL;
+
+    let pp = (pH + pL + pC) / 3;
+    let r1 = 0, r2 = 0, r3 = 0, s1 = 0, s2 = 0, s3 = 0;
+
+    if (pType === 'FIBONACCI') {
+      pp = (pH + pL + pC) / 3;
+      r1 = pp + 0.382 * diff;
+      r2 = pp + 0.618 * diff;
+      r3 = pp + 1.000 * diff;
+      s1 = pp - 0.382 * diff;
+      s2 = pp - 0.618 * diff;
+      s3 = pp - 1.000 * diff;
+    } else if (pType === 'CAMARILLA') {
+      pp = (pH + pL + pC) / 3;
+      r1 = pC + diff * 1.1 / 12;
+      r2 = pC + diff * 1.1 / 6;
+      r3 = pC + diff * 1.1 / 4;
+      s1 = pC - diff * 1.1 / 12;
+      s2 = pC - diff * 1.1 / 6;
+      s3 = pC - diff * 1.1 / 4;
+    } else {
+      // Standard
+      pp = (pH + pL + pC) / 3;
+      r1 = 2 * pp - pL;
+      s1 = 2 * pp - pH;
+      r2 = pp + diff;
+      s2 = pp - diff;
+      r3 = pH + 2 * (pp - pL);
+      s3 = pL - 2 * (pH - pp);
+    }
+
+    pivotPP.push({ time: times[i], value: Number(pp.toFixed(4)) });
+    pivotR1.push({ time: times[i], value: Number(r1.toFixed(4)) });
+    pivotR2.push({ time: times[i], value: Number(r2.toFixed(4)) });
+    pivotR3.push({ time: times[i], value: Number(r3.toFixed(4)) });
+    pivotS1.push({ time: times[i], value: Number(s1.toFixed(4)) });
+    pivotS2.push({ time: times[i], value: Number(s2.toFixed(4)) });
+    pivotS3.push({ time: times[i], value: Number(s3.toFixed(4)) });
+  }
+
+  // -------------------------------------------------------------
+  // Keltner Channels (EMA + Multiplier * ATR)
+  // -------------------------------------------------------------
+  const keltnerUpper: LineData[] = [];
+  const keltnerMiddle: LineData[] = [];
+  const keltnerLower: LineData[] = [];
+  const kLen = config.keltnerPeriod || 20;
+  const kMult = config.keltnerMult || 1.5;
+
+  if (n >= kLen) {
+    const alphaK = 2 / (kLen + 1);
+    let kEma = closes[0];
+    for (let i = 0; i < n; i++) {
+      if (i === 0) kEma = closes[0];
+      else kEma = alphaK * closes[i] + (1 - alphaK) * kEma;
+
+      if (i >= kLen - 1) {
+        const curAtr = atrValues[i] || tr[i];
+        keltnerMiddle.push({ time: times[i], value: Number(kEma.toFixed(4)) });
+        keltnerUpper.push({ time: times[i], value: Number((kEma + kMult * curAtr).toFixed(4)) });
+        keltnerLower.push({ time: times[i], value: Number((kEma - kMult * curAtr).toFixed(4)) });
+      }
+    }
+  }
+
+  // -------------------------------------------------------------
+  // VWAP (Volume Weighted Average Price) & Standard Dev Bands
+  // -------------------------------------------------------------
+  const vwapLine: LineData[] = [];
+  const vwapUpper1: LineData[] = [];
+  const vwapLower1: LineData[] = [];
+  const vwapUpper2: LineData[] = [];
+  const vwapLower2: LineData[] = [];
+
+  let cumVol = 0;
+  let cumTypicalVol = 0;
+  let cumTypicalVolSq = 0;
+
+  for (let i = 0; i < n; i++) {
+    const vol = candles[i].volume || 1000;
+    const typicalPrice = (highs[i] + lows[i] + closes[i]) / 3;
+    cumVol += vol;
+    cumTypicalVol += typicalPrice * vol;
+    cumTypicalVolSq += typicalPrice * typicalPrice * vol;
+
+    const vwap = cumTypicalVol / (cumVol || 1);
+    const variance = Math.max(0, (cumTypicalVolSq / (cumVol || 1)) - (vwap * vwap));
+    const std = Math.sqrt(variance);
+
+    vwapLine.push({ time: times[i], value: Number(vwap.toFixed(4)) });
+    vwapUpper1.push({ time: times[i], value: Number((vwap + std).toFixed(4)) });
+    vwapLower1.push({ time: times[i], value: Number((vwap - std).toFixed(4)) });
+    vwapUpper2.push({ time: times[i], value: Number((vwap + 2 * std).toFixed(4)) });
+    vwapLower2.push({ time: times[i], value: Number((vwap - 2 * std).toFixed(4)) });
+  }
+
   // RSI
   const rsiData: LineData[] = [];
   const rsiLen = Math.max(2, config.rsiLen);
@@ -442,6 +677,45 @@ export function computeTechnicalIndicators(
     }
   }
 
+  // -------------------------------------------------------------
+  // Stochastic RSI (%K and %D)
+  // -------------------------------------------------------------
+  const stochRsiK: LineData[] = [];
+  const stochRsiD: LineData[] = [];
+  const srsiLen = config.stochRsiLen || 14;
+  const srsiKPeriod = config.stochRsiK || 3;
+  const srsiDPeriod = config.stochRsiD || 3;
+
+  if (rsiData.length >= srsiLen) {
+    const rawStochRsi: { time: string | number; value: number }[] = [];
+    for (let i = srsiLen - 1; i < rsiData.length; i++) {
+      let minR = Infinity;
+      let maxR = -Infinity;
+      for (let j = i - srsiLen + 1; j <= i; j++) {
+        const val = rsiData[j].value;
+        if (val < minR) minR = val;
+        if (val > maxR) maxR = val;
+      }
+      const curR = rsiData[i].value;
+      const stochVal = maxR === minR ? 50 : ((curR - minR) / (maxR - minR)) * 100;
+      rawStochRsi.push({ time: rsiData[i].time, value: stochVal });
+    }
+
+    // %K smoothing (SMA of rawStochRsi)
+    for (let i = srsiKPeriod - 1; i < rawStochRsi.length; i++) {
+      const slice = rawStochRsi.slice(i - srsiKPeriod + 1, i + 1);
+      const avgK = slice.reduce((sum, item) => sum + item.value, 0) / srsiKPeriod;
+      stochRsiK.push({ time: rawStochRsi[i].time, value: Number(avgK.toFixed(2)) });
+    }
+
+    // %D smoothing (SMA of %K)
+    for (let i = srsiDPeriod - 1; i < stochRsiK.length; i++) {
+      const slice = stochRsiK.slice(i - srsiDPeriod + 1, i + 1);
+      const avgD = slice.reduce((sum, item) => sum + item.value, 0) / srsiDPeriod;
+      stochRsiD.push({ time: stochRsiK[i].time, value: Number(avgD.toFixed(2)) });
+    }
+  }
+
   // Pad series helpers to guarantee 100% time & logical range alignment across subcharts using WhitespaceData
   const pad = (arr: LineData[]): LineData[] => {
     const map = new Map<string | number, number>();
@@ -482,7 +756,38 @@ export function computeTechnicalIndicators(
       bbLower: pad(bbLower),
       sar: padColored(sarData),
       supertrend: padColored(supertrendData),
-      atrTsl: pad(atrTsl)
+      supertrendUpper: pad(stUpperData),
+      supertrendLower: pad(stLowerData),
+      supertrendSignals: stSignals,
+      atrTsl: pad(atrTsl),
+      ichimoku: {
+        tenkan: pad(ichimokuTenkan),
+        kijun: pad(ichimokuKijun),
+        senkouA: pad(ichimokuSenkouA),
+        senkouB: pad(ichimokuSenkouB),
+        chikou: pad(ichimokuChikou)
+      },
+      pivots: {
+        pp: pad(pivotPP),
+        r1: pad(pivotR1),
+        r2: pad(pivotR2),
+        r3: pad(pivotR3),
+        s1: pad(pivotS1),
+        s2: pad(pivotS2),
+        s3: pad(pivotS3)
+      },
+      keltner: {
+        upper: pad(keltnerUpper),
+        middle: pad(keltnerMiddle),
+        lower: pad(keltnerLower)
+      },
+      vwap: {
+        vwap: pad(vwapLine),
+        upper1: pad(vwapUpper1),
+        lower1: pad(vwapLower1),
+        upper2: pad(vwapUpper2),
+        lower2: pad(vwapLower2)
+      }
     },
     oscillators: {
       rsi: pad(rsiData),
@@ -494,6 +799,10 @@ export function computeTechnicalIndicators(
       stoch: {
         k: pad(stochK),
         d: pad(stochD)
+      },
+      stochRsi: {
+        k: pad(stochRsiK),
+        d: pad(stochRsiD)
       },
       atr: pad(atrData),
       adx: {

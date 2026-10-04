@@ -6,7 +6,6 @@ import {
   Eye,
   EyeOff,
   GitCompare,
-  TrendingUp,
   Percent,
   DollarSign,
   Activity,
@@ -73,7 +72,6 @@ export const OverlayModal: React.FC<OverlayModalProps> = ({
   if (!isOpen) return null;
 
   const handleAddPreset = (preset: typeof OVERLAY_PRESETS[0]) => {
-    // Pick an unused color from the palette if possible
     const usedColors = new Set(overlays.map(o => o.color.toLowerCase()));
     const availColor = COLOR_PALETTE.find(c => !usedColors.has(c.toLowerCase())) || preset.defaultColor;
 
@@ -157,7 +155,7 @@ export const OverlayModal: React.FC<OverlayModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="w-7 h-7 rounded flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--border-color)] transition"
+            className="w-7 h-7 rounded flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--border-color)] transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -167,7 +165,7 @@ export const OverlayModal: React.FC<OverlayModalProps> = ({
         <div className="flex items-center gap-2 px-5 py-2.5 border-b border-[var(--border-color)] bg-[var(--bg-main)]">
           <button
             onClick={() => setActiveTab('manage')}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
               activeTab === 'manage'
                 ? 'bg-blue-600 text-white shadow-sm'
                 : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--border-color)]'
@@ -178,7 +176,7 @@ export const OverlayModal: React.FC<OverlayModalProps> = ({
           </button>
           <button
             onClick={() => setActiveTab('add')}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
               activeTab === 'add'
                 ? 'bg-blue-600 text-white shadow-sm'
                 : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--border-color)]'
@@ -206,7 +204,7 @@ export const OverlayModal: React.FC<OverlayModalProps> = ({
                   </div>
                   <button
                     onClick={() => setActiveTab('add')}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-sm"
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-sm cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Aggiungi Benchmark Rapido</span>
@@ -234,7 +232,6 @@ export const OverlayModal: React.FC<OverlayModalProps> = ({
                         }`}
                       >
                         <div className="flex items-center justify-between flex-wrap gap-2">
-                          {/* Identificativo e Badge Colore */}
                           <div className="flex items-center gap-2.5">
                             <input
                               type="color"
@@ -256,9 +253,7 @@ export const OverlayModal: React.FC<OverlayModalProps> = ({
                             </div>
                           </div>
 
-                          {/* Azioni Visibilità & Rimozione */}
                           <div className="flex items-center gap-1.5">
-                            {/* Toggle Modalità Scala */}
                             <button
                               onClick={() =>
                                 onUpdateOverlay({
@@ -266,7 +261,7 @@ export const OverlayModal: React.FC<OverlayModalProps> = ({
                                   scaleMode: overlay.scaleMode === 'percent' ? 'price' : 'percent'
                                 })
                               }
-                              className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-bold border transition ${
+                              className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-bold border transition cursor-pointer ${
                                 overlay.scaleMode === 'percent'
                                   ? 'bg-blue-600/15 border-blue-600/40 text-blue-600 dark:text-blue-400'
                                   : 'bg-[var(--border-color)] border-transparent text-[var(--text-muted)]'
@@ -277,10 +272,9 @@ export const OverlayModal: React.FC<OverlayModalProps> = ({
                               <span>{overlay.scaleMode === 'percent' ? 'Rendimento %' : 'Prezzo (Asse SX)'}</span>
                             </button>
 
-                            {/* Visibilità */}
                             <button
                               onClick={() => onToggleOverlayVisibility(overlay.id)}
-                              className={`w-7 h-7 rounded flex items-center justify-center border transition ${
+                              className={`w-7 h-7 rounded flex items-center justify-center border transition cursor-pointer ${
                                 overlay.visible
                                   ? 'border-[var(--border-color)] hover:bg-[var(--border-color)] text-[var(--text-main)]'
                                   : 'border-transparent text-[var(--text-muted)] hover:bg-[var(--border-color)]'
@@ -290,10 +284,9 @@ export const OverlayModal: React.FC<OverlayModalProps> = ({
                               {overlay.visible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                             </button>
 
-                            {/* Rimuovi */}
                             <button
                               onClick={() => onRemoveOverlay(overlay.id)}
-                              className="w-7 h-7 rounded flex items-center justify-center text-rose-500 hover:bg-rose-500/10 transition border border-transparent hover:border-rose-500/30"
+                              className="w-7 h-7 rounded flex items-center justify-center text-rose-500 hover:bg-rose-500/10 transition border border-transparent hover:border-rose-500/30 cursor-pointer"
                               title="Rimuovi dal grafico"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -301,10 +294,8 @@ export const OverlayModal: React.FC<OverlayModalProps> = ({
                           </div>
                         </div>
 
-                        {/* Scheda Metriche di Correlazione e Performance */}
                         {stats && stats.overlapBars > 0 && (
                           <div className="mt-3 pt-3 border-t border-[var(--border-color)]/70 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                            {/* Correlazione di Pearson */}
                             <div className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] flex flex-col justify-between">
                               <span className="text-[10px] text-[var(--text-muted)] uppercase font-semibold">Correlazione Pearson (r)</span>
                               <div className="flex items-center gap-1.5 mt-1">
@@ -317,7 +308,6 @@ export const OverlayModal: React.FC<OverlayModalProps> = ({
                               </div>
                             </div>
 
-                            {/* Rendimento Titolo Base vs Overlay */}
                             <div className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] flex flex-col justify-between">
                               <span className="text-[10px] text-[var(--text-muted)] uppercase font-semibold">Rendimento Sovrapposto</span>
                               <div className="flex items-center gap-1 mt-1">
@@ -336,7 +326,6 @@ export const OverlayModal: React.FC<OverlayModalProps> = ({
                               </div>
                             </div>
 
-                            {/* Spread / Alpha */}
                             <div className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] flex flex-col justify-between">
                               <span className="text-[10px] text-[var(--text-muted)] uppercase font-semibold">Spread Differenziale</span>
                               <span
@@ -350,7 +339,6 @@ export const OverlayModal: React.FC<OverlayModalProps> = ({
                               </span>
                             </div>
 
-                            {/* Beta e Barre */}
                             <div className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] flex flex-col justify-between">
                               <span className="text-[10px] text-[var(--text-muted)] uppercase font-semibold">Beta e Campioni</span>
                               <div className="flex items-center justify-between text-xs mt-1">
@@ -370,7 +358,6 @@ export const OverlayModal: React.FC<OverlayModalProps> = ({
 
           {activeTab === 'add' && (
             <div className="space-y-6">
-              {/* Presets Popolari in 1 Clic */}
               <div className="space-y-3">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-[var(--text-main)]">
                   <Sparkles className="w-3.5 h-3.5 text-amber-500" />
@@ -384,7 +371,7 @@ export const OverlayModal: React.FC<OverlayModalProps> = ({
                         key={preset.ticker}
                         onClick={() => handleAddPreset(preset)}
                         disabled={isAlreadyAdded}
-                        className={`p-2.5 rounded-lg border text-left transition flex flex-col justify-between gap-1.5 ${
+                        className={`p-2.5 rounded-lg border text-left transition flex flex-col justify-between gap-1.5 cursor-pointer ${
                           isAlreadyAdded
                             ? 'bg-[var(--bg-main)] border-[var(--border-color)] opacity-50 cursor-not-allowed'
                             : 'bg-[var(--bg-card)] border-[var(--border-color)] hover:border-cyan-500 hover:shadow-xs'
@@ -408,7 +395,6 @@ export const OverlayModal: React.FC<OverlayModalProps> = ({
                 </div>
               </div>
 
-              {/* Form Inserimento Personalizzato */}
               <div className="p-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-main)] space-y-4">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-[var(--text-main)]">
                   <Plus className="w-3.5 h-3.5 text-blue-500" />
@@ -445,7 +431,6 @@ export const OverlayModal: React.FC<OverlayModalProps> = ({
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {/* Timeframe */}
                     <div>
                       <label className="text-[10px] font-bold uppercase text-[var(--text-muted)] block mb-1">
                         Timeframe di Analisi:
@@ -464,7 +449,6 @@ export const OverlayModal: React.FC<OverlayModalProps> = ({
                       </select>
                     </div>
 
-                    {/* Modalità Scala */}
                     <div>
                       <label className="text-[10px] font-bold uppercase text-[var(--text-muted)] block mb-1">
                         Scala Visuale:
@@ -479,7 +463,6 @@ export const OverlayModal: React.FC<OverlayModalProps> = ({
                       </select>
                     </div>
 
-                    {/* Stile Serie */}
                     <div>
                       <label className="text-[10px] font-bold uppercase text-[var(--text-muted)] block mb-1">
                         Stile Grafico:
@@ -495,7 +478,6 @@ export const OverlayModal: React.FC<OverlayModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Personalizzazione Colore e Tratto */}
                   <div className="flex items-center gap-4 flex-wrap pt-1">
                     <div className="flex items-center gap-1.5">
                       <label className="text-[10px] font-bold uppercase text-[var(--text-muted)]">Colore:</label>
@@ -506,7 +488,7 @@ export const OverlayModal: React.FC<OverlayModalProps> = ({
                             type="button"
                             onClick={() => setSelectedColor(c)}
                             style={{ backgroundColor: c }}
-                            className={`w-5 h-5 rounded-full transition ${
+                            className={`w-5 h-5 rounded-full transition cursor-pointer ${
                               selectedColor === c ? 'ring-2 ring-blue-500 scale-110' : 'opacity-80 hover:opacity-100'
                             }`}
                           />
@@ -543,7 +525,7 @@ export const OverlayModal: React.FC<OverlayModalProps> = ({
                     <button
                       type="submit"
                       disabled={!customTicker.trim()}
-                      className="ml-auto flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold transition shadow-sm"
+                      className="ml-auto flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold transition shadow-sm cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Aggiungi al Grafico</span>
@@ -552,14 +534,13 @@ export const OverlayModal: React.FC<OverlayModalProps> = ({
                 </form>
               </div>
 
-              {/* Box Informativo / Guida */}
               <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-xs text-blue-900 dark:text-blue-300 flex items-start gap-2.5">
                 <Info className="w-4 h-4 shrink-0 mt-0.5 text-blue-500" />
                 <div className="space-y-1">
                   <span className="font-bold">Come funziona la correlazione di performance:</span>
                   <p className="text-[11px] opacity-90">
-                    Il coefficiente di Pearson <strong>r</strong> varia tra <strong>-1</strong> (movimento opposto / perfetto hedging) e <strong>+1</strong> (movimento perfettamente concorde).
-                    In modalità <em>Rendimento %</em>, entrambi i titoli vengono normalizzati al valore di inizio periodo, permettendo di visualizzare chiaramente chi sta sovraperformando o sottoperformando.
+                    Il coefficiente di Pearson <strong>r</strong> varia tra <strong>-1</strong> (movimento opposto) e <strong>+1</strong> (movimento concorde).
+                    In modalità <em>Rendimento %</em>, entrambi i titoli vengono normalizzati al valore di inizio periodo per evidenziare sovraperformance e sottoperformance.
                   </p>
                 </div>
               </div>
@@ -574,7 +555,7 @@ export const OverlayModal: React.FC<OverlayModalProps> = ({
           </span>
           <button
             onClick={onClose}
-            className="px-4 py-1.5 rounded-lg bg-[var(--border-color)] hover:bg-[var(--border-color)]/80 text-[var(--text-main)] font-semibold transition"
+            className="px-4 py-1.5 rounded-lg bg-[var(--border-color)] hover:bg-[var(--border-color)]/80 text-[var(--text-main)] font-semibold transition cursor-pointer"
           >
             Chiudi
           </button>

@@ -4,11 +4,8 @@ import {
   Eye,
   EyeOff,
   X,
-  Sliders,
   ChevronDown,
   ChevronUp,
-  Percent,
-  Activity,
   Plus
 } from 'lucide-react';
 import { OverlayConfig, OverlayCorrelationStats } from '../types';
@@ -110,7 +107,6 @@ export const ChartOverlayLegend: React.FC<ChartOverlayLegendProps> = ({
 
                     {stats && stats.overlapBars > 0 && (
                       <div className="flex items-center gap-1.5 shrink-0">
-                        {/* Badge Correlazione r */}
                         <span
                           className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded border ${badgeStyle}`}
                           title={`Correlazione Pearson r = ${r.toFixed(3)} (${stats.correlationLabel})`}
@@ -118,7 +114,6 @@ export const ChartOverlayLegend: React.FC<ChartOverlayLegendProps> = ({
                           r: {r >= 0 ? `+${r.toFixed(2)}` : r.toFixed(2)}
                         </span>
 
-                        {/* Rendimento % */}
                         <span
                           className={`text-[10px] font-bold font-mono ${
                             stats.overlayReturnPct >= 0

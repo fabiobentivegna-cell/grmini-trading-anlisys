@@ -79,14 +79,14 @@ export const WatchlistPanel: React.FC<WatchlistPanelProps> = ({
           <button
             onClick={onRefreshQuotes}
             disabled={isRefreshing}
-            className="p-1.5 rounded hover:bg-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition"
+            className="p-1.5 rounded hover:bg-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition cursor-pointer"
             title="Aggiorna quotazioni in tempo reale"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-blue-500' : ''}`} />
           </button>
           <button
             onClick={onClose}
-            className="p-1.5 rounded hover:bg-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition"
+            className="p-1.5 rounded hover:bg-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition cursor-pointer"
             title="Chiudi pannello watchlist"
           >
             <X className="w-4 h-4" />
@@ -106,7 +106,7 @@ export const WatchlistPanel: React.FC<WatchlistPanelProps> = ({
           />
           <button
             type="submit"
-            className="px-2.5 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition flex items-center justify-center shrink-0"
+            className="px-2.5 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition flex items-center justify-center shrink-0 cursor-pointer"
             title="Aggiungi alla Watchlist"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -116,14 +116,13 @@ export const WatchlistPanel: React.FC<WatchlistPanelProps> = ({
         {!isCurrentTickerInWatchlist && currentTicker && (
           <button
             onClick={() => onAddTicker(currentTicker)}
-            className="w-full flex items-center justify-center gap-1.5 py-1 px-2 rounded border border-dashed border-blue-500/40 hover:border-blue-500 bg-blue-500/5 hover:bg-blue-500/10 text-blue-500 text-[11px] font-semibold transition"
+            className="w-full flex items-center justify-center gap-1.5 py-1 px-2 rounded border border-dashed border-blue-500/40 hover:border-blue-500 bg-blue-500/5 hover:bg-blue-500/10 text-blue-500 text-[11px] font-semibold transition cursor-pointer"
           >
             <Plus className="w-3 h-3" />
             <span>Aggiungi asset attivo: <strong>{currentTicker}</strong></span>
           </button>
         )}
 
-        {/* Search Filter */}
         <div className="relative">
           <Search className="w-3.5 h-3.5 absolute left-2.5 top-2 text-[var(--text-muted)]" />
           <input
@@ -153,7 +152,6 @@ export const WatchlistPanel: React.FC<WatchlistPanelProps> = ({
                     : 'bg-[var(--bg-card)] border-[var(--border-color)] hover:bg-[var(--bg-main)] hover:border-blue-500/30'
                 }`}
               >
-                {/* Left: Symbol & Name */}
                 <div className="min-w-0 pr-2">
                   <div className="flex items-center gap-1.5">
                     <span className="font-mono font-bold text-xs text-[var(--text-main)] group-hover:text-blue-500 transition">
@@ -168,7 +166,6 @@ export const WatchlistPanel: React.FC<WatchlistPanelProps> = ({
                   </div>
                 </div>
 
-                {/* Right: Price, Change %, Remove */}
                 <div className="flex items-center gap-2 shrink-0">
                   <div className="text-right">
                     <div className="font-mono font-bold text-xs text-[var(--text-main)]">
@@ -195,7 +192,7 @@ export const WatchlistPanel: React.FC<WatchlistPanelProps> = ({
                       e.stopPropagation();
                       onRemoveTicker(item.symbol);
                     }}
-                    className="p-1 rounded text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/10 transition opacity-0 group-hover:opacity-100"
+                    className="p-1 rounded text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/10 transition opacity-0 group-hover:opacity-100 cursor-pointer"
                     title="Rimuovi dalla watchlist"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -215,7 +212,7 @@ export const WatchlistPanel: React.FC<WatchlistPanelProps> = ({
       <div className="p-2.5 border-t border-[var(--border-color)] bg-[var(--bg-card)] flex items-center justify-between text-[11px]">
         <button
           onClick={onResetDefault}
-          className="flex items-center gap-1 px-2 py-1 rounded text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--border-color)] transition font-medium"
+          className="flex items-center gap-1 px-2 py-1 rounded text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--border-color)] transition font-medium cursor-pointer"
           title="Ripristina la lista predefinita"
         >
           <RotateCcw className="w-3 h-3 text-blue-500" />

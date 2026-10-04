@@ -3,18 +3,25 @@ import {
   createChart,
   IChartApi,
   ISeriesApi,
+  IPriceLine,
   CrosshairMode,
   ColorType,
   CandlestickSeries,
   LineSeries,
   HistogramSeries,
   AreaSeries,
-  LineStyle
+  LineStyle,
+  createSeriesMarkers
 } from 'lightweight-charts';
 import { DrawingToolbar } from '../components/DrawingToolbar';
 import { DrawingCanvas } from '../components/DrawingCanvas';
+import { SentimentChartOverlay } from '../components/SentimentChartOverlay';
 import { OverlayModal } from '../components/OverlayModal';
+import { BacktestModal } from '../components/BacktestModal';
+import { DivergenceModal } from '../components/DivergenceModal';
 import { ChartOverlayLegend } from '../components/ChartOverlayLegend';
+import { MultiTimeframeHub } from '../components/MultiTimeframeHub';
+import { ProboAnalysisModal } from '../components/ProboAnalysisModal';
 import {
   CandleData,
   DrawingItem,
@@ -22,10 +29,14 @@ import {
   IndicatorConfig,
   OverlayConfig,
   OverlayCorrelationStats,
-  OverlayLineStyle
+  OverlayLineStyle,
+  PriceAlert,
+  SentimentDivergenceAlert
 } from '../types';
 import { computeTechnicalIndicators } from '../services/technicalIndicators';
 import { correlationOverlayService } from '../services/correlationOverlayService';
+import { sentimentOverlayService } from '../services/sentimentOverlayService';
+import { divergenceService } from '../services/divergenceService';
 import { storageService } from '../services/storageService';
 
 interface ChartPageProps {
@@ -35,8 +46,10 @@ interface ChartPageProps {
   theme: 'dark' | 'light';
   indicatorConfig: IndicatorConfig;
   rawCandles: CandleData[];
-  onBarHover?: (bar: { open: number; high: number; low: number; close: number }) => void;
+  alerts?: PriceAlert[];
+  onBarHover?: (bar: { open: number; high: number; low: number; close: number; time?: any }) => void;
   onMaHover?: (maValues: Record<string, number | string>) => void;
+  onAtrHover?: (atrValue: number | string | null) => void;
   scrollToRealTimeTrigger?: number;
   drawColor: string;
   drawWidth: number;
@@ -45,6 +58,10 @@ interface ChartPageProps {
   isOverlayModalOpen: boolean;
   onOpenOverlayModal: () => void;
   onCloseOverlayModal: () => void;
+  isBacktestOpen?: boolean;
+  onOpenBacktest?: () => void;
+  onCloseBacktest?: () => void;
+  onUpdateIndicatorConfig?: (config: IndicatorConfig) => void;
 }
 
 export const ChartPage: React.FC<ChartPageProps> = ({
@@ -54,8 +71,10 @@ export const ChartPage: React.FC<ChartPageProps> = ({
   theme,
   indicatorConfig,
   rawCandles,
+  alerts = [],
   onBarHover,
   onMaHover,
+  onAtrHover,
   scrollToRealTimeTrigger,
   drawColor,
   drawWidth,
@@ -63,16 +82,65 @@ export const ChartPage: React.FC<ChartPageProps> = ({
   onOverlaysChange,
   isOverlayModalOpen,
   onOpenOverlayModal,
-  onCloseOverlayModal
+  onCloseOverlayModal,
+  isBacktestOpen = false,
+  onOpenBacktest,
+  onCloseBacktest,
+  onUpdateIndicatorConfig
 }) => {
+  const [internalBacktestOpen, setInternalBacktestOpen] = useState(false);
+  const [isDivergenceModalOpen, setIsDivergenceModalOpen] = useState(false);
+  const [isProboModalOpen, setIsProboModalOpen] = useState(false);
+  const [activeDivergence, setActiveDivergence] = useState<SentimentDivergenceAlert | null>(null);
+  const [divergenceMonitoring, setDivergenceMonitoring] = useState<boolean>(() =>
+    divergenceService.isMonitoringEnabled()
+  );
+  const [divergenceSensitivity, setDivergenceSensitivity] = useState<'HIGH' | 'MEDIUM' | 'LOW'>(() =>
+    divergenceService.getSensitivity()
+  );
+
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const oscillatorsContainerRef = useRef<HTMLDivElement>(null);
+
+  const captureChartScreenshot = useCallback(async (): Promise<string | null> => {
+    try {
+      const container = chartContainerRef.current;
+      if (!container) return null;
+      const canvases = container.querySelectorAll('canvas');
+      if (canvases.length === 0) return null;
+
+      const firstCanvas = canvases[0];
+      const width = firstCanvas.width;
+      const height = firstCanvas.height;
+
+      const mergedCanvas = document.createElement('canvas');
+      mergedCanvas.width = width;
+      mergedCanvas.height = height;
+      const ctx = mergedCanvas.getContext('2d');
+      if (!ctx) return null;
+
+      // Fill Background
+      ctx.fillStyle = theme === 'dark' ? '#131722' : '#ffffff';
+      ctx.fillRect(0, 0, width, height);
+
+      // Draw all canvas layers
+      canvases.forEach(c => {
+        try {
+          ctx.drawImage(c, 0, 0);
+        } catch {}
+      });
+
+      return mergedCanvas.toDataURL('image/png');
+    } catch (e) {
+      console.warn('Screenshot capture fallback:', e);
+      return null;
+    }
+  }, [theme]);
 
   const mainChartRef = useRef<IChartApi | null>(null);
   const primarySeriesRef = useRef<ISeriesApi<any> | null>(null);
   const [chartInstance, setChartInstance] = useState<IChartApi | null>(null);
   const [seriesInstance, setSeriesInstance] = useState<ISeriesApi<any> | null>(null);
-
 
   const dynamicMaSeriesMap = useRef<Record<string, ISeriesApi<any>>>({});
   const bbUpperSeriesRef = useRef<ISeriesApi<any> | null>(null);
@@ -81,16 +149,41 @@ export const ChartPage: React.FC<ChartPageProps> = ({
   const supertrendSeriesRef = useRef<ISeriesApi<any> | null>(null);
   const atrTslSeriesRef = useRef<ISeriesApi<any> | null>(null);
 
+  const ichimokuSeriesRef = useRef<{
+    tenkan: ISeriesApi<any> | null;
+    kijun: ISeriesApi<any> | null;
+    senkouA: ISeriesApi<any> | null;
+    senkouB: ISeriesApi<any> | null;
+    chikou: ISeriesApi<any> | null;
+  }>({ tenkan: null, kijun: null, senkouA: null, senkouB: null, chikou: null });
+
+  const keltnerSeriesRef = useRef<{
+    upper: ISeriesApi<any> | null;
+    middle: ISeriesApi<any> | null;
+    lower: ISeriesApi<any> | null;
+  }>({ upper: null, middle: null, lower: null });
+
+  const vwapSeriesRef = useRef<{
+    vwap: ISeriesApi<any> | null;
+    upper1: ISeriesApi<any> | null;
+    lower1: ISeriesApi<any> | null;
+    upper2: ISeriesApi<any> | null;
+    lower2: ISeriesApi<any> | null;
+  }>({ vwap: null, upper1: null, lower1: null, upper2: null, lower2: null });
+
+  const pivotSeriesRef = useRef<Record<string, ISeriesApi<any>>>({});
+
   const overlaySeriesMap = useRef<Record<string, ISeriesApi<any>>>({});
   const [correlationStats, setCorrelationStats] = useState<Record<string, OverlayCorrelationStats>>({});
 
   const subChartsRef = useRef<Record<string, { chart: IChartApi; series: any; panel: HTMLDivElement; observer?: ResizeObserver }>>({});
 
   const priceLinesRef = useRef<{ rsi: any[]; stoch: any[] }>({ rsi: [], stoch: [] });
+  const alertPriceLinesRef = useRef<IPriceLine[]>([]);
 
   const [currentTool, setCurrentTool] = useState<DrawingToolType>('cursor');
   const [isCrosshairActive, setIsCrosshairActive] = useState(true);
-  const [drawings, setDrawings] = useState<DrawingItem[]>(() => storageService.getDrawings(ticker));
+  const [drawings, setDrawings] = useState<DrawingItem[]>(() => storageService.getDrawings(ticker, interval));
 
   const currentChartTypeRef = useRef<string>('');
   const hasInitialFitted = useRef<boolean>(false);
@@ -103,6 +196,11 @@ export const ChartPage: React.FC<ChartPageProps> = ({
   const onMaHoverRef = useRef(onMaHover);
   onMaHoverRef.current = onMaHover;
 
+  const onAtrHoverRef = useRef(onAtrHover);
+  onAtrHoverRef.current = onAtrHover;
+
+  const atrMapRef = useRef<Map<string | number, number>>(new Map());
+
   const indicatorConfigRef = useRef(indicatorConfig);
   indicatorConfigRef.current = indicatorConfig;
 
@@ -114,12 +212,138 @@ export const ChartPage: React.FC<ChartPageProps> = ({
 
   const isSyncingRange = useRef(false);
 
-  // Sync drawings to storage per ticker
-  useEffect(() => {
-    setDrawings(storageService.getDrawings(ticker));
-  }, [ticker]);
+  // Timezone and Clock states
+  const [chartTimezone, setChartTimezone] = useState<string>(() => {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Rome';
+    } catch {
+      return 'Europe/Rome';
+    }
+  });
+  const [showTzMenu, setShowTzMenu] = useState(false);
+  const [currentTime, setCurrentTime] = useState<Date>(new Date());
+  const [isMtfHubOpen, setIsMtfHubOpen] = useState<boolean>(false);
 
-  // Track ticker / interval change to re-fit content on new asset load
+  // Zero-Delay mode
+  const [zeroDelayMode, setZeroDelayMode] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('zenith_zero_delay_mode');
+      return saved !== null ? JSON.parse(saved) : true;
+    } catch {
+      return true;
+    }
+  });
+
+  const handleToggleZeroDelay = () => {
+    setZeroDelayMode(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem('zenith_zero_delay_mode', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const intervalSeconds = React.useMemo(() => {
+    switch (interval) {
+      case '1m': return 60;
+      case '5m': return 300;
+      case '15m': return 900;
+      case '30m': return 1800;
+      case '1h': return 3600;
+      case '4h': return 14400;
+      default: return 86400;
+    }
+  }, [interval]);
+
+  const { processedCandles, originalLagMinutes } = React.useMemo(() => {
+    if (rawCandles.length === 0) {
+      return { processedCandles: rawCandles, originalLagMinutes: 0, isLagDetected: false };
+    }
+
+    const isIntraday = ['1m', '5m', '15m', '30m', '1h', '4h'].includes(interval);
+    const lastRaw = rawCandles[rawCandles.length - 1];
+
+    if (!isIntraday || typeof lastRaw.time !== 'number') {
+      return { processedCandles: rawCandles, originalLagMinutes: 0, isLagDetected: false };
+    }
+
+    const currentEpoch = Math.floor(Date.now() / 1000);
+    const targetLastBarTime = currentEpoch - (currentEpoch % intervalSeconds);
+    const lagSeconds = targetLastBarTime - lastRaw.time;
+    const lagMins = Math.round(lagSeconds / 60);
+    const hasLag = lagSeconds > intervalSeconds * 1.5;
+
+    if (zeroDelayMode && hasLag && lagSeconds > 0) {
+      const shifted = rawCandles.map(c => {
+        if (typeof c.time === 'number') {
+          return { ...c, time: c.time + lagSeconds };
+        }
+        return c;
+      });
+      return { processedCandles: shifted, originalLagMinutes: lagMins, isLagDetected: true };
+    }
+
+    return { processedCandles: rawCandles, originalLagMinutes: Math.max(0, lagMins), isLagDetected: hasLag };
+  }, [rawCandles, interval, intervalSeconds, zeroDelayMode]);
+
+  // AI Sentiment Score Mapping per Candle
+  const sentimentMap = React.useMemo(() => {
+    return sentimentOverlayService.generateSentimentMap(processedCandles, ticker);
+  }, [processedCandles, ticker]);
+
+  // Historical Divergence Points for rendering on Chart
+  const divergencePoints = React.useMemo(() => {
+    return divergenceService.detectHistoricalDivergences(processedCandles, sentimentMap, ticker);
+  }, [processedCandles, sentimentMap, ticker]);
+
+  // Check for active divergence on latest candles
+  useEffect(() => {
+    if (divergenceMonitoring && processedCandles.length > 10) {
+      const detected = divergenceService.detectActiveDivergence(
+        processedCandles,
+        sentimentMap,
+        ticker,
+        divergenceSensitivity
+      );
+      if (detected) {
+        setActiveDivergence(detected);
+        divergenceService.saveAlertToHistory(detected);
+      }
+    }
+  }, [processedCandles, sentimentMap, ticker, divergenceMonitoring, divergenceSensitivity]);
+
+  const lastCandle = processedCandles.length > 0 ? processedCandles[processedCandles.length - 1] : null;
+  const lastCandleFormatted = React.useMemo(() => {
+    if (!lastCandle) return null;
+    if (typeof lastCandle.time === 'number') {
+      const d = new Date(lastCandle.time * 1000);
+      return {
+        timeExact: d.toLocaleTimeString('it-IT', { timeZone: chartTimezone, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }),
+        timeShort: d.toLocaleTimeString('it-IT', { timeZone: chartTimezone, hour: '2-digit', minute: '2-digit', hour12: false }),
+        date: d.toLocaleDateString('it-IT', { timeZone: chartTimezone, day: '2-digit', month: '2-digit', year: 'numeric' }),
+        rawDate: d
+      };
+    } else if (typeof lastCandle.time === 'string') {
+      return {
+        timeExact: '--:--',
+        timeShort: '--:--',
+        date: lastCandle.time,
+        rawDate: new Date(lastCandle.time)
+      };
+    }
+    return null;
+  }, [lastCandle, chartTimezone]);
+
+  useEffect(() => {
+    setDrawings(storageService.getDrawings(ticker, interval));
+  }, [ticker, interval]);
+
   useEffect(() => {
     if (prevTickerRef.current !== ticker || prevIntervalRef.current !== interval) {
       prevTickerRef.current = ticker;
@@ -128,7 +352,6 @@ export const ChartPage: React.FC<ChartPageProps> = ({
     }
   }, [ticker, interval]);
 
-  // Scroll to real time trigger
   useEffect(() => {
     if (mainChartRef.current && scrollToRealTimeTrigger) {
       mainChartRef.current.timeScale().scrollToRealTime();
@@ -142,8 +365,105 @@ export const ChartPage: React.FC<ChartPageProps> = ({
 
   const handleDrawingsChange = (updated: DrawingItem[]) => {
     setDrawings(updated);
-    storageService.saveDrawings(ticker, updated);
+    storageService.saveDrawings(ticker, interval, updated);
   };
+
+  const [highlightedTrade, setHighlightedTrade] = useState<{ entryDate: string; exitDate: string; type: 'LONG' | 'SHORT' } | null>(null);
+  const markersRef = useRef<any>(null);
+
+  // Clear highlight on ticker/interval change
+  useEffect(() => {
+    setHighlightedTrade(null);
+  }, [ticker, interval]);
+
+  // Set markers for entry/exit when a trade is selected
+  useEffect(() => {
+    const series = seriesInstance || primarySeriesRef.current;
+    if (!series) return;
+
+    // Clean up previous markers primitive if it exists
+    if (markersRef.current) {
+      try {
+        (series as any).detachPrimitive(markersRef.current);
+      } catch (err) {
+        console.warn('Errore durante la rimozione del marker primitivo:', err);
+      }
+      markersRef.current = null;
+    }
+
+    if (!highlightedTrade) return;
+
+    const markers: any[] = [];
+
+    const entryCandle = processedCandles.find(c => {
+      const cTimeStr = typeof c.time === 'string'
+        ? c.time
+        : new Date(Number(c.time) * 1000).toISOString().slice(0, 10);
+      return cTimeStr === highlightedTrade.entryDate;
+    });
+
+    const exitCandle = processedCandles.find(c => {
+      const cTimeStr = typeof c.time === 'string'
+        ? c.time
+        : new Date(Number(c.time) * 1000).toISOString().slice(0, 10);
+      return cTimeStr === highlightedTrade.exitDate;
+    });
+
+    if (entryCandle) {
+      markers.push({
+        time: entryCandle.time,
+        position: highlightedTrade.type === 'LONG' ? 'belowBar' : 'aboveBar',
+        color: highlightedTrade.type === 'LONG' ? '#10b981' : '#ef4444',
+        shape: highlightedTrade.type === 'LONG' ? 'arrowUp' : 'arrowDown',
+        text: highlightedTrade.type === 'LONG' ? 'IN LONG' : 'IN SHORT'
+      });
+    }
+
+    if (exitCandle) {
+      markers.push({
+        time: exitCandle.time,
+        position: highlightedTrade.type === 'LONG' ? 'aboveBar' : 'belowBar',
+        color: highlightedTrade.type === 'LONG' ? '#ef4444' : '#10b981',
+        shape: highlightedTrade.type === 'LONG' ? 'arrowDown' : 'arrowUp',
+        text: highlightedTrade.type === 'LONG' ? 'OUT LONG' : 'OUT SHORT'
+      });
+    }
+
+    if (markers.length > 0) {
+      try {
+        markersRef.current = createSeriesMarkers(series, markers);
+      } catch (err) {
+        console.error('Errore durante la creazione dei marker con createSeriesMarkers:', err);
+      }
+    }
+  }, [highlightedTrade, seriesInstance, processedCandles]);
+
+  const handleSelectTrade = useCallback((trade: { entryDate: string; exitDate: string; type: 'LONG' | 'SHORT' }) => {
+    setHighlightedTrade(trade);
+
+    const chart = chartInstance || mainChartRef.current;
+    if (!chart) return;
+
+    const entryIdx = processedCandles.findIndex(c => {
+      const cTimeStr = typeof c.time === 'string'
+        ? c.time
+        : new Date(Number(c.time) * 1000).toISOString().slice(0, 10);
+      return cTimeStr === trade.entryDate;
+    });
+
+    if (entryIdx !== -1) {
+      const startIdx = Math.max(0, entryIdx - 20);
+      const endIdx = Math.min(processedCandles.length - 1, entryIdx + 20);
+
+      const fromTime = processedCandles[startIdx].time;
+      const toTime = processedCandles[endIdx].time;
+
+      chart.timeScale().setVisibleRange({
+        from: fromTime as any,
+        to: toTime as any
+      });
+    }
+  }, [chartInstance, processedCandles]);
 
   const getThemeColors = useCallback(() => {
     return theme === 'dark'
@@ -151,7 +471,65 @@ export const ChartPage: React.FC<ChartPageProps> = ({
       : { bg: '#ffffff', text: '#131722', grid: '#f0f3fa', border: '#e0e3eb' };
   }, [theme]);
 
-  // Initialize main chart (Mounts ONCE - never destroyed on hover or data updates)
+  const getTickMarkFormatter = useCallback((tz: string) => {
+    return (timeVal: any, tickMarkType: any) => {
+      if (typeof timeVal === 'string') {
+        const parts = timeVal.split('-');
+        if (parts.length === 3) {
+          const [y, m, d] = parts;
+          if (tickMarkType === 0) return y;
+          if (tickMarkType === 1) {
+            const dt = new Date(Number(y), Number(m) - 1, Number(d));
+            return dt.toLocaleDateString('it-IT', { month: 'short' });
+          }
+          return d;
+        }
+        return timeVal;
+      }
+      if (typeof timeVal === 'number') {
+        const date = new Date(timeVal * 1000);
+        if (tickMarkType === 3) {
+          return date.toLocaleTimeString('it-IT', {
+            timeZone: tz,
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+          });
+        }
+        if (tickMarkType === 4) {
+          return date.toLocaleTimeString('it-IT', {
+            timeZone: tz,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+          });
+        }
+        if (tickMarkType === 2) {
+          return date.toLocaleDateString('it-IT', {
+            timeZone: tz,
+            day: 'numeric',
+            month: 'short'
+          });
+        }
+        if (tickMarkType === 1) {
+          return date.toLocaleDateString('it-IT', {
+            timeZone: tz,
+            month: 'short'
+          });
+        }
+        if (tickMarkType === 0) {
+          return date.toLocaleDateString('it-IT', {
+            timeZone: tz,
+            year: 'numeric'
+          });
+        }
+      }
+      return '';
+    };
+  }, []);
+
+  // Initialize main chart
   useEffect(() => {
     const container = chartContainerRef.current;
     if (!container) return;
@@ -164,6 +542,23 @@ export const ChartPage: React.FC<ChartPageProps> = ({
       layout: {
         background: { type: ColorType.Solid, color: colors.bg },
         textColor: colors.text
+      },
+      localization: {
+        locale: 'it-IT',
+        dateFormat: 'dd/MM/yyyy',
+        timeFormatter: (timeVal: any) => {
+          if (typeof timeVal === 'number') {
+            const date = new Date(timeVal * 1000);
+            return date.toLocaleTimeString('it-IT', {
+              timeZone: chartTimezone,
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              hour12: false
+            });
+          }
+          return String(timeVal);
+        }
       },
       grid: {
         vertLines: { color: colors.grid },
@@ -189,7 +584,8 @@ export const ChartPage: React.FC<ChartPageProps> = ({
         secondsVisible: false,
         rightOffset: 12,
         barSpacing: 8,
-        minBarSpacing: 2
+        minBarSpacing: 2,
+        tickMarkFormatter: getTickMarkFormatter(chartTimezone)
       },
       handleScroll: {
         mouseWheel: true,
@@ -207,7 +603,6 @@ export const ChartPage: React.FC<ChartPageProps> = ({
     mainChartRef.current = chart;
     setChartInstance(chart);
 
-    // Guaranteed responsive resizing with ResizeObserver
     const resizeObserver = new ResizeObserver(entries => {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
@@ -218,7 +613,6 @@ export const ChartPage: React.FC<ChartPageProps> = ({
     });
     resizeObserver.observe(container);
 
-    // Series overlays
     bbUpperSeriesRef.current = chart.addSeries(LineSeries, {
       color: '#ab47bc',
       lineWidth: 1,
@@ -252,7 +646,51 @@ export const ChartPage: React.FC<ChartPageProps> = ({
       priceLineVisible: false
     });
 
-    // Crosshair move subscription using ref callbacks
+    // Ichimoku Cloud Lines
+    ichimokuSeriesRef.current = {
+      tenkan: chart.addSeries(LineSeries, { color: '#2563eb', lineWidth: 2, title: 'Tenkan', priceLineVisible: false }),
+      kijun: chart.addSeries(LineSeries, { color: '#dc2626', lineWidth: 2, title: 'Kijun', priceLineVisible: false }),
+      senkouA: chart.addSeries(LineSeries, { color: '#059669', lineWidth: 1, lineStyle: 1, title: 'Senkou A', priceLineVisible: false }),
+      senkouB: chart.addSeries(LineSeries, { color: '#e11d48', lineWidth: 1, lineStyle: 1, title: 'Senkou B', priceLineVisible: false }),
+      chikou: chart.addSeries(LineSeries, { color: '#9333ea', lineWidth: 1, lineStyle: 2, title: 'Chikou', priceLineVisible: false })
+    };
+
+    // Keltner Channels
+    keltnerSeriesRef.current = {
+      upper: chart.addSeries(LineSeries, { color: '#06b6d4', lineWidth: 1, title: 'Keltner Up', priceLineVisible: false }),
+      middle: chart.addSeries(LineSeries, { color: '#0891b2', lineWidth: 1, lineStyle: 2, title: 'Keltner Mid', priceLineVisible: false }),
+      lower: chart.addSeries(LineSeries, { color: '#06b6d4', lineWidth: 1, title: 'Keltner Low', priceLineVisible: false })
+    };
+
+    // VWAP & Bands
+    vwapSeriesRef.current = {
+      vwap: chart.addSeries(LineSeries, { color: '#ea580c', lineWidth: 2, title: 'VWAP', priceLineVisible: false }),
+      upper1: chart.addSeries(LineSeries, { color: '#f97316', lineWidth: 1, lineStyle: 2, title: 'VWAP +1σ', priceLineVisible: false }),
+      lower1: chart.addSeries(LineSeries, { color: '#f97316', lineWidth: 1, lineStyle: 2, title: 'VWAP -1σ', priceLineVisible: false }),
+      upper2: chart.addSeries(LineSeries, { color: '#fb923c', lineWidth: 1, lineStyle: 1, title: 'VWAP +2σ', priceLineVisible: false }),
+      lower2: chart.addSeries(LineSeries, { color: '#fb923c', lineWidth: 1, lineStyle: 1, title: 'VWAP -2σ', priceLineVisible: false })
+    };
+
+    // Pivot Points
+    const pivotColors: Record<string, string> = {
+      p: '#eab308',
+      r1: '#f87171',
+      r2: '#ef4444',
+      r3: '#b91c1c',
+      s1: '#34d399',
+      s2: '#10b981',
+      s3: '#047857'
+    };
+    Object.entries(pivotColors).forEach(([lvlKey, col]) => {
+      pivotSeriesRef.current[lvlKey] = chart.addSeries(LineSeries, {
+        color: col,
+        lineWidth: lvlKey === 'p' ? 2 : 1,
+        lineStyle: lvlKey === 'p' ? 0 : 2,
+        title: lvlKey.toUpperCase(),
+        priceLineVisible: false
+      });
+    });
+
     chart.subscribeCrosshairMove(param => {
       if (!param.time || !primarySeriesRef.current) return;
       const data = param.seriesData.get(primarySeriesRef.current) as any;
@@ -262,14 +700,16 @@ export const ChartPage: React.FC<ChartPageProps> = ({
             open: data.open,
             high: data.high,
             low: data.low,
-            close: data.close
+            close: data.close,
+            time: param.time
           });
         } else if (data.value !== undefined) {
           onBarHoverRef.current({
             open: data.value,
             high: data.value,
             low: data.value,
-            close: data.value
+            close: data.value,
+            time: param.time
           });
         }
       }
@@ -287,9 +727,22 @@ export const ChartPage: React.FC<ChartPageProps> = ({
         });
         onMaHoverRef.current(maVals);
       }
+
+      if (onAtrHoverRef.current) {
+        if (param.time && atrMapRef.current.has(param.time as any)) {
+          const val = atrMapRef.current.get(param.time as any)!;
+          const decimals = ticker.includes('=X') ? 4 : ticker.includes('^TNX') ? 3 : 2;
+          onAtrHoverRef.current(Number(val.toFixed(decimals)));
+        } else {
+          const arr = Array.from(atrMapRef.current.values());
+          if (arr.length > 0) {
+            const decimals = ticker.includes('=X') ? 4 : ticker.includes('^TNX') ? 3 : 2;
+            onAtrHoverRef.current(Number(arr[arr.length - 1].toFixed(decimals)));
+          }
+        }
+      }
     });
 
-    // Logical range change for synchronizing oscillator sub-charts
     chart.timeScale().subscribeVisibleLogicalRangeChange(range => {
       if (!range || isSyncingRange.current) return;
       isSyncingRange.current = true;
@@ -325,9 +778,8 @@ export const ChartPage: React.FC<ChartPageProps> = ({
       mainChartRef.current = null;
       primarySeriesRef.current = null;
     };
-  }, []); // Mounts once and stays mounted!
+  }, []);
 
-  // Update timeVisible when interval changes without destroying the chart
   useEffect(() => {
     const isIntraday = ['1m', '5m', '15m', '30m', '1h', '4h'].includes(interval);
     if (mainChartRef.current) {
@@ -338,7 +790,6 @@ export const ChartPage: React.FC<ChartPageProps> = ({
     });
   }, [interval]);
 
-  // Update theme colors
   useEffect(() => {
     const colors = getThemeColors();
     if (mainChartRef.current) {
@@ -373,6 +824,56 @@ export const ChartPage: React.FC<ChartPageProps> = ({
     });
   }, [theme, getThemeColors]);
 
+  useEffect(() => {
+    if (mainChartRef.current) {
+      mainChartRef.current.applyOptions({
+        localization: {
+          timeFormatter: (timeVal: any) => {
+            if (typeof timeVal === 'number') {
+              const date = new Date(timeVal * 1000);
+              return date.toLocaleTimeString('it-IT', {
+                timeZone: chartTimezone,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+              });
+            }
+            return String(timeVal);
+          }
+        },
+        timeScale: {
+          tickMarkFormatter: getTickMarkFormatter(chartTimezone)
+        }
+      });
+    }
+
+    Object.values(subChartsRef.current).forEach(({ chart: subChart }) => {
+      try {
+        subChart.applyOptions({
+          localization: {
+            timeFormatter: (timeVal: any) => {
+              if (typeof timeVal === 'number') {
+                const date = new Date(timeVal * 1000);
+                return date.toLocaleTimeString('it-IT', {
+                  timeZone: chartTimezone,
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit',
+                  hour12: false
+                });
+              }
+              return String(timeVal);
+            }
+          },
+          timeScale: {
+            tickMarkFormatter: getTickMarkFormatter(chartTimezone)
+          }
+        });
+      } catch {}
+    });
+  }, [chartTimezone, getTickMarkFormatter]);
+
   // Manage Oscillator Panels
   useEffect(() => {
     const chart = mainChartRef.current;
@@ -385,7 +886,8 @@ export const ChartPage: React.FC<ChartPageProps> = ({
       macd: indicatorConfig.macdEnabled,
       stoch: indicatorConfig.stochEnabled,
       adx: indicatorConfig.adxEnabled,
-      atr: indicatorConfig.atrEnabled
+      atr: indicatorConfig.atrEnabled,
+      stochRsi: indicatorConfig.stochRsiEnabled
     };
 
     Object.entries(activeOscs).forEach(([key, isEnabled]) => {
@@ -510,9 +1012,21 @@ export const ChartPage: React.FC<ChartPageProps> = ({
             title: 'ATR',
             priceLineVisible: false
           });
+        } else if (key === 'stochRsi') {
+          seriesObj.k = subChart.addSeries(LineSeries, {
+            color: '#2563eb',
+            lineWidth: 2,
+            title: '%K',
+            priceLineVisible: false
+          });
+          seriesObj.d = subChart.addSeries(LineSeries, {
+            color: '#f97316',
+            lineWidth: 2,
+            title: '%D',
+            priceLineVisible: false
+          });
         }
 
-        // Bidirectional time-scale synchronization
         subChart.timeScale().subscribeVisibleLogicalRangeChange(range => {
           if (!range || isSyncingRange.current || !mainChartRef.current) return;
           isSyncingRange.current = true;
@@ -529,7 +1043,6 @@ export const ChartPage: React.FC<ChartPageProps> = ({
           isSyncingRange.current = false;
         });
 
-        // Sync initial range from main chart if available
         try {
           const curRange = chart.timeScale().getVisibleLogicalRange();
           if (curRange) {
@@ -553,17 +1066,17 @@ export const ChartPage: React.FC<ChartPageProps> = ({
     indicatorConfig.stochEnabled,
     indicatorConfig.adxEnabled,
     indicatorConfig.atrEnabled,
+    indicatorConfig.stochRsiEnabled,
     getThemeColors
   ]);
 
   // Update Data and Indicators
   useEffect(() => {
     const chart = mainChartRef.current;
-    if (!chart || rawCandles.length === 0) return;
+    if (!chart || processedCandles.length === 0) return;
 
-    const calculated = computeTechnicalIndicators(rawCandles, indicatorConfig);
+    const calculated = computeTechnicalIndicators(processedCandles, indicatorConfig);
 
-    // Primary Series switch (candlestick / line / heikin_ashi) - only recreate when type changes
     if (!primarySeriesRef.current || currentChartTypeRef.current !== chartType) {
       if (primarySeriesRef.current) {
         chart.removeSeries(primarySeriesRef.current);
@@ -608,7 +1121,6 @@ export const ChartPage: React.FC<ChartPageProps> = ({
 
     setSeriesInstance(primarySeriesRef.current);
 
-    // Auto-fit content on initial data load so candles are fully visible and centered
     if (!hasInitialFitted.current && calculated.candles.length > 0) {
       hasInitialFitted.current = true;
       requestAnimationFrame(() => {
@@ -643,7 +1155,6 @@ export const ChartPage: React.FC<ChartPageProps> = ({
       }
     });
 
-    // Remove deleted MA series
     Object.keys(dynamicMaSeriesMap.current).forEach(id => {
       if (!indicatorConfig.movingAverages.some(m => m.id === id)) {
         chart.removeSeries(dynamicMaSeriesMap.current[id]);
@@ -667,6 +1178,50 @@ export const ChartPage: React.FC<ChartPageProps> = ({
       atrTslSeriesRef.current.setData(indicatorConfig.atrTslEnabled ? (calculated.overlays.atrTsl as any) : []);
     }
 
+    // Ichimoku Cloud Lines
+    const ichRef = ichimokuSeriesRef.current;
+    if (ichRef.tenkan && ichRef.kijun && ichRef.senkouA && ichRef.senkouB && ichRef.chikou) {
+      const ich = calculated.overlays.ichimoku;
+      const en = !!indicatorConfig.ichimokuEnabled;
+      ichRef.tenkan.setData(en && ich ? (ich.tenkan as any) : []);
+      ichRef.kijun.setData(en && ich ? (ich.kijun as any) : []);
+      ichRef.senkouA.setData(en && ich ? (ich.senkouA as any) : []);
+      ichRef.senkouB.setData(en && ich ? (ich.senkouB as any) : []);
+      ichRef.chikou.setData(en && ich ? (ich.chikou as any) : []);
+    }
+
+    // Keltner Channels
+    const kcRef = keltnerSeriesRef.current;
+    if (kcRef.upper && kcRef.middle && kcRef.lower) {
+      const kc = calculated.overlays.keltner;
+      const en = !!indicatorConfig.keltnerEnabled;
+      kcRef.upper.setData(en && kc ? (kc.upper as any) : []);
+      kcRef.middle.setData(en && kc ? (kc.middle as any) : []);
+      kcRef.lower.setData(en && kc ? (kc.lower as any) : []);
+    }
+
+    // VWAP & Bands
+    const vwRef = vwapSeriesRef.current;
+    if (vwRef.vwap && vwRef.upper1 && vwRef.lower1 && vwRef.upper2 && vwRef.lower2) {
+      const vw = calculated.overlays.vwap;
+      const en = !!indicatorConfig.vwapEnabled;
+      vwRef.vwap.setData(en && vw ? (vw.vwap as any) : []);
+      vwRef.upper1.setData(en && vw ? (vw.upper1 as any) : []);
+      vwRef.lower1.setData(en && vw ? (vw.lower1 as any) : []);
+      vwRef.upper2.setData(en && vw ? (vw.upper2 as any) : []);
+      vwRef.lower2.setData(en && vw ? (vw.lower2 as any) : []);
+    }
+
+    // Pivots
+    const piv = calculated.overlays.pivots;
+    const pivEn = !!indicatorConfig.pivotEnabled;
+    Object.keys(pivotSeriesRef.current).forEach(lvl => {
+      const s = pivotSeriesRef.current[lvl];
+      if (s) {
+        s.setData(pivEn && piv && (piv as any)[lvl] ? ((piv as any)[lvl] as any) : []);
+      }
+    });
+
     // Oscillators Data
     const sc = subChartsRef.current;
     if (sc['rsi'] && sc['rsi'].series.line) {
@@ -676,7 +1231,6 @@ export const ChartPage: React.FC<ChartPageProps> = ({
       });
       sc['rsi'].series.line.setData(calculated.oscillators.rsi as any);
 
-      // Price lines OB/OS
       priceLinesRef.current.rsi.forEach(pl => sc['rsi'].series.line.removePriceLine(pl));
       priceLinesRef.current.rsi = [
         sc['rsi'].series.line.createPriceLine({
@@ -752,7 +1306,30 @@ export const ChartPage: React.FC<ChartPageProps> = ({
       });
       sc['atr'].series.line.setData(calculated.oscillators.atr as any);
     }
-  }, [rawCandles, indicatorConfig, chartType]);
+
+    if (sc['stochRsi'] && calculated.oscillators.stochRsi) {
+      sc['stochRsi'].series.k.setData(calculated.oscillators.stochRsi.k as any);
+      sc['stochRsi'].series.d.setData(calculated.oscillators.stochRsi.d as any);
+    }
+
+    const newAtrMap = new Map<string | number, number>();
+    const atrSeries = calculated.oscillators.atr;
+    atrSeries.forEach(pt => {
+      if (typeof pt.value === 'number' && !isNaN(pt.value)) {
+        newAtrMap.set(pt.time, pt.value);
+      }
+    });
+    atrMapRef.current = newAtrMap;
+
+    if (onAtrHoverRef.current && atrSeries.length > 0) {
+      const validPoints = atrSeries.filter(pt => typeof pt.value === 'number' && !isNaN(pt.value));
+      if (validPoints.length > 0) {
+        const latestVal = validPoints[validPoints.length - 1].value;
+        const decimals = ticker.includes('=X') ? 4 : ticker.includes('^TNX') ? 3 : 2;
+        onAtrHoverRef.current(Number(latestVal.toFixed(decimals)));
+      }
+    }
+  }, [processedCandles, indicatorConfig, chartType, ticker]);
 
   const getLineStyleEnum = (style: OverlayLineStyle) => {
     if (style === 'dashed') return LineStyle.Dashed;
@@ -760,7 +1337,6 @@ export const ChartPage: React.FC<ChartPageProps> = ({
     return LineStyle.Solid;
   };
 
-  // Synchronize and render overlaid benchmark & secondary series
   useEffect(() => {
     const chart = mainChartRef.current;
     if (!chart || !rawCandles.length) return;
@@ -772,7 +1348,6 @@ export const ChartPage: React.FC<ChartPageProps> = ({
       const newStats: Record<string, OverlayCorrelationStats> = {};
       const activeOverlayIds = new Set(overlays.filter(o => o.visible).map(o => o.id));
 
-      // Remove any series that are no longer active/visible
       Object.keys(overlaySeriesMap.current).forEach(id => {
         if (!activeOverlayIds.has(id)) {
           try {
@@ -851,7 +1426,6 @@ export const ChartPage: React.FC<ChartPageProps> = ({
         series.setData(alignedData as any);
       }
 
-      // Configure leftPriceScale visibility and styling
       chart.applyOptions({
         leftPriceScale: {
           visible: hasAnyVisibleOverlay,
@@ -873,6 +1447,69 @@ export const ChartPage: React.FC<ChartPageProps> = ({
       isMounted = false;
     };
   }, [rawCandles, overlays, interval, ticker, getThemeColors]);
+
+  // Price alerts lines on chart
+  useEffect(() => {
+    const series = primarySeriesRef.current;
+    if (!series) return;
+
+    if (alertPriceLinesRef.current.length > 0) {
+      alertPriceLinesRef.current.forEach(pl => {
+        try {
+          series.removePriceLine(pl);
+        } catch {}
+      });
+      alertPriceLinesRef.current = [];
+    }
+
+    if (!alerts || alerts.length === 0) return;
+    const currentTickerClean = ticker.trim().toUpperCase();
+    const relevantAlerts = alerts.filter(
+      a => a.ticker.trim().toUpperCase() === currentTickerClean && a.active
+    );
+
+    relevantAlerts.forEach(alert => {
+      try {
+        const isAbove = alert.condition === 'ABOVE';
+        const isTriggered = alert.triggered;
+
+        const lineColor = isTriggered
+          ? '#9ca3af'
+          : isAbove
+          ? '#10b981'
+          : '#f43f5e';
+
+        const symbolCondition = isAbove ? '≥' : '≤';
+        const titleText = isTriggered
+          ? `🔔 ESEGUITO ${symbolCondition} ${alert.targetPrice}`
+          : `🔔 ALERT ${symbolCondition} ${alert.targetPrice}`;
+
+        const priceLine = series.createPriceLine({
+          price: alert.targetPrice,
+          color: lineColor,
+          lineWidth: 2,
+          lineStyle: isTriggered ? LineStyle.Dotted : LineStyle.Dashed,
+          axisLabelVisible: true,
+          title: titleText
+        });
+
+        alertPriceLinesRef.current.push(priceLine);
+      } catch (err) {
+        console.warn('Errore creazione price line per allarme:', err);
+      }
+    });
+
+    return () => {
+      if (alertPriceLinesRef.current.length > 0 && primarySeriesRef.current) {
+        alertPriceLinesRef.current.forEach(pl => {
+          try {
+            primarySeriesRef.current?.removePriceLine(pl);
+          } catch {}
+        });
+        alertPriceLinesRef.current = [];
+      }
+    };
+  }, [alerts, ticker, seriesInstance]);
 
   const handleAddOverlay = (newOverlay: OverlayConfig) => {
     const updated = [...overlays, newOverlay];
@@ -900,7 +1537,6 @@ export const ChartPage: React.FC<ChartPageProps> = ({
     onOverlaysChange(updated);
   };
 
-  // Splitter mouse handlers
   const handleSplitterMouseDown = (e: React.MouseEvent) => {
     isResizingRef.current = true;
     startYRef.current = e.clientY;
@@ -939,7 +1575,6 @@ export const ChartPage: React.FC<ChartPageProps> = ({
 
   return (
     <div className="flex-1 flex overflow-hidden relative w-full h-full">
-      {/* Barra Laterale Strumenti di Disegno */}
       <DrawingToolbar
         currentTool={currentTool}
         onSelectTool={setCurrentTool}
@@ -956,7 +1591,6 @@ export const ChartPage: React.FC<ChartPageProps> = ({
         activeOverlaysCount={overlays.filter(o => o.visible).length}
       />
 
-      {/* Area Grafico & Oscillatori */}
       <div className="flex-1 flex flex-col h-full overflow-hidden relative">
         <div
           style={{ height: mainHeight ? `${mainHeight}px` : undefined }}
@@ -964,13 +1598,239 @@ export const ChartPage: React.FC<ChartPageProps> = ({
         >
           <div ref={chartContainerRef} className="w-full h-full absolute inset-0" />
 
-          {/* Floating Legend & Correlazioni HUD */}
           <ChartOverlayLegend
             overlays={overlays}
             correlationStats={correlationStats}
             onToggleVisibility={handleToggleOverlayVisibility}
             onRemoveOverlay={handleRemoveOverlay}
             onOpenModal={onOpenOverlayModal}
+          />
+
+          {lastCandleFormatted && (
+            <div className="absolute top-2 right-3 z-30 flex flex-col items-end gap-1 pointer-events-auto select-none">
+              <div className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-[var(--bg-card)]/95 backdrop-blur-md border border-[var(--border-color)] shadow-md text-[11px] font-mono text-[var(--text-main)]">
+                <div className="flex items-center gap-1.5">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                  <span className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Ultima Candela:</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400 text-xs">
+                    {lastCandleFormatted.timeExact}
+                  </span>
+                  <span className="text-[10px] text-[var(--text-muted)]">
+                    ({lastCandleFormatted.date})
+                  </span>
+                </div>
+
+                <div className="h-3 w-px bg-[var(--border-color)]" />
+
+                <div className="flex items-center gap-1 text-[10px] text-[var(--text-muted)]">
+                  <span>Ora Locale:</span>
+                  <span className="font-semibold text-[var(--text-main)]">
+                    {currentTime.toLocaleTimeString('it-IT', { timeZone: chartTimezone, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
+                  </span>
+                </div>
+
+                <div className="h-3 w-px bg-[var(--border-color)]" />
+
+                {/* Backtest Button */}
+                <button
+                  onClick={onOpenBacktest ? onOpenBacktest : () => setInternalBacktestOpen(true)}
+                  className="flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold bg-linear-to-r from-blue-600/15 to-indigo-600/15 hover:from-blue-600/25 hover:to-indigo-600/25 border border-blue-500/40 text-blue-600 dark:text-blue-400 transition cursor-pointer shadow-xs"
+                  title="Laboratorio Backtesting Crossover Medie Mobili [Tasto: B]"
+                >
+                  <span>⚡</span>
+                  <span>Backtest MA</span>
+                </button>
+
+                <div className="h-3 w-px bg-[var(--border-color)]" />
+
+                {/* Probo AI Analysis Button */}
+                <button
+                  onClick={() => setIsProboModalOpen(true)}
+                  className="flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[10px] font-black bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white border border-blue-400/50 transition cursor-pointer shadow-sm shadow-blue-500/20"
+                  title="Avvia Analisi AI Metodologia Giacomo Probo (Confluenza 5 Tecniche, Stocastico 10-6-3, Bollinger 5/1.8, Scaling Out 50%)"
+                >
+                  <span className="text-amber-300">📘</span>
+                  <span>Analisi Probo AI</span>
+                </button>
+
+                <div className="h-3 w-px bg-[var(--border-color)]" />
+
+                {/* Divergenze Button */}
+                <button
+                  onClick={() => setIsDivergenceModalOpen(true)}
+                  className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold border transition cursor-pointer shadow-xs ${
+                    activeDivergence
+                      ? activeDivergence.type === 'BEARISH_DIVERGENCE'
+                        ? 'bg-rose-500/20 border-rose-500 text-rose-600 dark:text-rose-400'
+                        : 'bg-emerald-500/20 border-emerald-500 text-emerald-600 dark:text-emerald-400'
+                      : 'bg-[var(--bg-main)] border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                  }`}
+                  title="Analisi Divergenze Prezzo vs Sentiment AI"
+                >
+                  <span>🔍</span>
+                  <span>{activeDivergence ? (activeDivergence.type === 'BEARISH_DIVERGENCE' ? 'Div. Bearish!' : 'Div. Bullish!') : 'Divergenze'}</span>
+                </button>
+
+                <div className="h-3 w-px bg-[var(--border-color)]" />
+
+                {/* Toggle Overlay Sentiment AI */}
+                <button
+                  onClick={() => {
+                    if (onUpdateIndicatorConfig) {
+                      onUpdateIndicatorConfig({
+                        ...indicatorConfig,
+                        sentimentOverlayEnabled: !indicatorConfig.sentimentOverlayEnabled
+                      });
+                    }
+                  }}
+                  className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold border transition-all cursor-pointer shadow-xs ${
+                    indicatorConfig.sentimentOverlayEnabled
+                      ? 'bg-purple-600/20 border-purple-500/60 text-purple-600 dark:text-purple-300 ring-1 ring-purple-500/40'
+                      : 'bg-[var(--bg-main)] border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                  }`}
+                  title="Attiva/Disattiva Overlay Sentiment AI a barre sullo sfondo del grafico"
+                >
+                  <span>🧠</span>
+                  <span>{indicatorConfig.sentimentOverlayEnabled ? 'AI Sentiment ON' : 'AI Sentiment'}</span>
+                </button>
+
+                <div className="h-3 w-px bg-[var(--border-color)]" />
+
+                {/* SMC Market Structure Auto */}
+                <button
+                  onClick={() => {
+                    if (onUpdateIndicatorConfig) {
+                      onUpdateIndicatorConfig({
+                        ...indicatorConfig,
+                        smcEnabled: !indicatorConfig.smcEnabled
+                      });
+                    }
+                  }}
+                  className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold border transition-all cursor-pointer shadow-xs ${
+                    indicatorConfig.smcEnabled
+                      ? 'bg-blue-600/20 border-blue-500/60 text-blue-600 dark:text-blue-300 ring-1 ring-blue-500/40'
+                      : 'bg-[var(--bg-main)] border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                  }`}
+                  title="Attiva/Disattiva Smart Money Concepts (BOS, CHoCH, Fair Value Gaps, Order Blocks, Liquidity Sweeps)"
+                >
+                  <span>🏛️</span>
+                  <span>{indicatorConfig.smcEnabled ? 'SMC Structure ON' : 'SMC Structure'}</span>
+                </button>
+
+                <div className="h-3 w-px bg-[var(--border-color)]" />
+
+                {/* MTF Confluence Hub Button */}
+                <button
+                  onClick={() => setIsMtfHubOpen(!isMtfHubOpen)}
+                  className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold border transition-all cursor-pointer shadow-xs ${
+                    isMtfHubOpen
+                      ? 'bg-indigo-600/20 border-indigo-500/60 text-indigo-600 dark:text-indigo-300 ring-1 ring-indigo-500/40'
+                      : 'bg-[var(--bg-main)] border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                  }`}
+                  title="Visualizza Matrice di Confluenza a 4 Timeframe (Daily, 4h, 1h, 15m)"
+                >
+                  <span>🌐</span>
+                  <span>{isMtfHubOpen ? 'MTF Hub ON' : 'MTF Confluence'}</span>
+                </button>
+
+                <div className="h-3 w-px bg-[var(--border-color)]" />
+
+                {/* Toggle Zero Delay */}
+                <button
+                  onClick={handleToggleZeroDelay}
+                  className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold border transition-all cursor-pointer ${
+                    zeroDelayMode
+                      ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25'
+                      : 'bg-[var(--bg-main)] border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                  }`}
+                  title={
+                    zeroDelayMode
+                      ? `Zero Delay ATTIVO: I dati sono sincronizzati all'orologio attuale (differita di ${originalLagMinutes}m compensata). Clicca per disattivare.`
+                      : `Zero Delay DISATTIVATO: Mostra timestamp feed borsa con ~${originalLagMinutes}m di differita. Clicca per sincronizzare in tempo reale.`
+                  }
+                >
+                  <span>⚡</span>
+                  <span>{zeroDelayMode ? 'Zero Delay ON' : `Differita ${originalLagMinutes}m`}</span>
+                </button>
+
+                <div className="h-3 w-px bg-[var(--border-color)]" />
+
+                <div className="relative">
+                  <button
+                    onClick={() => setShowTzMenu(!showTzMenu)}
+                    className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--bg-main)] hover:bg-blue-500/10 hover:text-blue-500 border border-[var(--border-color)] transition-colors cursor-pointer"
+                    title="Cambia Fuso Orario Grafico"
+                  >
+                    <span>🌐</span>
+                    <span>{chartTimezone === 'Europe/Rome' ? 'Roma (UTC+2)' : chartTimezone === 'UTC' ? 'UTC' : chartTimezone.split('/')[1] || chartTimezone}</span>
+                    <span className="text-[8px]">▼</span>
+                  </button>
+
+                  {showTzMenu && (
+                    <div className="absolute right-0 top-full mt-1 w-48 py-1 rounded-md bg-[var(--bg-card)] border border-[var(--border-color)] shadow-xl z-50 text-[11px]">
+                      <div className="px-2 py-1 text-[9px] uppercase font-bold text-[var(--text-muted)] border-b border-[var(--border-color)]">
+                        Fuso Orario Grafico
+                      </div>
+                      {[
+                        { id: 'Europe/Rome', label: 'Roma / Italia (UTC+2)', flag: '🇮🇹' },
+                        { id: 'UTC', label: 'UTC (Tempo Universale)', flag: '🌐' },
+                        { id: 'America/New_York', label: 'New York / US (UTC-4)', flag: '🇺🇸' },
+                        { id: 'Europe/London', label: 'Londra / UK (UTC+1)', flag: '🇬🇧' },
+                        { id: 'Asia/Tokyo', label: 'Tokyo / JP (UTC+9)', flag: '🇯🇵' }
+                      ].map(tz => (
+                        <button
+                          key={tz.id}
+                          onClick={() => {
+                            setChartTimezone(tz.id);
+                            setShowTzMenu(false);
+                          }}
+                          className={`w-full text-left px-2.5 py-1.5 flex items-center justify-between hover:bg-blue-600 hover:text-white transition-colors cursor-pointer ${
+                            chartTimezone === tz.id ? 'font-bold text-blue-500 dark:text-blue-400 bg-blue-500/10' : 'text-[var(--text-main)]'
+                          }`}
+                        >
+                          <span>{tz.flag} {tz.label}</span>
+                          {chartTimezone === tz.id && <span>✓</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Floating Sentiment Legend Badge */}
+          {indicatorConfig.sentimentOverlayEnabled && (
+            <div className="absolute top-12 left-3 z-30 flex items-center gap-2 px-2.5 py-1 rounded-md bg-[var(--bg-card)]/90 backdrop-blur-md border border-purple-500/40 shadow-lg text-[10px] font-semibold text-[var(--text-main)] pointer-events-auto select-none animate-fadeIn">
+              <div className="flex items-center gap-1.5">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-500"></span>
+                </span>
+                <span className="font-bold text-purple-600 dark:text-purple-400">Overlay Sentiment AI Attivo</span>
+              </div>
+              <div className="h-3 w-px bg-[var(--border-color)]" />
+              <div className="flex items-center gap-1 text-[9px] font-mono">
+                <span className="w-2.5 h-2.5 rounded-xs bg-emerald-500/70 border border-emerald-400" title="Bullish" />
+                <span>Rialzista</span>
+                <span className="w-2.5 h-2.5 rounded-xs bg-rose-500/70 border border-rose-400 ml-1" title="Bearish" />
+                <span>Ribassista</span>
+              </div>
+            </div>
+          )}
+
+          {/* Sentiment Overlay Canvas with Historical Divergences */}
+          <SentimentChartOverlay
+            chart={chartInstance || mainChartRef.current}
+            series={seriesInstance || primarySeriesRef.current}
+            enabled={!!indicatorConfig.sentimentOverlayEnabled}
+            opacity={indicatorConfig.sentimentOverlayOpacity ?? 0.25}
+            candles={processedCandles}
+            sentimentMap={sentimentMap}
+            divergencePoints={divergencePoints}
           />
 
           <DrawingCanvas
@@ -984,7 +1844,25 @@ export const ChartPage: React.FC<ChartPageProps> = ({
             theme={theme}
             drawings={drawings}
             onDrawingsChange={handleDrawingsChange}
+            candles={processedCandles}
+            smcEnabled={!!indicatorConfig.smcEnabled}
+            smcShowBosChoch={indicatorConfig.smcShowBosChoch ?? true}
+            smcShowFvg={indicatorConfig.smcShowFvg ?? true}
+            smcShowOrderBlocks={indicatorConfig.smcShowOrderBlocks ?? true}
+            smcShowLiquiditySweeps={indicatorConfig.smcShowLiquiditySweeps ?? true}
           />
+
+          {/* Floating Multi-Timeframe Confluence Hub Widget */}
+          {isMtfHubOpen && (
+            <div className="absolute top-12 right-3 z-40">
+              <MultiTimeframeHub
+                ticker={ticker}
+                currentInterval={interval}
+                candles={processedCandles}
+                onClose={() => setIsMtfHubOpen(false)}
+              />
+            </div>
+          )}
         </div>
 
         {/* Resizer Splitter */}
@@ -994,14 +1872,13 @@ export const ChartPage: React.FC<ChartPageProps> = ({
           title="Trascina su/giù per ridimensionare il grafico principale"
         />
 
-        {/* Contenitore Oscillatori Separati */}
+        {/* Contenitore Oscillatori */}
         <div
           ref={oscillatorsContainerRef}
           className="flex flex-col w-full overflow-y-auto bg-[var(--bg-main)] max-h-[45vh]"
         />
       </div>
 
-      {/* Modale Gestione Sovrapposizioni & Correlazioni */}
       <OverlayModal
         isOpen={isOverlayModalOpen}
         onClose={onCloseOverlayModal}
@@ -1014,7 +1891,52 @@ export const ChartPage: React.FC<ChartPageProps> = ({
         onRemoveOverlay={handleRemoveOverlay}
         onToggleOverlayVisibility={handleToggleOverlayVisibility}
       />
+
+      <BacktestModal
+        isOpen={isBacktestOpen || internalBacktestOpen}
+        onClose={onCloseBacktest || (() => setInternalBacktestOpen(false))}
+        candles={rawCandles}
+        ticker={ticker}
+        interval={interval}
+        onSelectTrade={handleSelectTrade}
+      />
+
+      <DivergenceModal
+        isOpen={isDivergenceModalOpen}
+        onClose={() => setIsDivergenceModalOpen(false)}
+        alert={activeDivergence}
+        monitoringEnabled={divergenceMonitoring}
+        onToggleMonitoring={(enabled) => {
+          setDivergenceMonitoring(enabled);
+          divergenceService.setMonitoringEnabled(enabled);
+        }}
+        sensitivity={divergenceSensitivity}
+        onChangeSensitivity={(s) => {
+          setDivergenceSensitivity(s);
+          divergenceService.setSensitivity(s);
+        }}
+        onOpenChart={() => {
+          setIsDivergenceModalOpen(false);
+          if (mainChartRef.current) {
+            mainChartRef.current.timeScale().scrollToRealTime();
+          }
+        }}
+      />
+
+      <ProboAnalysisModal
+        isOpen={isProboModalOpen}
+        onClose={() => setIsProboModalOpen(false)}
+        ticker={ticker}
+        timeframe={interval}
+        currentPrice={rawCandles.length > 0 ? rawCandles[rawCandles.length - 1].close : 34500}
+        candles={rawCandles}
+        onApplyProboPreset={(config) => {
+          if (onUpdateIndicatorConfig) {
+            onUpdateIndicatorConfig(config);
+          }
+        }}
+        onCaptureChartScreenshot={captureChartScreenshot}
+      />
     </div>
   );
 };
-

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, RefreshCw, AlertCircle, Search, Filter } from 'lucide-react';
+import { Calendar, RefreshCw, Search } from 'lucide-react';
 import { EconomicCalendarData } from '../types';
 import { marketDataService } from '../services/marketDataService';
 
@@ -81,7 +81,7 @@ export const CalendarPage: React.FC = () => {
             <button
               onClick={loadCalendar}
               disabled={loading}
-              className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold text-xs transition shadow-sm"
+              className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold text-xs transition shadow-sm cursor-pointer"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
               <span>Aggiorna</span>
@@ -89,7 +89,7 @@ export const CalendarPage: React.FC = () => {
           </div>
         </div>
 
-        {/* 1. Prossimi Rilasci in Arrivo */}
+        {/* 1. Prossimi Rilasci */}
         <div className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] shadow-xs space-y-3">
           <div className="flex items-center gap-2 border-b border-[var(--border-color)] pb-3">
             <span className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse" />
@@ -142,7 +142,7 @@ export const CalendarPage: React.FC = () => {
           </div>
         </div>
 
-        {/* 2. Dati Pregressi Rilasciati */}
+        {/* 2. Dati Pregressi */}
         <div className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] shadow-xs space-y-3">
           <div className="flex items-center gap-2 border-b border-[var(--border-color)] pb-3">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />

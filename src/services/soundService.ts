@@ -1,7 +1,3 @@
-/**
- * Synthesizes a crisp, pleasant two-tone chime notification using the Web Audio API.
- * Requires no external audio files or dependencies.
- */
 export function playAlertChime() {
   try {
     const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;

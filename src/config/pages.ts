@@ -1,15 +1,5 @@
 import { PageDefinition, PageId } from '../types';
 
-/**
- * REGISTRO DELLE PAGINE DELL'APPLICAZIONE
- * ========================================
- * Per aggiungere una nuova pagina all'applicazione:
- * 1. Crea il tuo componente in `src/pages/MiaNuovaPagina.tsx`
- * 2. Aggiungi la definizione qui sotto nell'array `PAGES_CONFIG`
- * 3. Importa il componente in `src/App.tsx`
- * 
- * Ogni pagina è completamente autonoma e disaccoppiata dalle altre.
- */
 export const PAGES_CONFIG: PageDefinition[] = [
   {
     id: 'chart',
@@ -33,6 +23,13 @@ export const PAGES_CONFIG: PageDefinition[] = [
     description: 'Modelli DCF, Benjamin Graham, Peter Lynch, target analisti, stagionalità e audit quantitativo AI'
   },
   {
+    id: 'agent',
+    title: 'Financial Intelligence Agent (InvestingPro + Quantaste + Forecaster)',
+    navTitle: '🧠 Quant Agent',
+    icon: 'BrainCircuit',
+    description: 'Analista finanziario quantitativo avanzato: Fair Value multi-modello, Smart Quant Score a 5 pilastri, Projection Engine, Market Mood Meter e flussi istituzionali'
+  },
+  {
     id: 'calendar',
     title: 'Calendario Economico Globale',
     navTitle: '📅 Calendario Economico',
@@ -52,6 +49,27 @@ export const PAGES_CONFIG: PageDefinition[] = [
     navTitle: '📉 Inflazione & Macro Hub',
     icon: 'LayoutGrid',
     description: 'Vista quadrigrafica simultanea per monitorare inflazione, rendimenti USA, petrolio, VIX e indici'
+  },
+  {
+    id: 'screener',
+    title: 'Stock Screener Pro & Modelli Quantitativi',
+    navTitle: '🔍 Stock Screener',
+    icon: 'Filter',
+    description: 'Filtra e seleziona azioni con modelli preimpostati (Buffett, InvestingPro, Value, Growth, Dalio) e metriche personalizzate'
+  },
+  {
+    id: 'heatmap',
+    title: 'Heatmap di Mercato & Mappa Settoriale',
+    navTitle: '🗺️ Heatmap',
+    icon: 'LayoutGrid',
+    description: 'Mappa visiva termica delle variazioni percentuali dei settori azionari e asset globali con selezione immediata del ticker'
+  },
+  {
+    id: 'multichart',
+    title: 'Multi-Chart Quad Matrix (Daily, 1h, 15m, 5m)',
+    navTitle: '🎛️ Multi-Chart 4-TF',
+    icon: 'Grid',
+    description: 'Vista simultanea a 4 grafici sincronizzati (Daily, 1h, 15m, 5m) con disegno, oscillatori, indicatori e analisi approfondita AI Multi-Timeframe'
   }
 ];
 

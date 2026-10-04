@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Sparkles,
   RefreshCw,
@@ -7,8 +7,14 @@ import {
   Users,
   Calendar,
   Building2,
-  PieChart,
-  ShieldCheck
+  ShieldCheck,
+  Sliders,
+  Calculator,
+  HelpCircle,
+  Award,
+  ArrowUpRight,
+  ArrowDownRight,
+  BrainCircuit
 } from 'lucide-react';
 import { FundamentalData } from '../types';
 import { marketDataService } from '../services/marketDataService';
@@ -16,14 +22,23 @@ import { geminiService } from '../services/geminiService';
 
 interface FundamentalPageProps {
   ticker: string;
+  onNavigateToAgent?: () => void;
 }
 
-export const FundamentalPage: React.FC<FundamentalPageProps> = ({ ticker }) => {
+export const FundamentalPage: React.FC<FundamentalPageProps> = ({ ticker, onNavigateToAgent }) => {
   const [data, setData] = useState<FundamentalData | null>(null);
   const [loading, setLoading] = useState(false);
   const [seasonPeriod, setSeasonPeriod] = useState('5y');
   const [aiVerdict, setAiVerdict] = useState<string>('');
   const [loadingAi, setLoadingAi] = useState(false);
+
+  // Modelli Interattivi di Valutazione (DCF, Graham, Peter Lynch)
+  const [dcfWacc, setDcfWacc] = useState<number>(8.5);
+  const [dcfGrowth5y, setDcfGrowth5y] = useState<number>(8.0);
+  const [dcfTerminalGrowth, setDcfTerminalGrowth] = useState<number>(2.5);
+  const [grahamTargetMultiplier, setGrahamTargetMultiplier] = useState<number>(22.5);
+  const [lynchTargetPeg, setLynchTargetPeg] = useState<number>(1.0);
+  const [selectedModelTab, setSelectedModelTab] = useState<'dcf' | 'graham' | 'lynch'>('dcf');
 
   const loadData = async () => {
     setLoading(true);
@@ -74,6 +89,52 @@ export const FundamentalPage: React.FC<FundamentalPageProps> = ({ ticker }) => {
   const isUnderValued = vm.safety_margin_pct > 15;
   const isOverValued = vm.safety_margin_pct < -15;
 
+  const interactiveValuations = useMemo(() => {
+    if (!data) return { dcfPrice: 0, dcfUpside: 0, grahamPrice: 0, grahamUpside: 0, lynchPrice: 0, lynchUpside: 0, eps: 0, bvps: 0 };
+    const price = data.price;
+    const pe = Math.max(1, data.multiples.pe);
+    const pb = Math.max(0.1, data.multiples.pb);
+    const eps = price / pe;
+    const bvps = price / pb;
+
+    // 1. DCF Model
+    const baseFcf = Math.max(0.1, eps * 0.95);
+    const wacc = dcfWacc / 100;
+    const g5y = dcfGrowth5y / 100;
+    const gTerm = Math.min(dcfTerminalGrowth / 100, Math.max(0.01, wacc - 0.01));
+
+    let pvFcf = 0;
+    let projectedFcf = baseFcf;
+    for (let yr = 1; yr <= 5; yr++) {
+      projectedFcf *= (1 + g5y);
+      pvFcf += projectedFcf / Math.pow(1 + wacc, yr);
+    }
+    const terminalValue = (projectedFcf * (1 + gTerm)) / Math.max(0.005, wacc - gTerm);
+    const pvTerminal = terminalValue / Math.pow(1 + wacc, 5);
+    const dcfPrice = Number((pvFcf + pvTerminal).toFixed(2));
+    const dcfUpside = Number((((dcfPrice - price) / price) * 100).toFixed(1));
+
+    // 2. Benjamin Graham
+    const grahamPrice = Number((Math.sqrt(Math.max(0.1, grahamTargetMultiplier * eps * bvps))).toFixed(2));
+    const grahamUpside = Number((((grahamPrice - price) / price) * 100).toFixed(1));
+
+    // 3. Peter Lynch
+    const lynchGrowth = Math.min(30, Math.max(4, dcfGrowth5y));
+    const lynchPrice = Number((eps * (lynchGrowth * lynchTargetPeg) + (data.multiples.dividend_yield * 0.5)).toFixed(2));
+    const lynchUpside = Number((((lynchPrice - price) / price) * 100).toFixed(1));
+
+    return {
+      dcfPrice,
+      dcfUpside,
+      grahamPrice,
+      grahamUpside,
+      lynchPrice,
+      lynchUpside,
+      eps: Number(eps.toFixed(2)),
+      bvps: Number(bvps.toFixed(2))
+    };
+  }, [data, dcfWacc, dcfGrowth5y, dcfTerminalGrowth, grahamTargetMultiplier, lynchTargetPeg]);
+
   return (
     <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-[var(--bg-main)]">
       <div className="max-w-7xl mx-auto space-y-4">
@@ -90,21 +151,34 @@ export const FundamentalPage: React.FC<FundamentalPageProps> = ({ ticker }) => {
             </p>
           </div>
 
-          <div className="text-right">
-            <div className="text-2xl md:text-3xl font-extrabold text-blue-600 dark:text-blue-400 font-mono">
-              {data.price.toFixed(2)} {data.currency}
+          <div className="flex items-center gap-3">
+            {onNavigateToAgent && (
+              <button
+                onClick={onNavigateToAgent}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-md transition cursor-pointer"
+                title="Apri l'Analista Quantitativo Avanzato (InvestingPro + Quantaste + Forecaster)"
+              >
+                <BrainCircuit className="w-3.5 h-3.5" />
+                <span>Quant Agent Pro</span>
+              </button>
+            )}
+
+            <div className="text-right">
+              <div className="text-2xl md:text-3xl font-extrabold text-blue-600 dark:text-blue-400 font-mono">
+                {data.price.toFixed(2)} {data.currency}
+              </div>
+              <span
+                className={`inline-block mt-1 px-3 py-1 rounded text-xs font-bold border ${
+                  isUnderValued
+                    ? 'bg-emerald-500/15 border-emerald-500 text-emerald-600 dark:text-emerald-400'
+                    : isOverValued
+                    ? 'bg-red-500/15 border-red-500 text-red-600 dark:text-red-400'
+                    : 'bg-neutral-500/15 border-neutral-400 text-neutral-500'
+                }`}
+              >
+                {vm.status_label} (Margine {vm.safety_margin_pct > 0 ? `+${vm.safety_margin_pct}%` : `${vm.safety_margin_pct}%`})
+              </span>
             </div>
-            <span
-              className={`inline-block mt-1 px-3 py-1 rounded text-xs font-bold border ${
-                isUnderValued
-                  ? 'bg-emerald-500/15 border-emerald-500 text-emerald-600 dark:text-emerald-400'
-                  : isOverValued
-                  ? 'bg-red-500/15 border-red-500 text-red-600 dark:text-red-400'
-                  : 'bg-neutral-500/15 border-neutral-400 text-neutral-500'
-              }`}
-            >
-              {vm.status_label} (Margine {vm.safety_margin_pct > 0 ? `+${vm.safety_margin_pct}%` : `${vm.safety_margin_pct}%`})
-            </span>
           </div>
         </div>
 
@@ -243,6 +317,206 @@ export const FundamentalPage: React.FC<FundamentalPageProps> = ({ ticker }) => {
           </div>
         </div>
 
+        {/* Laboratorio Interattivo di Valutazione (DCF, Graham, Peter Lynch) */}
+        <div className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] shadow-xs space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-color)] pb-3">
+            <div className="flex items-center gap-2">
+              <Calculator className="w-5 h-5 text-indigo-500" />
+              <div>
+                <h3 className="font-bold text-sm text-[var(--text-main)] uppercase tracking-wide">
+                  Laboratorio di Valutazione Quantitativa: DCF, Benjamin Graham & Peter Lynch
+                </h3>
+                <p className="text-[11px] text-[var(--text-muted)]">
+                  Simula la sensibilità del Fair Value al variare di WACC, tassi di crescita FCF e multipli di sicurezza
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 p-1 rounded-lg bg-[var(--bg-main)] border border-[var(--border-color)]">
+              <button
+                onClick={() => setSelectedModelTab('dcf')}
+                className={`px-3 py-1 rounded text-xs font-bold transition cursor-pointer ${
+                  selectedModelTab === 'dcf' ? 'bg-blue-600 text-white shadow-xs' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                }`}
+              >
+                1. DCF Model (Flussi Scontati)
+              </button>
+              <button
+                onClick={() => setSelectedModelTab('graham')}
+                className={`px-3 py-1 rounded text-xs font-bold transition cursor-pointer ${
+                  selectedModelTab === 'graham' ? 'bg-blue-600 text-white shadow-xs' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                }`}
+              >
+                2. Benjamin Graham Number
+              </button>
+              <button
+                onClick={() => setSelectedModelTab('lynch')}
+                className={`px-3 py-1 rounded text-xs font-bold transition cursor-pointer ${
+                  selectedModelTab === 'lynch' ? 'bg-blue-600 text-white shadow-xs' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                }`}
+              >
+                3. Peter Lynch Fair Value
+              </button>
+            </div>
+          </div>
+
+          {/* Risultato Sintetico Confronto Modelli */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className={`p-3.5 rounded-xl border transition ${selectedModelTab === 'dcf' ? 'border-blue-500 bg-blue-500/10' : 'border-[var(--border-color)] bg-[var(--bg-main)]'}`}>
+              <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)] font-semibold mb-1">
+                <span>DCF Fair Value (5Y + Terminale)</span>
+                <span className="font-mono text-[10px] text-blue-500">WACC {dcfWacc}%</span>
+              </div>
+              <div className="text-xl font-bold font-mono text-[var(--text-main)]">
+                {interactiveValuations.dcfPrice} {data.currency}
+              </div>
+              <div className={`text-xs font-bold mt-1 flex items-center gap-1 ${interactiveValuations.dcfUpside >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                {interactiveValuations.dcfUpside >= 0 ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
+                <span>{interactiveValuations.dcfUpside >= 0 ? `+${interactiveValuations.dcfUpside}%` : `${interactiveValuations.dcfUpside}%`} vs Prezzo Attuale</span>
+              </div>
+            </div>
+
+            <div className={`p-3.5 rounded-xl border transition ${selectedModelTab === 'graham' ? 'border-blue-500 bg-blue-500/10' : 'border-[var(--border-color)] bg-[var(--bg-main)]'}`}>
+              <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)] font-semibold mb-1">
+                <span>Benjamin Graham Number</span>
+                <span className="font-mono text-[10px] text-amber-500">√(22.5 × EPS × BVPS)</span>
+              </div>
+              <div className="text-xl font-bold font-mono text-[var(--text-main)]">
+                {interactiveValuations.grahamPrice} {data.currency}
+              </div>
+              <div className={`text-xs font-bold mt-1 flex items-center gap-1 ${interactiveValuations.grahamUpside >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                {interactiveValuations.grahamUpside >= 0 ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
+                <span>{interactiveValuations.grahamUpside >= 0 ? `+${interactiveValuations.grahamUpside}%` : `${interactiveValuations.grahamUpside}%`} vs Prezzo Attuale</span>
+              </div>
+            </div>
+
+            <div className={`p-3.5 rounded-xl border transition ${selectedModelTab === 'lynch' ? 'border-blue-500 bg-blue-500/10' : 'border-[var(--border-color)] bg-[var(--bg-main)]'}`}>
+              <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)] font-semibold mb-1">
+                <span>Peter Lynch Fair Value</span>
+                <span className="font-mono text-[10px] text-purple-500">PEG {lynchTargetPeg.toFixed(1)}x</span>
+              </div>
+              <div className="text-xl font-bold font-mono text-[var(--text-main)]">
+                {interactiveValuations.lynchPrice} {data.currency}
+              </div>
+              <div className={`text-xs font-bold mt-1 flex items-center gap-1 ${interactiveValuations.lynchUpside >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                {interactiveValuations.lynchUpside >= 0 ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
+                <span>{interactiveValuations.lynchUpside >= 0 ? `+${interactiveValuations.lynchUpside}%` : `${interactiveValuations.lynchUpside}%`} vs Prezzo Attuale</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Controlli Parametri Interattivi */}
+          <div className="p-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-main)]">
+            {selectedModelTab === 'dcf' && (
+              <div className="space-y-3">
+                <div className="text-xs text-[var(--text-muted)] leading-relaxed">
+                  Il modello <strong className="text-[var(--text-main)]">Discounted Cash Flow (DCF)</strong> calcola il valore intrinseco attualizzando i Free Cash Flow futuri a 5 anni più il Valore Terminale (formula di Gordon-Shapiro).
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-[var(--text-muted)] font-semibold">WACC / Tasso di Sconto:</span>
+                      <span className="font-mono font-bold text-blue-500">{dcfWacc.toFixed(1)}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="5"
+                      max="14"
+                      step="0.5"
+                      value={dcfWacc}
+                      onChange={e => setDcfWacc(parseFloat(e.target.value))}
+                      className="w-full accent-blue-500 cursor-pointer"
+                    />
+                    <span className="text-[10px] text-[var(--text-muted)]">Costo medio ponderato del capitale</span>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-[var(--text-muted)] font-semibold">Crescita FCF Prospettica (5y):</span>
+                      <span className="font-mono font-bold text-emerald-500">+{dcfGrowth5y.toFixed(1)}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="2"
+                      max="22"
+                      step="0.5"
+                      value={dcfGrowth5y}
+                      onChange={e => setDcfGrowth5y(parseFloat(e.target.value))}
+                      className="w-full accent-emerald-500 cursor-pointer"
+                    />
+                    <span className="text-[10px] text-[var(--text-muted)]">Crescita annua composta dei flussi di cassa</span>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-[var(--text-muted)] font-semibold">Crescita Perpetua Terminale (g):</span>
+                      <span className="font-mono font-bold text-purple-500">+{dcfTerminalGrowth.toFixed(1)}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="1.0"
+                      max="3.5"
+                      step="0.1"
+                      value={dcfTerminalGrowth}
+                      onChange={e => setDcfTerminalGrowth(parseFloat(e.target.value))}
+                      className="w-full accent-purple-500 cursor-pointer"
+                    />
+                    <span className="text-[10px] text-[var(--text-muted)]">Allineato alla crescita del PIL a lungo termine</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {selectedModelTab === 'graham' && (
+              <div className="space-y-3">
+                <div className="text-xs text-[var(--text-muted)] leading-relaxed">
+                  La formula di <strong className="text-[var(--text-main)]">Benjamin Graham</strong> calcola il prezzo massimo ragionevole per un investitore difensivo combinando gli utili per azione (EPS: {interactiveValuations.eps} {data.currency}) e il valore di libro per azione (BVPS: {interactiveValuations.bvps} {data.currency}). Il limite di 22.5 corrisponde a P/E 15 × P/B 1.5.
+                </div>
+                <div className="max-w-md space-y-1.5 pt-2">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-[var(--text-muted)] font-semibold">Moltiplicatore Graham Target (P/E × P/B):</span>
+                    <span className="font-mono font-bold text-amber-500">{grahamTargetMultiplier.toFixed(1)}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="15"
+                    max="30"
+                    step="0.5"
+                    value={grahamTargetMultiplier}
+                    onChange={e => setGrahamTargetMultiplier(parseFloat(e.target.value))}
+                    className="w-full accent-amber-500 cursor-pointer"
+                  />
+                  <span className="text-[10px] text-[var(--text-muted)]">22.5 è lo standard aureo per il Value Investing difensivo</span>
+                </div>
+              </div>
+            )}
+
+            {selectedModelTab === 'lynch' && (
+              <div className="space-y-3">
+                <div className="text-xs text-[var(--text-muted)] leading-relaxed">
+                  Secondo <strong className="text-[var(--text-main)]">Peter Lynch</strong>, una società in crescita solida è scambiata a un prezzo equo (Fair Value) quando il suo rapporto P/E eguaglia il suo tasso annuo di crescita degli utili (PEG = 1.0). Se il PEG è inferiore a 1.0, il titolo offre un margine di sicurezza d'acquisto.
+                </div>
+                <div className="max-w-md space-y-1.5 pt-2">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-[var(--text-muted)] font-semibold">Target PEG Ratio:</span>
+                    <span className="font-mono font-bold text-purple-500">{lynchTargetPeg.toFixed(2)}x</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.6"
+                    max="1.6"
+                    step="0.05"
+                    value={lynchTargetPeg}
+                    onChange={e => setLynchTargetPeg(parseFloat(e.target.value))}
+                    className="w-full accent-purple-500 cursor-pointer"
+                  />
+                  <span className="text-[10px] text-[var(--text-muted)]">PEG ≤ 1.0 indica un acquisto conveniente a sconto (GARP)</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Stagionalità Storica */}
         <div className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] shadow-xs">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-color)] pb-3 mb-4">
@@ -270,7 +544,6 @@ export const FundamentalPage: React.FC<FundamentalPageProps> = ({ ticker }) => {
             </div>
           </div>
 
-          {/* Bar Chart Container */}
           <div className="flex items-end justify-between gap-2 h-36 pt-4 px-2">
             {data.seasonality.map((pt, idx) => {
               const maxVal = Math.max(...data.seasonality.map(s => Math.abs(s.avg_return)), 1.0);
@@ -319,7 +592,6 @@ export const FundamentalPage: React.FC<FundamentalPageProps> = ({ ticker }) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border-color)]">
-                {/* Current company row */}
                 <tr className="bg-blue-600/5 font-bold">
                   <td className="py-2.5 px-3 text-blue-500">{data.name} ({data.ticker}) ★</td>
                   <td className="py-2.5 px-3 font-mono">{data.multiples.pe}x</td>
@@ -355,7 +627,7 @@ export const FundamentalPage: React.FC<FundamentalPageProps> = ({ ticker }) => {
             <button
               onClick={handleGenerateAudit}
               disabled={loadingAi}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold text-xs transition shadow-sm"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold text-xs transition shadow-sm cursor-pointer"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loadingAi ? 'animate-spin' : ''}`} />
               <span>{loadingAi ? 'Elaborazione Audit AI...' : 'Genera Audit AI'}</span>

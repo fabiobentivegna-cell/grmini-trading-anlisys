@@ -6,7 +6,6 @@ import {
   Plus,
   Trash2,
   CheckCircle2,
-  AlertTriangle,
   RotateCcw,
   Sparkles,
   Volume2
@@ -93,7 +92,7 @@ export const PriceAlertsModal: React.FC<PriceAlertsModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded hover:bg-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition"
+            className="p-1 rounded hover:bg-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -138,14 +137,14 @@ export const PriceAlertsModal: React.FC<PriceAlertsModalProps> = ({
                 {notificationPermission !== 'granted' && notificationPermission !== 'unsupported' && (
                   <button
                     onClick={onRequestPermission}
-                    className="px-2.5 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold text-[10px] transition"
+                    className="px-2.5 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold text-[10px] transition cursor-pointer"
                   >
                     Richiedi Permesso
                   </button>
                 )}
                 <button
                   onClick={onTestNotification}
-                  className="flex items-center gap-1 px-2 py-1 rounded border border-[var(--border-color)] hover:bg-[var(--border-color)] text-[var(--text-main)] text-[10px] font-semibold transition"
+                  className="flex items-center gap-1 px-2 py-1 rounded border border-[var(--border-color)] hover:bg-[var(--border-color)] text-[var(--text-main)] text-[10px] font-semibold transition cursor-pointer"
                   title="Invia una notifica di prova"
                 >
                   <Volume2 className="w-3 h-3 text-purple-500" />
@@ -166,6 +165,11 @@ export const PriceAlertsModal: React.FC<PriceAlertsModalProps> = ({
                   Prezzo attuale: <strong className="text-blue-500">{currentPrice.toFixed(2)}</strong>
                 </span>
               )}
+            </div>
+
+            <div className="p-2 rounded bg-blue-500/10 border border-blue-500/20 text-[11px] text-[var(--text-main)] flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+              <span>Le soglie impostate vengono disegnate automaticamente con <strong>linee tratteggiate orizzontali</strong> sul grafico.</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -219,49 +223,49 @@ export const PriceAlertsModal: React.FC<PriceAlertsModalProps> = ({
               <button
                 type="button"
                 onClick={() => applyOffset(1)}
-                className="px-2 py-0.5 rounded bg-[var(--input-bg)] hover:bg-[var(--border-color)] border border-[var(--border-color)] font-mono text-[10px] font-bold text-emerald-500"
+                className="px-2 py-0.5 rounded bg-[var(--input-bg)] hover:bg-[var(--border-color)] border border-[var(--border-color)] font-mono text-[10px] font-bold text-emerald-500 cursor-pointer"
               >
                 +1%
               </button>
               <button
                 type="button"
                 onClick={() => applyOffset(2)}
-                className="px-2 py-0.5 rounded bg-[var(--input-bg)] hover:bg-[var(--border-color)] border border-[var(--border-color)] font-mono text-[10px] font-bold text-emerald-500"
+                className="px-2 py-0.5 rounded bg-[var(--input-bg)] hover:bg-[var(--border-color)] border border-[var(--border-color)] font-mono text-[10px] font-bold text-emerald-500 cursor-pointer"
               >
                 +2%
               </button>
               <button
                 type="button"
                 onClick={() => applyOffset(5)}
-                className="px-2 py-0.5 rounded bg-[var(--input-bg)] hover:bg-[var(--border-color)] border border-[var(--border-color)] font-mono text-[10px] font-bold text-emerald-500"
+                className="px-2 py-0.5 rounded bg-[var(--input-bg)] hover:bg-[var(--border-color)] border border-[var(--border-color)] font-mono text-[10px] font-bold text-emerald-500 cursor-pointer"
               >
                 +5%
               </button>
               <button
                 type="button"
                 onClick={() => applyOffset(-1)}
-                className="px-2 py-0.5 rounded bg-[var(--input-bg)] hover:bg-[var(--border-color)] border border-[var(--border-color)] font-mono text-[10px] font-bold text-red-500"
+                className="px-2 py-0.5 rounded bg-[var(--input-bg)] hover:bg-[var(--border-color)] border border-[var(--border-color)] font-mono text-[10px] font-bold text-red-500 cursor-pointer"
               >
                 -1%
               </button>
               <button
                 type="button"
                 onClick={() => applyOffset(-2)}
-                className="px-2 py-0.5 rounded bg-[var(--input-bg)] hover:bg-[var(--border-color)] border border-[var(--border-color)] font-mono text-[10px] font-bold text-red-500"
+                className="px-2 py-0.5 rounded bg-[var(--input-bg)] hover:bg-[var(--border-color)] border border-[var(--border-color)] font-mono text-[10px] font-bold text-red-500 cursor-pointer"
               >
                 -2%
               </button>
               <button
                 type="button"
                 onClick={() => applyOffset(-5)}
-                className="px-2 py-0.5 rounded bg-[var(--input-bg)] hover:bg-[var(--border-color)] border border-[var(--border-color)] font-mono text-[10px] font-bold text-red-500"
+                className="px-2 py-0.5 rounded bg-[var(--input-bg)] hover:bg-[var(--border-color)] border border-[var(--border-color)] font-mono text-[10px] font-bold text-red-500 cursor-pointer"
               >
                 -5%
               </button>
 
               <button
                 type="submit"
-                className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white font-bold transition shadow-xs"
+                className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white font-bold transition shadow-xs cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Attiva Allarme</span>
@@ -278,7 +282,7 @@ export const PriceAlertsModal: React.FC<PriceAlertsModalProps> = ({
               {alerts.length > 0 && (
                 <button
                   onClick={onClearAllAlerts}
-                  className="text-[10px] text-red-500 hover:underline"
+                  className="text-[10px] text-red-500 hover:underline cursor-pointer"
                 >
                   Cancella tutti
                 </button>
@@ -317,7 +321,7 @@ export const PriceAlertsModal: React.FC<PriceAlertsModalProps> = ({
 
                       <button
                         onClick={() => onRemoveAlert(alert.id)}
-                        className="p-1 rounded text-red-500 hover:bg-red-500/10 transition"
+                        className="p-1 rounded text-red-500 hover:bg-red-500/10 transition cursor-pointer"
                         title="Elimina allarme"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -333,7 +337,7 @@ export const PriceAlertsModal: React.FC<PriceAlertsModalProps> = ({
             )}
           </div>
 
-          {/* Lista Allarmi Scattati (Triggered) */}
+          {/* Lista Allarmi Scattati */}
           {triggeredAlerts.length > 0 && (
             <div className="space-y-2 pt-2 border-t border-[var(--border-color)]">
               <span className="font-bold uppercase text-[11px] text-[var(--text-muted)] flex items-center gap-1.5">
@@ -359,7 +363,7 @@ export const PriceAlertsModal: React.FC<PriceAlertsModalProps> = ({
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => onResetAlert(alert.id)}
-                        className="flex items-center gap-1 px-2 py-0.5 rounded border border-[var(--border-color)] bg-[var(--bg-card)] hover:bg-[var(--border-color)] text-[10px] font-semibold text-[var(--text-main)] transition"
+                        className="flex items-center gap-1 px-2 py-0.5 rounded border border-[var(--border-color)] bg-[var(--bg-card)] hover:bg-[var(--border-color)] text-[10px] font-semibold text-[var(--text-main)] transition cursor-pointer"
                         title="Riattiva questo allarme"
                       >
                         <RotateCcw className="w-3 h-3 text-blue-500" />
@@ -367,7 +371,7 @@ export const PriceAlertsModal: React.FC<PriceAlertsModalProps> = ({
                       </button>
                       <button
                         onClick={() => onRemoveAlert(alert.id)}
-                        className="p-1 rounded text-red-500 hover:bg-red-500/10 transition"
+                        className="p-1 rounded text-red-500 hover:bg-red-500/10 transition cursor-pointer"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -383,7 +387,7 @@ export const PriceAlertsModal: React.FC<PriceAlertsModalProps> = ({
         <div className="flex justify-end p-3 border-t border-[var(--border-color)] bg-[var(--bg-card)]">
           <button
             onClick={onClose}
-            className="px-4 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white font-bold transition text-xs"
+            className="px-4 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white font-bold transition text-xs cursor-pointer"
           >
             Chiudi
           </button>

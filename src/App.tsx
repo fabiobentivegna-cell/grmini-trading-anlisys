@@ -11,18 +11,35 @@ import { ApiHubModal } from './components/ApiHubModal';
 import { PriceAlertsModal } from './components/PriceAlertsModal';
 import { PriceAlertToast, AlertNotificationItem } from './components/PriceAlertToast';
 import { WatchlistPanel } from './components/WatchlistPanel';
+import { ShortcutsModal } from './components/ShortcutsModal';
+import { DivergenceModal } from './components/DivergenceModal';
 
 import { ChartPage } from './pages/ChartPage';
 import { NewsAiPage } from './pages/NewsAiPage';
 import { FundamentalPage } from './pages/FundamentalPage';
+import { FinancialAgentPage } from './pages/FinancialAgentPage';
 import { CalendarPage } from './pages/CalendarPage';
 import { CorrelationsPage } from './pages/CorrelationsPage';
 import { InflationPage } from './pages/InflationPage';
+import { ScreenerPage } from './pages/ScreenerPage';
+import { HeatmapPage } from './pages/HeatmapPage';
+import { MultiChartPage } from './pages/MultiChartPage';
 
-import { CandleData, IndicatorConfig, OverlayConfig, PageId, PriceAlert, WatchlistItem } from './types';
-import { storageService, DEFAULT_INDICATOR_CONFIG, DEFAULT_WATCHLIST } from './services/storageService';
+import {
+  CandleData,
+  IndicatorConfig,
+  LiveTickUpdate,
+  OverlayConfig,
+  PageId,
+  PriceAlert,
+  SentimentDivergenceAlert,
+  WatchlistItem,
+  WebSocketStatus
+} from './types';
+import { storageService, DEFAULT_WATCHLIST } from './services/storageService';
 import { marketDataService } from './services/marketDataService';
 import { playAlertChime } from './services/soundService';
+import { divergenceService } from './services/divergenceService';
 import { DEFAULT_PAGE_ID } from './config/pages';
 import { ASSET_CATALOG } from './config/catalog';
 
@@ -42,11 +59,21 @@ export default function App() {
   const [isApiHubOpen, setIsApiHubOpen] = useState(false);
   const [isAlertsOpen, setIsAlertsOpen] = useState(false);
   const [isWatchlistOpen, setIsWatchlistOpen] = useState(false);
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
+  const [isBacktestOpen, setIsBacktestOpen] = useState(false);
+  const [isDivergenceModalOpen, setIsDivergenceModalOpen] = useState(false);
+  const [inspectedDivergence, setInspectedDivergence] = useState<SentimentDivergenceAlert | null>(null);
+
+  // WebSocket Live Streaming State
+  const [wsStatus, setWsStatus] = useState<WebSocketStatus>({
+    connected: false,
+    provider: 'Connessione in corso...',
+    ticker: 'FTSEMIB.MI'
+  });
 
   // Chart Overlays & Performance Correlation state
   const [overlays, setOverlays] = useState<OverlayConfig[]>(() => storageService.getChartOverlays());
   const [isOverlayModalOpen, setIsOverlayModalOpen] = useState(false);
-
 
   // Watchlist State
   const [watchlistSymbols, setWatchlistSymbols] = useState<string[]>(() => storageService.getWatchlist());
@@ -66,42 +93,35 @@ export default function App() {
   const [drawColor, setDrawColor] = useState('#2962ff');
   const [drawWidth, setDrawWidth] = useState(2);
 
-  // Live Refresh interval cycle: 5s -> 10s -> 30s -> 0 (OFF) -> 5s
   const [liveRefreshSeconds, setLiveRefreshSeconds] = useState(5);
   const liveIntervals = [5, 10, 30, 0];
 
-  // Market Candles data
   const [candles, setCandles] = useState<CandleData[]>([]);
   const [statusText, setStatusText] = useState('Pronto');
   const [isError, setIsError] = useState(false);
 
-  // Status Bar OHLC
-  const [ohlc, setOhlc] = useState<{ open: number | string; high: number | string; low: number | string; close: number | string }>({
+  const [ohlc, setOhlc] = useState<{ open: number | string; high: number | string; low: number | string; close: number | string; time?: string | number }>({
     open: '-',
     high: '-',
     low: '-',
     close: '-'
   });
 
+  const [atrValue, setAtrValue] = useState<number | string | null>('-');
   const [maHoverValues, setMaHoverValues] = useState<Record<string, number | string>>({});
   const [scrollToRealTimeTrigger, setScrollToRealTimeTrigger] = useState<number>(0);
 
-  const liveTimerRef = useRef<any>(null);
-
-  // Apply body theme class
   useEffect(() => {
     document.body.classList.toggle('dark-theme', theme === 'dark');
     storageService.saveTheme(theme);
   }, [theme]);
 
-  // Sync notification permission state
   useEffect(() => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
       setNotificationPermission(Notification.permission);
     }
   }, []);
 
-  // Request browser notification permission
   const handleRequestNotificationPermission = async () => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
       try {
@@ -118,7 +138,6 @@ export default function App() {
     }
   };
 
-  // Helper to trigger browser notification
   const triggerBrowserNotification = useCallback((alert: PriceAlert, currentPrice: number) => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
       if (Notification.permission === 'granted') {
@@ -140,7 +159,6 @@ export default function App() {
     }
   }, []);
 
-  // Core Price Alert Evaluation Engine
   const checkPriceAlerts = useCallback((currentPrice: number, currentTicker: string) => {
     if (isNaN(currentPrice) || currentPrice <= 0) return;
 
@@ -154,11 +172,8 @@ export default function App() {
 
           if (isTriggered) {
             hasTriggered = true;
-            // 1. Browser Notification
             triggerBrowserNotification(alert, currentPrice);
-            // 2. Play Web Audio Chime
             playAlertChime();
-            // 3. Trigger In-App Floating Toast
             const newToast: AlertNotificationItem = {
               id: `toast_${Date.now()}_${Math.random()}`,
               alert: { ...alert, triggered: true },
@@ -181,7 +196,6 @@ export default function App() {
     });
   }, [triggerBrowserNotification]);
 
-  // Load candle data when ticker or interval changes
   const loadMarketData = async (isLiveBackground = false) => {
     if (!isLiveBackground) {
       setStatusText(`Caricamento ${ticker} [${interval.toUpperCase()}]...`);
@@ -198,9 +212,9 @@ export default function App() {
             open: last.open,
             high: last.high,
             low: last.low,
-            close: last.close
+            close: last.close,
+            time: last.time
           });
-          // Check price alerts on initial data load
           checkPriceAlerts(last.close, res.ticker);
         }
         setStatusText(`${res.ticker} [${interval.toUpperCase()}] sincronizzato (${res.candles.length} barre)`);
@@ -219,55 +233,80 @@ export default function App() {
     loadMarketData();
   }, [ticker, interval]);
 
-  // Live auto-refresh timer with real-time API fetch and alert checks
   useEffect(() => {
-    if (liveTimerRef.current) window.clearInterval(liveTimerRef.current);
+    const unsubscribeStatus = marketDataService.onWebSocketStatusChange((status) => {
+      setWsStatus(status);
+      if (status.connected) {
+        setStatusText(`⚡ Live: ${status.provider} • ${status.ticker} [${interval.toUpperCase()}]`);
+        setIsError(false);
+      }
+    });
 
-    if (liveRefreshSeconds > 0) {
-      liveTimerRef.current = window.setInterval(async () => {
-        try {
-          const res = await marketDataService.getCandlestickData(ticker, interval);
-          if (res.status === 'success' && res.candles.length > 0) {
-            setCandles(res.candles);
-            const last = res.candles[res.candles.length - 1];
-            setOhlc({
-              open: last.open,
-              high: last.high,
-              low: last.low,
-              close: last.close
-            });
-            checkPriceAlerts(last.close, ticker);
-          }
-        } catch {
-          // Smooth fallback drift if offline
-          setCandles(prev => {
-            if (prev.length === 0) return prev;
-            const isIntraday = ['1m', '5m', '15m', '30m', '1h', '4h'].includes(interval);
-            const updatedLast = marketDataService.simulateLiveTick(prev[prev.length - 1], ticker, isIntraday);
-            setOhlc({
-              open: updatedLast.open,
-              high: updatedLast.high,
-              low: updatedLast.low,
-              close: updatedLast.close
-            });
-            checkPriceAlerts(updatedLast.close, ticker);
-            return [...prev.slice(0, -1), updatedLast];
-          });
+    const unsubscribeTicks = marketDataService.subscribeLiveTicks(ticker, interval, (tick: LiveTickUpdate) => {
+      setCandles(prev => {
+        if (prev.length === 0) {
+          return [{
+            time: tick.time,
+            open: tick.open,
+            high: tick.high,
+            low: tick.low,
+            close: tick.close,
+            volume: tick.volume
+          }];
         }
 
-        // Also refresh quotes for all watchlist items in background
-        if (watchlistSymbols.length > 0) {
-          marketDataService.getWatchlistQuotes(watchlistSymbols).then(setWatchlistQuotes).catch(() => {});
+        const last = prev[prev.length - 1];
+        const isSameBar = String(last.time) === String(tick.time);
+
+        let updated: CandleData[];
+        if (isSameBar) {
+          const updatedLast: CandleData = {
+            ...last,
+            high: Math.max(last.high, tick.high, tick.close),
+            low: Math.min(last.low, tick.low, tick.close),
+            close: tick.close,
+            volume: tick.volume !== undefined ? (last.volume || 0) + tick.volume : last.volume
+          };
+          updated = [...prev.slice(0, -1), updatedLast];
+        } else {
+          const newBar: CandleData = {
+            time: tick.time,
+            open: tick.open,
+            high: tick.high,
+            low: tick.low,
+            close: tick.close,
+            volume: tick.volume
+          };
+          updated = [...prev, newBar];
         }
-      }, liveRefreshSeconds * 1000);
-    }
+
+        return updated;
+      });
+
+      setOhlc({
+        open: tick.open,
+        high: tick.high,
+        low: tick.low,
+        close: tick.close,
+        time: tick.time
+      });
+
+      checkPriceAlerts(tick.close, ticker);
+    });
+
+    const watchlistInterval = window.setInterval(() => {
+      if (watchlistSymbols.length > 0) {
+        marketDataService.getWatchlistQuotes(watchlistSymbols).then(setWatchlistQuotes).catch(() => {});
+      }
+    }, 10000);
 
     return () => {
-      if (liveTimerRef.current) window.clearInterval(liveTimerRef.current);
+      unsubscribeStatus();
+      unsubscribeTicks();
+      window.clearInterval(watchlistInterval);
     };
-  }, [liveRefreshSeconds, ticker, interval, checkPriceAlerts, watchlistSymbols]);
+  }, [ticker, interval, checkPriceAlerts, watchlistSymbols]);
 
-  // Watchlist methods
   const refreshWatchlistQuotes = useCallback(async (symbolsToFetch = watchlistSymbols) => {
     if (symbolsToFetch.length === 0) return;
     setIsWatchlistRefreshing(true);
@@ -281,12 +320,10 @@ export default function App() {
     }
   }, [watchlistSymbols]);
 
-  // Initial load of watchlist quotes
   useEffect(() => {
     refreshWatchlistQuotes(watchlistSymbols);
   }, []);
 
-  // Stable callbacks for Chart hover to prevent re-render destruction cycles
   const handleBarHover = useCallback((bar: { open: number; high: number; low: number; close: number }) => {
     setOhlc(prev => {
       if (
@@ -321,7 +358,6 @@ export default function App() {
     const clean = newTicker.trim().toUpperCase();
     setTicker(clean);
 
-    // Auto-select category if symbol is present in ASSET_CATALOG
     for (const [catName, assets] of Object.entries(ASSET_CATALOG)) {
       if (assets.some(a => a.symbol.toUpperCase() === clean)) {
         setCategory(catName);
@@ -354,7 +390,6 @@ export default function App() {
     refreshWatchlistQuotes(DEFAULT_WATCHLIST);
   };
 
-  // Auto-dismiss in-app toasts after 8 seconds
   useEffect(() => {
     if (activeToasts.length === 0) return;
     const timer = setTimeout(() => {
@@ -363,7 +398,6 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [activeToasts]);
 
-  // Alert Management Handlers
   const handleAddAlert = (newAlertData: Omit<PriceAlert, 'id' | 'createdAt' | 'triggered'>) => {
     const newAlert: PriceAlert = {
       ...newAlertData,
@@ -380,7 +414,6 @@ export default function App() {
     setAlerts(updated);
     storageService.savePriceAlerts(updated);
 
-    // If permission has not been requested yet, prompt user
     if (notificationPermission === 'default') {
       handleRequestNotificationPermission();
     }
@@ -451,9 +484,76 @@ export default function App() {
   const activeAlertsCount = alerts.filter(a => a.active && !a.triggered).length;
   const currentPriceNum = typeof ohlc.close === 'number' ? ohlc.close : parseFloat(ohlc.close as string) || 0;
 
+  // Keyboard Shortcuts Handler
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const isInput = target && (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.tagName === 'SELECT' ||
+        target.isContentEditable
+      );
+
+      if (e.key === 'Escape') {
+        setIsShortcutsOpen(false);
+        setIsIndicatorsOpen(false);
+        setIsAlertsOpen(false);
+        setIsApiHubOpen(false);
+        setIsOverlayModalOpen(false);
+        setIsWatchlistOpen(false);
+        setIsBacktestOpen(false);
+        setIsDivergenceModalOpen(false);
+        return;
+      }
+
+      if (isInput || e.ctrlKey || e.metaKey || e.altKey) return;
+
+      const key = e.key.toLowerCase();
+
+      if (key === 'c' || key === '1') {
+        setActivePage('chart');
+      } else if (key === 'n' || key === '2') {
+        setActivePage('news');
+      } else if (key === 'f' || key === '3') {
+        setActivePage('fundamental');
+      } else if (key === 'e' || key === '4') {
+        setActivePage('calendar');
+      } else if (key === 'm' || key === '5') {
+        setActivePage('correlations');
+      } else if (key === 'i' || key === '6') {
+        setActivePage('inflation');
+      } else if (key === 's' || key === '7') {
+        setActivePage('screener');
+      } else if (key === 'h' || key === '8') {
+        setActivePage('heatmap');
+      } else if (key === 'b') {
+        setIsBacktestOpen(prev => !prev);
+      } else if (key === 'v') {
+        setIsDivergenceModalOpen(prev => !prev);
+      } else if (key === 'w') {
+        setIsWatchlistOpen(prev => !prev);
+      } else if (key === 'a') {
+        setIsAlertsOpen(prev => !prev);
+      } else if (key === 't' || key === 'k') {
+        setIsIndicatorsOpen(prev => !prev);
+      } else if (key === 'o') {
+        setIsOverlayModalOpen(prev => !prev);
+      } else if (key === 'p' || key === 'u') {
+        setIsApiHubOpen(prev => !prev);
+      } else if (key === 'd') {
+        handleToggleTheme();
+      } else if (e.key === '?' || key === '/') {
+        setIsShortcutsOpen(prev => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleToggleTheme]);
+
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-[var(--bg-main)] text-[var(--text-main)] select-none">
-      {/* 1. Header Superiore con Navigazione & Selettori */}
       <Header
         activePage={activePage}
         onSelectPage={setActivePage}
@@ -467,10 +567,12 @@ export default function App() {
         onChartTypeChange={setChartType}
         liveRefreshSeconds={liveRefreshSeconds}
         onToggleLiveRefresh={handleToggleLiveRefresh}
+        wsStatus={wsStatus}
         onScrollToRealTime={() => setScrollToRealTimeTrigger(Date.now())}
         onOpenIndicators={() => setIsIndicatorsOpen(true)}
         onOpenOverlays={() => setIsOverlayModalOpen(true)}
         activeOverlaysCount={overlays.filter(o => o.visible).length}
+        onOpenBacktest={() => setIsBacktestOpen(true)}
         onOpenApiHub={() => setIsApiHubOpen(true)}
         onOpenAlerts={() => setIsAlertsOpen(true)}
         activeAlertsCount={activeAlertsCount}
@@ -479,13 +581,13 @@ export default function App() {
         watchlistCount={watchlistSymbols.length}
         theme={theme}
         onToggleTheme={handleToggleTheme}
+        onOpenShortcuts={() => setIsShortcutsOpen(true)}
         drawColor={drawColor}
         onDrawColorChange={setDrawColor}
         drawWidth={drawWidth}
         onDrawWidthChange={setDrawWidth}
       />
 
-      {/* 2. Barra di Stato & Valori OHLC (Visibile su Grafico o Macro) */}
       <StatusBar
         statusText={statusText}
         isError={isError}
@@ -493,14 +595,16 @@ export default function App() {
         highPrice={ohlc.high}
         lowPrice={ohlc.low}
         closePrice={ohlc.close}
+        barTime={ohlc.time}
         activeMAs={indicatorConfig.movingAverages}
         maValues={maHoverValues}
+        atrValue={atrValue}
+        atrPeriod={indicatorConfig.atrLen}
+        atrColor={indicatorConfig.atrColor}
       />
 
-      {/* 3. Area Contenuto Modulare con Pannello Watchlist Laterale */}
       <div className="flex-1 flex overflow-hidden relative w-full h-full">
         <main className="flex-1 flex overflow-hidden relative w-full h-full">
-          {/* Pagina 1: Grafico Interattivo con Indicatori & Drawing Tools */}
           {activePage === 'chart' && (
             <ChartPage
               ticker={ticker}
@@ -509,8 +613,10 @@ export default function App() {
               theme={theme}
               indicatorConfig={indicatorConfig}
               rawCandles={candles}
+              alerts={alerts}
               onBarHover={handleBarHover}
               onMaHover={handleMaHover}
+              onAtrHover={setAtrValue}
               scrollToRealTimeTrigger={scrollToRealTimeTrigger}
               drawColor={drawColor}
               drawWidth={drawWidth}
@@ -519,36 +625,69 @@ export default function App() {
               isOverlayModalOpen={isOverlayModalOpen}
               onOpenOverlayModal={() => setIsOverlayModalOpen(true)}
               onCloseOverlayModal={() => setIsOverlayModalOpen(false)}
+              isBacktestOpen={isBacktestOpen}
+              onOpenBacktest={() => setIsBacktestOpen(true)}
+              onCloseBacktest={() => setIsBacktestOpen(false)}
+              onUpdateIndicatorConfig={handleIndicatorsChange}
             />
           )}
 
-          {/* Pagina 2: News in Tempo Reale & Analisi Sentiment Gemini AI */}
           {activePage === 'news' && (
             <NewsAiPage ticker={ticker} category={category} />
           )}
 
-          {/* Pagina 3: Analisi Fondamentale, Fair Value & Multipli */}
           {activePage === 'fundamental' && (
-            <FundamentalPage ticker={ticker} />
+            <FundamentalPage
+              ticker={ticker}
+              onNavigateToAgent={() => setActivePage('agent')}
+            />
           )}
 
-          {/* Pagina 4: Calendario Economico Globale */}
+          {activePage === 'agent' && (
+            <FinancialAgentPage
+              ticker={ticker}
+              category={category}
+              candles={candles}
+              theme={theme}
+              onSelectTicker={(selected) => setTicker(selected)}
+            />
+          )}
+
           {activePage === 'calendar' && (
             <CalendarPage />
           )}
 
-          {/* Pagina 5: Matrice delle Correlazioni Multi-Asset */}
           {activePage === 'correlations' && (
             <CorrelationsPage ticker={ticker} />
           )}
 
-          {/* Pagina 6: Inflazione & Macro Hub (Quad View 4 grafici) */}
           {activePage === 'inflation' && (
             <InflationPage theme={theme} />
           )}
+
+          {activePage === 'screener' && (
+            <ScreenerPage
+              onSelectTicker={(selected) => setTicker(selected)}
+              onNavigatePage={(page) => setActivePage(page)}
+            />
+          )}
+
+          {activePage === 'heatmap' && (
+            <HeatmapPage
+              onSelectTicker={(selected) => setTicker(selected)}
+              onNavigatePage={(page) => setActivePage(page)}
+            />
+          )}
+
+          {activePage === 'multichart' && (
+            <MultiChartPage
+              initialTicker={ticker}
+              theme={theme}
+              onSelectTicker={(selected) => setTicker(selected)}
+            />
+          )}
         </main>
 
-        {/* Pannello Watchlist Laterale a Scomparsa */}
         <WatchlistPanel
           isOpen={isWatchlistOpen}
           onClose={() => setIsWatchlistOpen(false)}
@@ -563,7 +702,6 @@ export default function App() {
         />
       </div>
 
-      {/* Modali Fluttuanti */}
       <IndicatorsModal
         isOpen={isIndicatorsOpen}
         onClose={() => setIsIndicatorsOpen(false)}
@@ -576,7 +714,6 @@ export default function App() {
         onClose={() => setIsApiHubOpen(false)}
       />
 
-      {/* Modale Gestione Allarmi di Prezzo */}
       <PriceAlertsModal
         isOpen={isAlertsOpen}
         onClose={() => setIsAlertsOpen(false)}
@@ -593,12 +730,54 @@ export default function App() {
         onRequestPermission={handleRequestNotificationPermission}
       />
 
-      {/* In-App Floating Toast Notifications */}
       <PriceAlertToast
         notifications={activeToasts}
         onDismiss={id => setActiveToasts(prev => prev.filter(t => t.id !== id))}
+        onInspectDivergence={item => {
+          if (item.alert) {
+            setInspectedDivergence({
+              id: item.id,
+              ticker: item.alert.ticker,
+              type: item.alert.divergenceType || 'BEARISH_DIVERGENCE',
+              severity: item.alert.severity || 'MEDIUM',
+              priceChangePct: item.alert.priceChangePct || 2.5,
+              sentimentChange: item.alert.sentimentChange || -0.4,
+              currentPrice: item.currentPrice,
+              currentSentiment: item.alert.currentSentiment || 0,
+              title: `Divergenza Rilevata su ${item.alert.ticker}`,
+              description: item.alert.description || 'Divergenza tra azione del prezzo e Sentiment AI.',
+              tradingImplication: item.alert.tradingImplication || 'Possibile esaurimento del movimento in corso.',
+              timestamp: item.timestamp,
+              triggered: true,
+              active: true
+            });
+            setIsDivergenceModalOpen(true);
+          }
+        }}
+      />
+
+      <ShortcutsModal
+        isOpen={isShortcutsOpen}
+        onClose={() => setIsShortcutsOpen(false)}
+      />
+
+      <DivergenceModal
+        isOpen={isDivergenceModalOpen}
+        onClose={() => {
+          setIsDivergenceModalOpen(false);
+          setInspectedDivergence(null);
+        }}
+        alert={inspectedDivergence}
+        monitoringEnabled={divergenceService.isMonitoringEnabled()}
+        onToggleMonitoring={(enabled) => divergenceService.setMonitoringEnabled(enabled)}
+        sensitivity={divergenceService.getSensitivity()}
+        onChangeSensitivity={(s) => divergenceService.setSensitivity(s)}
+        onOpenChart={() => {
+          setIsDivergenceModalOpen(false);
+          setActivePage('chart');
+          setScrollToRealTimeTrigger(Date.now());
+        }}
       />
     </div>
   );
 }
-

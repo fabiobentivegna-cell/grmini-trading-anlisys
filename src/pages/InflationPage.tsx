@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createChart, IChartApi, ISeriesApi, ColorType, CandlestickSeries } from 'lightweight-charts';
-import { LayoutGrid, RefreshCw } from 'lucide-react';
 import { MACRO_PRESETS } from '../config/catalog';
 import { marketDataService } from '../services/marketDataService';
 import { CandleData } from '../types';
@@ -64,7 +63,6 @@ export const InflationPage: React.FC<InflationPageProps> = ({ theme }) => {
         [id]: { ...prev[id], ticker, interval, price: lastPrice }
       }));
 
-      // If chart doesn't exist, create it
       if (!chartsRef.current[id]) {
         const colors = getThemeColors();
         const chart = createChart(container, {
@@ -108,7 +106,6 @@ export const InflationPage: React.FC<InflationPageProps> = ({ theme }) => {
     }
   };
 
-  // Mount charts
   useEffect(() => {
     for (let id = 1; id <= 4; id++) {
       const cfg = configs[id];
@@ -141,7 +138,6 @@ export const InflationPage: React.FC<InflationPageProps> = ({ theme }) => {
     };
   }, []);
 
-  // Update theme on all 4 charts
   useEffect(() => {
     const colors = getThemeColors();
     for (let id = 1; id <= 4; id++) {
@@ -217,7 +213,7 @@ export const InflationPage: React.FC<InflationPageProps> = ({ theme }) => {
                     />
                     <button
                       type="submit"
-                      className="px-1.5 py-0.5 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold text-[10px]"
+                      className="px-1.5 py-0.5 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold text-[10px] cursor-pointer"
                     >
                       Carica
                     </button>
