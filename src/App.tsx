@@ -24,6 +24,7 @@ import { InflationPage } from './pages/InflationPage';
 import { ScreenerPage } from './pages/ScreenerPage';
 import { HeatmapPage } from './pages/HeatmapPage';
 import { MultiChartPage } from './pages/MultiChartPage';
+import { MarketAnalysisPage } from './pages/MarketAnalysisPage';
 
 import {
   CandleData,
@@ -685,6 +686,10 @@ export default function App() {
               theme={theme}
               onSelectTicker={(selected) => setTicker(selected)}
             />
+          )}
+
+          {activePage === 'market-analysis' && (
+            <MarketAnalysisPage />
           )}
         </main>
 

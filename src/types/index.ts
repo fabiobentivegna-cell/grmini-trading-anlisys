@@ -659,10 +659,61 @@ export interface WatchlistItem {
   low?: number;
 }
 
-export type PageId = 'chart' | 'news' | 'fundamental' | 'agent' | 'calendar' | 'correlations' | 'inflation' | 'screener' | 'heatmap' | 'multichart';
+export type PageId = 'chart' | 'news' | 'fundamental' | 'agent' | 'calendar' | 'correlations' | 'inflation' | 'screener' | 'heatmap' | 'multichart' | 'market-analysis';
 
 // -------------------------------------------------------------
 // Metodologia Giacomo Probo AI Analysis Types
+// -------------------------------------------------------------
+export interface ProboMarketAnalysisReport {
+  market: string;
+  country: string;
+  timestamp: string;
+  timeframe: string;
+  confluenceScore: number; // 0 to 100
+  ratingStars: '⭐⭐⭐ 3 STELLE' | '⭐⭐ 2 STELLE' | '⭐ 1 STELLA' | '0 STELLE' | string;
+  qualityGrade: 'Eccellente' | 'Buono' | 'Moderato' | 'Insufficiente' | string;
+  macroPillars: {
+    sevenVariables: {
+      balanceOfPayments: string;
+      interestRatesAndSpreads: string;
+      inflation: string;
+      moneySupplyAndLiquidity: string;
+      stateBudgetAndGdp: string;
+      laborMarket: string;
+      growthProductivityDiff: string;
+      summary: string;
+    };
+    macroIndicators: {
+      confidenceIndexes: string;
+      economicActivity: string;
+      inflationData: string;
+      centralBanks: string;
+    };
+    cyclicIntermarket: {
+      marketRegime: 'RISK ON' | 'RISK OFF';
+      cyclicPhase: string;
+      intermarketCorrelations: string;
+    };
+  };
+  scoringBreakdown: {
+    macroScore: number; // max 20
+    intermarketScore: number; // max 20
+    dataSentimentScore: number; // max 20
+    technicalConfluenceScore: number; // max 20
+    riskRewardScore: number; // max 20
+  };
+  operationalPlan: {
+    action: 'BUY' | 'SELL' | 'WAIT';
+    recommendedEntry: string;
+    stopLoss: string;
+    takeProfit1: string;
+    takeProfit2: string;
+    riskRewardRatio: string;
+    sizeManagement: 'SIZE MASSIMA' | 'SIZE INTERMEDIA' | 'SIZE MINIMA' | 'NO TRADE' | string;
+    rationale: string;
+  };
+  markdownReport: string;
+}
 // -------------------------------------------------------------
 export interface ProboTechniquesConfluence {
   classicalGraph: {

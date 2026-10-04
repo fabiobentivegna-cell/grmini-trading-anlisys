@@ -70,6 +70,13 @@ export const PAGES_CONFIG: PageDefinition[] = [
     navTitle: '🎛️ Multi-Chart 4-TF',
     icon: 'Grid',
     description: 'Vista simultanea a 4 grafici sincronizzati (Daily, 1h, 15m, 5m) con disegno, oscillatori, indicatori e analisi approfondita AI Multi-Timeframe'
+  },
+  {
+    id: 'market-analysis',
+    title: 'Analisi dei Mercati & dei Paesi - Metodologia Giacomo Probo',
+    navTitle: '🌍 Analisi Mercati Probo',
+    icon: 'Globe',
+    description: 'Valutazione macroeconomica a 3 pilastri (7 variabili, dati & sentiment, intermarket), rating quantitativo 0-100 (3 Stelle) e piano operativo per mercato e Paese'
   }
 ];
 
